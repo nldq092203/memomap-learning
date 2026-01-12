@@ -82,31 +82,45 @@ python run.py
 
 ## 3. Architecture (High Level)
 
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│                         Clients                                │
-│  ┌─────────────────┐              ┌─────────────────┐          │
-│  │   Web App       │              │ Chrome Extension│          │
-│  └────────┬────────┘              └────────┬────────┘          │
-└───────────┼────────────────────────────────┼───────────────────┘
-            │                                │
-┌───────────┼────────────────────────────────┼───────────────────┐
-│           │       API Layer                │                   │
-│  ┌────────▼────────┐   ┌─────────────┐   ┌▼────────────┐      │
-│  │  /api/auth/*    │   │  /api/web/* │   │ /api/ext/*  │      │
-│  │  (Shared Auth)  │   │ (Full API)  │   │ (Limited)   │      │
-│  └─────────────────┘   └──────┬──────┘   └──────┬──────┘      │
-└────────────────────────────────┼────────────────┼─────────────┘
-                                 │                │
-┌────────────────────────────────┼────────────────┼─────────────┐
-│                      Domain Layer (Shared)      │             │
-│  Controllers │ Services │ DB Queries                         │
-└───────────────────────────────────────────────────────────────┘
-            │
-┌───────────▼───────────────────────────────────────────────────┐
-│                      Infrastructure                           │
-│  PostgreSQL │ Redis │ Gemini │ Numbers Dictation │ Drive      │
-└───────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Clients
+        Web[Web App]
+        Ext[Chrome Extension]
+    end
+
+    subgraph API["Learning API (/api)"]
+        Auth[/api/auth/*\nShared Auth/]
+        WebApi[/api/web/*\nFull Web API/]
+        ExtApi[/api/ext/*\nExtension API/]
+    end
+
+    subgraph Domain["Domain Layer"]
+        DomainSvc[Controllers / Services / DB Queries]
+    end
+
+    subgraph Infra["Infrastructure"]
+        DB[(PostgreSQL)]
+        Cache[(Redis)]
+        Gemini[(Google Gemini)]
+        Numbers[(Numbers Dictation)]
+        Drive[(Google Drive)]
+    end
+
+    Web --> Auth
+    Web --> WebApi
+    Ext --> Auth
+    Ext --> ExtApi
+
+    Auth --> DomainSvc
+    WebApi --> DomainSvc
+    ExtApi --> DomainSvc
+
+    DomainSvc --> DB
+    DomainSvc --> Cache
+    DomainSvc --> Gemini
+    DomainSvc --> Numbers
+    DomainSvc --> Drive
 ```
 
 ---
@@ -192,6 +206,65 @@ Use the `token` value as the Bearer token in all subsequent calls.
 | POST   | `/web/sessions`      | Create new session       |
 | GET    | `/web/sessions/{id}` | Get session by ID        |
 
+**`GET /api/web/sessions` – Example**
+
+- Headers:
+  - `Authorization: Bearer <jwt>`
+- Response:
+
+```json
+{
+  "status": "success",
+  "data": {
+    "items": [
+      {
+        "id": "uuid",
+        "language": "fr",
+        "name": "French Practice",
+        "duration_seconds": 1800,
+        "tags": ["grammar"],
+        "created_at": "2024-01-15T10:30:00Z"
+      }
+    ],
+    "total": 42,
+    "limit": 20,
+    "offset": 0
+  }
+}
+```
+
+**`POST /api/web/sessions` – Example**
+
+- Headers:
+  - `Authorization: Bearer <jwt>`
+- Request:
+
+```json
+{
+  "language": "fr",
+  "name": "French Practice",
+  "duration_seconds": 1800,
+  "tags": ["grammar", "podcast"],
+  "extra": {}
+}
+```
+
+- Response (`201 Created`):
+
+```json
+{
+  "status": "success",
+  "data": {
+    "id": "uuid",
+    "language": "fr",
+    "name": "French Practice",
+    "duration_seconds": 1800,
+    "tags": ["grammar", "podcast"],
+    "created_at": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
 ### 5.2. Transcripts
 
 | Method | Endpoint                 | Description               |
@@ -201,6 +274,42 @@ Use the `token` value as the Bearer token in all subsequent calls.
 | GET    | `/web/transcripts/{id}`  | Get transcript            |
 | PUT    | `/web/transcripts/{id}`  | Update transcript         |
 | DELETE | `/web/transcripts/{id}`  | Delete transcript         |
+
+**`POST /api/web/transcripts` – Example**
+
+- Headers:
+  - `Authorization: Bearer <jwt>`
+- Request:
+
+```json
+{
+  "language": "fr",
+  "source_url": "https://youtube.com/watch?v=...",
+  "transcript": "Full transcript text...",
+  "notes": ["Key point 1", "Key point 2"],
+  "tags": ["podcast", "news"],
+  "lesson_audio_folder_id": "drive_folder_id",
+  "extra": {}
+}
+```
+
+- Response (`201 Created`):
+
+```json
+{
+  "status": "success",
+  "data": {
+    "id": "uuid",
+    "language": "fr",
+    "source_url": "https://youtube.com/watch?v=...",
+    "transcript": "Full transcript text...",
+    "notes": ["Key point 1", "Key point 2"],
+    "tags": ["podcast", "news"],
+    "lesson_audio_folder_id": "drive_folder_id",
+    "created_at": "2024-01-15T10:30:00Z"
+  }
+}
+```
 
 ### 5.3. Vocabulary (with SRS)
 
@@ -216,12 +325,157 @@ Use the `token` value as the Bearer token in all subsequent calls.
 | POST   | `/web/vocab:review-batch`   | Submit batch review results     |
 | GET    | `/web/vocab/stats`          | Get vocabulary statistics       |
 
+**`GET /api/web/vocab` – Example**
+
+- Headers:
+  - `Authorization: Bearer <jwt>`
+- Query params (optional):
+  - `language`, `limit`, `offset`, `q`
+- Response:
+
+```json
+{
+  "status": "success",
+  "data": {
+    "items": [
+      {
+        "id": "uuid",
+        "language": "fr",
+        "word": "bonjour",
+        "translation": "hello",
+        "notes": ["Used in formal settings"],
+        "tags": ["greetings"],
+        "srs_level": 3,
+        "ease_factor": 2.5,
+        "next_review": "2024-01-20T10:00:00Z",
+        "created_at": "2024-01-15T10:30:00Z"
+      }
+    ],
+    "total": 150,
+    "limit": 50,
+    "offset": 0
+  }
+}
+```
+
+**`POST /api/web/vocab` – Example**
+
+```json
+{
+  "language": "fr",
+  "word": "bonjour",
+  "translation": "hello",
+  "notes": ["Used in formal settings"],
+  "tags": ["greetings"],
+  "extra": {}
+}
+```
+
+**`GET /api/web/vocab/due` – Example**
+
+```json
+{
+  "status": "success",
+  "data": {
+    "cards": [
+      {
+        "id": "uuid",
+        "word": "bonjour",
+        "translation": "hello",
+        "srs_level": 3,
+        "last_reviewed": "2024-01-15T10:00:00Z"
+      }
+    ],
+    "count": 15
+  }
+}
+```
+
+**`POST /api/web/vocab:review-batch` – Example**
+
+```json
+{
+  "reviews": [
+    { "card_id": "uuid-1", "grade": "good" },
+    { "card_id": "uuid-2", "grade": "again" },
+    { "card_id": "uuid-3", "grade": "easy" }
+  ]
+}
+```
+
+**`GET /api/web/vocab/stats` – Example**
+
+```json
+{
+  "status": "success",
+  "data": {
+    "total_cards": 150,
+    "cards_by_level": {
+      "0": 10,
+      "1": 25,
+      "2": 40,
+      "3": 35,
+      "4": 25,
+      "5": 15
+    },
+    "due_today": 12,
+    "reviewed_today": 8
+  }
+}
+```
+
 ### 5.4. AI (Web)
 
 | Method | Endpoint           | Description              |
 |--------|--------------------|--------------------------|
 | POST   | `/web/ai/explain`  | Explain text with AI     |
 | POST   | `/web/ai/chat`     | Chat with AI tutor       |
+
+**`POST /api/web/ai/explain` – Example**
+
+```json
+{
+  "text": "Je voudrais un café, s'il vous plaît",
+  "language": "fr",
+  "context": "At a restaurant"
+}
+```
+
+Response:
+
+```json
+{
+  "status": "success",
+  "data": {
+    "explanation": "This phrase means 'I would like a coffee, please'...",
+    "breakdown": [
+      { "word": "voudrais", "meaning": "would like", "grammar": "conditional" }
+    ]
+  }
+}
+```
+
+**`POST /api/web/ai/chat` – Example**
+
+```json
+{
+  "message": "How do I use the subjunctive in French?",
+  "language": "fr",
+  "conversation_id": "conv-uuid"
+}
+```
+
+Response:
+
+```json
+{
+  "status": "success",
+  "data": {
+    "response": "The subjunctive mood in French is used to express...",
+    "conversation_id": "conv-uuid"
+  }
+}
+```
 
 ### 5.5. Numbers Dictation (User)
 
@@ -232,6 +486,68 @@ Use the `token` value as the Bearer token in all subsequent calls.
 | POST   | `/web/numbers/sessions/{id}/answer` | Submit answer                  |
 | GET    | `/web/numbers/sessions/{id}/summary`| Get session summary            |
 | GET    | `/web/numbers/audio/{ref}`          | Stream audio file              |
+
+**`POST /api/web/numbers/sessions` – Example**
+
+```json
+{
+  "language": "fr",
+  "difficulty": "medium",
+  "count": 10
+}
+```
+
+Response:
+
+```json
+{
+  "status": "success",
+  "data": {
+    "session_id": "uuid",
+    "language": "fr",
+    "difficulty": "medium",
+    "total_exercises": 10
+  }
+}
+```
+
+**`GET /api/web/numbers/sessions/{id}/next` – Example**
+
+```json
+{
+  "status": "success",
+  "data": {
+    "exercise_id": "ex-1",
+    "index": 1,
+    "total": 10,
+    "audio_ref": "fr/2024-W01/session-uuid/ex-1"
+  }
+}
+```
+
+**`POST /api/web/numbers/sessions/{id}/answer` – Example**
+
+```json
+{
+  "exercise_id": "ex-1",
+  "answer": "42"
+}
+```
+
+**`GET /api/web/numbers/sessions/{id}/summary` – Example**
+
+```json
+{
+  "status": "success",
+  "data": {
+    "session_id": "uuid",
+    "total_exercises": 10,
+    "correct": 8,
+    "incorrect": 2,
+    "accuracy": 0.8
+  }
+}
+```
 
 ### 5.6. Numbers Dictation (Admin)
 
@@ -249,6 +565,24 @@ Admin endpoints (require both JWT and `X-Admin-Token`):
 |--------|------------------|-------------------------|
 | GET    | `/web/analytics` | Get learning analytics  |
 
+**`GET /api/web/analytics` – Example**
+
+```json
+{
+  "status": "success",
+  "data": {
+    "total_sessions": 45,
+    "total_duration_hours": 22.5,
+    "total_vocab_cards": 150,
+    "cards_reviewed_30d": 320,
+    "sessions_by_day": [
+      { "date": "2024-01-15", "count": 2, "duration": 3600 }
+    ],
+    "languages": ["fr", "es"]
+  }
+}
+```
+
 ---
 
 ## 6. Extension API Surface (`/api/ext/*`)
@@ -262,6 +596,21 @@ Extension endpoints are a subset of the Web API, optimized for the Chrome Extens
 | GET    | `/ext/vocab`      | List vocabulary cards        |
 | POST   | `/ext/vocab`      | Create vocabulary card       |
 | PUT    | `/ext/vocab/{id}` | Update vocabulary card       |
+
+**`POST /api/ext/vocab` – Example**
+
+```json
+{
+  "language": "fr",
+  "word": "bonjour",
+  "translation": "hello",
+  "notes": ["Heard in a video"],
+  "tags": ["extension"],
+  "extra": {
+    "source_url": "https://youtube.com/..."
+  }
+}
+```
 
 ### 6.2. AI (Extension)
 
