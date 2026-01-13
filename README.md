@@ -90,9 +90,9 @@ flowchart TD
     end
 
     subgraph API["Learning API (/api)"]
-        Auth[/api/auth/*\nShared Auth/]
-        WebApi[/api/web/*\nFull Web API/]
-        ExtApi[/api/ext/*\nExtension API/]
+        Auth[/api/auth/* Shared Auth/]
+        WebApi[/api/web/* Full Web API/]
+        ExtApi[/api/ext/* Extension API/]
     end
 
     subgraph Domain["Domain Layer"]

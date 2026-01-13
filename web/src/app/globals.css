@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@custom-variant dark (&:is(.dark *));
+
+/* ---------- THEME VARIABLES ---------- */
+/* Jade Green Theme - Light Mode (same as extension) */
+:root {
+  --background: 0 0% 100%;
+  --foreground: 215 25% 27%;
+
+  --card: 210 40% 95%;
+  --card-foreground: 215 25% 27%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 215 25% 27%;
+
+  --primary: 158 64% 52%;           /* #29ab87 - Jade Green */
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 158 100% 40%;         /* Emerald-ish for accents */
+  --secondary-foreground: 0 0% 100%;
+
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 43%;
+
+  --accent: 210 40% 92%;
+  --accent-foreground: 215 25% 27%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 158 64% 52%;
+
+  --radius: 14px; /* nice rounded cards/buttons */
+}
+
+/* Optional Dark Mode (keeps jade primary) */
+.dark {
+  --background: 222 47% 8%;
+  --foreground: 210 40% 98%;
+
+  --card: 222 47% 10%;
+  --card-foreground: 210 40% 98%;
+
+  --popover: 222 47% 10%;
+  --popover-foreground: 210 40% 98%;
+
+  --primary: 158 64% 52%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 158 100% 40%;
+  --secondary-foreground: 0 0% 100%;
+
+  --muted: 217 33% 17%;
+  --muted-foreground: 214 32% 75%;
+
+  --accent: 217 33% 18%;
+  --accent-foreground: 210 40% 98%;
+
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 98%;
+
+  --border: 217 33% 20%;
+  --input: 217 33% 20%;
+  --ring: 158 64% 52%;
+}
+
+/* ---------- BASE RESETS ---------- */
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  :root {
+    font-size: 15px;
+  }
+
+  @media (max-width: 640px) {
+    :root {
+      font-size: 14px;
+    }
+  }
+
+  body {
+    @apply bg-background text-foreground text-sm md:text-base;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  h1 {
+    @apply text-2xl md:text-4xl font-semibold;
+  }
+
+  h2 {
+    @apply text-xl md:text-2xl font-semibold;
+  }
+
+  h3 {
+    @apply text-lg md:text-xl font-semibold;
+  }
+
+  small {
+    @apply text-xs;
+  }
+}
+
