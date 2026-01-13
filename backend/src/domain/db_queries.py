@@ -53,8 +53,11 @@ class UserQueries:
                     email=cached_data["email"],
                     extra=cached_data.get("extra", {}),
                 )
-                user.created_at = cached_data.get("created_at")
-                user.updated_at = cached_data.get("updated_at")
+                # Parse datetime strings back to datetime objects
+                if cached_data.get("created_at"):
+                    user.created_at = datetime.fromisoformat(cached_data["created_at"])
+                if cached_data.get("updated_at"):
+                    user.updated_at = datetime.fromisoformat(cached_data["updated_at"])
                 return user
         except Exception as e:
             logger.warning(f"[CACHE ERROR] Failed to get user from cache: {e}")
