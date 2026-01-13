@@ -47,6 +47,10 @@ from src.api.web.audio_lessons import (
 )
 from src.api.web.speaking_practice import (
     speaking_practice_create,
+    speaking_practice_list_topics,
+    speaking_practice_get_manifest,
+    speaking_practice_get_content,
+    speaking_practice_stream_audio,
 )
 from src.api.web.coce_practice import (
     coce_list_exercises,
@@ -218,10 +222,33 @@ web_bp.add_url_rule(
 )
 
 # ==================== Speaking Practice ====================
+# Create (Drive-backed)
 web_bp.add_url_rule(
     "/speaking-practice/sets",
     view_func=speaking_practice_create,
     methods=["POST"],
+)
+
+# Retrieval (GitHub-backed)
+web_bp.add_url_rule(
+    "/speaking-practice/topics",
+    view_func=speaking_practice_list_topics,
+    methods=["GET"],
+)
+web_bp.add_url_rule(
+    "/speaking-practice/topics/<topic_id>",
+    view_func=speaking_practice_get_manifest,
+    methods=["GET"],
+)
+web_bp.add_url_rule(
+    "/speaking-practice/content",
+    view_func=speaking_practice_get_content,
+    methods=["GET"],
+)
+web_bp.add_url_rule(
+    "/speaking-practice/audio",
+    view_func=speaking_practice_stream_audio,
+    methods=["GET"],
 )
 
 # ==================== CO/CE Practice (GitHub-backed) ====================

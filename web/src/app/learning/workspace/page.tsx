@@ -17,6 +17,7 @@ import {
   List,
   TrendingUp,
   Award,
+  MessageSquare,
 } from "lucide-react"
 import { useLearningLang } from "@/lib/contexts/learning-lang-context"
 import { useConfirmationDialog } from "@/components/ui/confirmation-dialog"
@@ -275,6 +276,34 @@ export default function WorkspacePage() {
                   >
                     <Play className="h-4 w-4" />
                     Start CO/CE Practice
+                  </Button>
+                </div>
+              </div>
+
+              {/* Speaking Practice Activity */}
+              <div className="group relative overflow-hidden rounded-xl border border-border/60 bg-gradient-to-br from-background to-muted/30 p-6 transition-all hover:border-primary/40 hover:shadow-lg">
+                <div className="absolute right-4 top-4 opacity-10 transition-opacity group-hover:opacity-20">
+                  <MessageSquare className="h-16 w-16 text-primary" />
+                </div>
+                <div className="relative space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <MessageSquare className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">Speaking Practice</h3>
+                      <p className="text-xs text-muted-foreground">Structured Speaking Exercises</p>
+                    </div>
+                  </div>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    Improve your speaking skills with guided practice exercises on various topics with model answers and speaking prompts.
+                  </p>
+                  <Button
+                    className="w-full gap-2"
+                    onClick={() => router.push("/learning/speaking-practice")}
+                  >
+                    <Play className="h-4 w-4" />
+                    Start Speaking Practice
                   </Button>
                 </div>
               </div>
