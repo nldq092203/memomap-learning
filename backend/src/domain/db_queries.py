@@ -20,6 +20,8 @@ from src.infra.db.orm import (
     VocabularyCardORM,
 )
 
+from src.infra.cache.client import get_redis_client
+from src.extensions import logger
 
 class UserQueries:
     """Database queries for users."""
@@ -31,8 +33,53 @@ class UserQueries:
 
     @staticmethod
     def get_by_id(db: Session, user_id: str) -> UserORM | None:
+        """
+        Get user by ID with Redis caching.
+        
+        Cache TTL: 5 minutes
+        Cache key: user:{user_id}
+        """
+        cache = get_redis_client()
+        cache_key = f"user:{user_id}"
+        
+        # Try cache first
+        try:
+            cached_data = cache.get_json(cache_key)
+            if cached_data:
+                logger.info(f"[CACHE HIT] User {user_id}")
+                # Reconstruct UserORM from cached data
+                user = UserORM(
+                    id=cached_data["id"],
+                    email=cached_data["email"],
+                    extra=cached_data.get("extra", {}),
+                )
+                user.created_at = cached_data.get("created_at")
+                user.updated_at = cached_data.get("updated_at")
+                return user
+        except Exception as e:
+            logger.warning(f"[CACHE ERROR] Failed to get user from cache: {e}")
+        
+        # Cache miss - query database
+        logger.info(f"[CACHE MISS] User {user_id}")
         stmt = select(UserORM).where(UserORM.id == user_id)
-        return db.execute(stmt).scalar_one_or_none()
+        user = db.execute(stmt).scalar_one_or_none()
+        
+        # Cache the result
+        if user:
+            try:
+                cache_data = {
+                    "id": user.id,
+                    "email": user.email,
+                    "extra": user.extra,
+                    "created_at": user.created_at.isoformat() if user.created_at else None,
+                    "updated_at": user.updated_at.isoformat() if user.updated_at else None,
+                }
+                cache.set_json(cache_key, cache_data, ex=300)  # 5 minutes TTL
+                logger.info(f"[CACHE SET] User {user_id}")
+            except Exception as e:
+                logger.warning(f"[CACHE ERROR] Failed to cache user: {e}")
+        
+        return user
 
     @staticmethod
     def create(db: Session, email: str, extra: dict[str, Any] | None = None) -> UserORM:
