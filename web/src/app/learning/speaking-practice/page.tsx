@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect } from "react"
-import { LearningNav } from "@/components/learning/layout/learning-nav"
 import { useSpeakingPractice } from "@/lib/hooks/use-speaking-practice"
 import {
   TopicList,
@@ -47,13 +46,6 @@ export default function SpeakingPracticePage() {
   if (!currentTopic && !currentContent) {
     return (
       <div className="min-h-screen bg-background">
-        <LearningNav
-          breadcrumbs={[
-            { label: "Learning", href: "/learning" },
-            { label: "Speaking Practice" },
-          ]}
-          showBackButton
-        />
         <div className="mx-auto max-w-6xl px-4 py-6 md:py-8">
           <TopicList
             topics={topics}
@@ -69,14 +61,6 @@ export default function SpeakingPracticePage() {
   if (currentTopic && !currentContent) {
     return (
       <div className="min-h-screen bg-background">
-        <LearningNav
-          breadcrumbs={[
-            { label: "Learning", href: "/learning" },
-            { label: "Speaking Practice", href: "/learning/speaking-practice" },
-            { label: currentTopic.title },
-          ]}
-          showBackButton
-        />
         <div className="mx-auto max-w-6xl px-4 py-6 md:py-8">
           <SubtopicList
             topic={currentTopic}
@@ -93,15 +77,6 @@ export default function SpeakingPracticePage() {
   if (currentContent) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-        <LearningNav
-          breadcrumbs={[
-            { label: "Learning", href: "/learning" },
-            { label: "Speaking Practice", href: "/learning/speaking-practice" },
-            { label: currentTopic?.title || "Practice" },
-            { label: currentContent.topic },
-          ]}
-          showBackButton
-        />
         <div className="mx-auto max-w-4xl px-4 py-6 md:py-8">
           <PracticePlayer
             content={currentContent}

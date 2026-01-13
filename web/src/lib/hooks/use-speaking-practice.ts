@@ -93,7 +93,6 @@ export function useSpeakingPractice() {
 
   // Back to topics
   const backToTopics = useCallback(() => {
-    setTopics([])
     reset()
   }, [reset])
 
