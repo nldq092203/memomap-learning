@@ -12,12 +12,17 @@
 ## 📋 Table of Contents
 
 - [Overview](#-overview)
-- [Features](#-features)
-- [Quick Start](#-quick-start)
-- [Architecture](#-architecture)
+- [Technology Stack](#technology-stack)
+- [Architecture & Workflows](#-architecture--workflows)
+  - [System Architecture](#system-architecture)
+  - [Project Structure](#project-structure)
+  - [Data Flow](#data-flow)
 - [Authentication](#-authentication)
-- [API Documentation](#-api-documentation)
-  - [Vocabulary Management](#vocabulary-management)
+- [Endpoint Roles](#-endpoint-roles)
+  - [Admin Endpoints](#admin-endpoints)
+  - [User Endpoints](#user-endpoints)
+- [Business Logic & Features](#-business-logic--features)
+  - [Vocabulary Management (SRS)](#vocabulary-management)
   - [Numbers Dictation](#numbers-dictation)
   - [Audio Lessons](#audio-lessons)
   - [CO/CE Practice](#coce-practice-comprehension-exercises)
@@ -28,7 +33,6 @@
   - [Analytics](#analytics)
 - [Error Handling](#-error-handling)
 - [Rate Limiting](#-rate-limiting)
-- [Deployment](#-deployment)
 
 ---
 
@@ -106,103 +110,10 @@
 - Progress analytics by language
 - Daily/weekly activity summaries
 
----
 
-## 🚀 Quick Start
+## 🏗️ Architecture & Workflows
 
-### Prerequisites
-
-- Python 3.11 or higher
-- PostgreSQL 15+
-- Redis 7+
-- Google OAuth credentials
-- Google Gemini API key
-- Azure Speech Services key (for TTS features)
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   cd backend
-   ```
-
-2. **Set up environment variables**
-   ```bash
-   cp env.example .env
-   ```
-
-   Edit `.env` with your credentials:
-   ```env
-   # Flask
-   SECRET_KEY=your-secret-key-here
-   
-   # Database
-   POSTGRES_DSN=postgresql://user:password@localhost:5432/memomap_learning
-   
-   # Redis
-   REDIS_URL=redis://localhost:6379/0
-   
-   # Google OAuth
-   GOOGLE_CLIENT_ID=your-client-id
-   GOOGLE_WEB_CLIENT_ID=your-web-client-id
-   
-   # AI
-   GEMINI_API_KEY=your-gemini-api-key
-   
-   # Azure TTS (optional, for audio generation)
-   AZURE_SPEECH_KEY=your-azure-key
-   AZURE_SPEECH_REGION=your-region
-   ```
-
-3. **Install dependencies (using uv - recommended)**
-   ```bash
-   uv sync
-   ```
-
-   Or with pip:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Run database migrations**
-   ```bash
-   uv run alembic upgrade head
-   ```
-
-5. **Start the development server**
-   ```bash
-   uv run dev
-   ```
-
-   Or:
-   ```bash
-   python run.py
-   ```
-
-The API will be available at `http://localhost:5000/api`
-
-### Health Check
-
-```bash
-curl http://localhost:5000/api/health
-```
-
-Expected response:
-```json
-{
-  "status": "success",
-  "data": {
-    "status": "healthy",
-    "timestamp": "2024-01-15T10:30:00Z"
-  }
-}
-```
-
----
-
-## 🏗️ Architecture
-
-### System Overview
+### System Architecture
 
 ```mermaid
 flowchart TB
@@ -443,7 +354,179 @@ https://www.googleapis.com/auth/drive.file
 
 ---
 
-## 📚 API Documentation
+## 🎭 Endpoint Roles
+
+The API is designed with clear separation between **Admin** and **User** roles. Admin endpoints are used to create and manage learning content (datasets, audio, exercises), while User endpoints allow learners to interact with and consume this content.
+
+### Admin Endpoints
+
+**Purpose:** Content creation and dataset management for practice exercises
+
+#### Numbers Dictation - Admin
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/web/numbers/admin/generate` | Generate new number dictation exercises |
+| POST | `/web/numbers/admin/upload` | Upload pre-generated exercise datasets |
+| DELETE | `/web/numbers/admin/exercises/{id}` | Remove exercise from pool |
+
+**Requirements:**
+- JWT authentication
+- Google Drive access token (for storage)
+- Admin privileges
+
+**Use Case:** Administrators generate batches of number dictation exercises (phone numbers, prices, years, times) with native speaker audio and upload them to the exercise pool.
+
+#### Audio Lessons - Admin
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/web/audio-lessons` | Upload custom audio lesson with transcript |
+| POST | `/web/audio-lessons/tts` | Generate lesson from text using TTS |
+| POST | `/web/audio-lessons/conversation` | Generate multi-speaker conversation |
+| POST | `/web/audio-lessons/{id}/questions` | Attach CO/CE questions to lesson |
+
+**Requirements:**
+- JWT authentication
+- Google Drive access token
+
+**Use Case:** Create audio learning materials with transcripts and comprehension questions. Supports both uploaded audio and TTS-generated content.
+
+#### Speaking Practice - Admin
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/web/speaking-practice/sets` | Create speaking practice topic set |
+| PUT | `/web/speaking-practice/sets/{id}` | Update practice set |
+| DELETE | `/web/speaking-practice/sets/{id}` | Remove practice set |
+
+**Requirements:**
+- JWT authentication
+- Google Drive access token
+
+**Use Case:** Create structured speaking exercises with progressive difficulty (warmup → opinion → nuance) including intro audio, questions, and model answers.
+
+#### CO/CE Practice - Admin
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/web/coce/admin/exercises` | Create new CO/CE exercise |
+| PUT | `/web/coce/admin/exercises/{id}` | Update exercise content |
+| POST | `/web/coce/admin/exercises/{id}/publish` | Publish to GitHub repository |
+| DELETE | `/web/coce/admin/exercises/{id}` | Remove exercise |
+
+**Requirements:**
+- JWT authentication
+- GitHub access (for publishing)
+
+**Use Case:** Create comprehension exercises (listening/reading) with questions, then publish to static hosting for user access.
+
+---
+
+### User Endpoints
+
+**Purpose:** Interact with learning content and track progress
+
+#### Vocabulary Management - User
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/web/vocab` | List personal vocabulary cards |
+| POST | `/web/vocab` | Create new vocabulary card |
+| GET | `/web/vocab/{id}` | Get specific card |
+| PATCH | `/web/vocab/{id}` | Update card |
+| DELETE | `/web/vocab/{id}` | Suspend card |
+| GET | `/web/vocab/due` | Get cards due for review |
+| POST | `/web/vocab:review-batch` | Submit review results |
+| GET | `/web/vocab/stats` | Get learning statistics |
+
+**Use Case:** Users manage their personal vocabulary flashcards with spaced repetition (SRS) for optimal learning.
+
+#### Numbers Dictation - User
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/web/numbers/sessions` | Create practice session |
+| GET | `/web/numbers/sessions/{id}/next` | Get next exercise |
+| POST | `/web/numbers/sessions/{id}/answer` | Submit answer |
+| GET | `/web/numbers/sessions/{id}/summary` | Get session results |
+| GET | `/web/numbers/audio/{ref}` | Stream exercise audio |
+
+**Use Case:** Users practice understanding spoken numbers through interactive sessions with immediate feedback.
+
+#### Audio Lessons - User
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/web/audio-lessons` | List available lessons |
+| GET | `/web/audio-lessons/{id}/transcript` | Get lesson transcript |
+| GET | `/web/audio-lessons/{id}/audio` | Stream lesson audio |
+
+**Use Case:** Users access audio lessons with transcripts for listening comprehension practice.
+
+#### CO/CE Practice - User
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/web/coce/exercises?level={level}` | List exercises by level |
+| GET | `/web/coce/exercises/{id}?level={level}` | Get exercise with audio URL |
+| GET | `/web/coce/exercises/{id}/transcript?level={level}` | Get transcript |
+| GET | `/web/coce/exercises/{id}/questions?level={level}&type={co\|ce}` | Get questions |
+
+**Use Case:** Users practice listening (CO) or reading (CE) comprehension with level-appropriate exercises (A1-C2).
+
+#### Speaking Practice - User
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/web/speaking-practice/topics?level={level}` | List available topics |
+| GET | `/web/speaking-practice/topics/{id}` | Get topic with questions |
+| GET | `/web/speaking-practice/topics/{id}/audio/{file}` | Stream audio files |
+
+**Use Case:** Users practice speaking with structured prompts and can compare with model answers.
+
+#### AI Features - User
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/web/ai/explain` | Get AI explanation of text |
+| POST | `/web/ai/chat` | Chat with AI language tutor |
+
+**Use Case:** Users get instant explanations and conversational practice with AI assistance.
+
+#### Learning Sessions - User
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/web/sessions` | List learning sessions |
+| POST | `/web/sessions` | Create session record |
+| GET | `/web/sessions/{id}` | Get session details |
+
+**Use Case:** Track study time and activities for progress monitoring.
+
+#### Transcripts - User
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/web/transcripts` | List saved transcripts |
+| POST | `/web/transcripts` | Save new transcript |
+| GET | `/web/transcripts/{id}` | Get transcript |
+| PUT | `/web/transcripts/{id}` | Update transcript |
+| DELETE | `/web/transcripts/{id}` | Delete transcript |
+
+**Use Case:** Manage transcripts and notes from various learning materials.
+
+#### Analytics - User
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/web/analytics?language={lang}&days={n}` | Get learning statistics |
+
+**Use Case:** View progress metrics, study time, and performance analytics.
+
+---
+
+## 📚 Business Logic & Features
 
 Base URL: `/api`
 
@@ -701,56 +784,63 @@ Authorization: Bearer <jwt>
 
 ## Numbers Dictation
 
-Practice understanding numbers in spoken French with pre-generated exercises.
+**Admin Workflow:** Admins generate number dictation exercises (phone, price, year, time) with native speaker audio, save to Google Drive, then publish to GitHub as public storage.
+
+**User Workflow:** Users practice understanding spoken numbers through interactive sessions, accessing exercises from GitHub.
 
 ### Architecture
 
 ```mermaid
 flowchart TB
-    subgraph Client
-        UI[User Interface]
+    subgraph Admin["Admin Workflow"]
+        AdminUI[Admin Interface]
+        Generator[Exercise Generator]
     end
     
-    subgraph API
+    subgraph User["User Workflow"]
+        UserUI[User Interface]
         SessionAPI[Session API]
-        Generator[Exercise Generator]
         Validator[Answer Validator]
     end
     
     subgraph Storage
-        GitHub[(GitHub Repository<br/>Pre-generated Exercises)]
+        Drive[(Google Drive<br/>Admin Storage)]
+        GitHub[(GitHub Repository<br/>Public Storage)]
         Memory[(In-Memory<br/>Active Sessions)]
     end
     
-    UI -->|Create session| SessionAPI
-    SessionAPI -->|Sample exercises| Generator
-    Generator -->|Fetch| GitHub
-    GitHub -->|Exercises + Audio| Generator
-    Generator -->|Create session| Memory
+    AdminUI -->|1. Generate exercises| Generator
+    Generator -->|2. Save datasets| Drive
+    AdminUI -->|3. Publish to GitHub| GitHub
     
-    UI -->|Get next exercise| SessionAPI
+    UserUI -->|Create session| SessionAPI
+    SessionAPI -->|Sample exercises| GitHub
+    GitHub -->|Exercises + Audio| SessionAPI
+    SessionAPI -->|Create session| Memory
+    
+    UserUI -->|Get next exercise| SessionAPI
     SessionAPI -->|Retrieve| Memory
     Memory -->|Exercise| SessionAPI
-    SessionAPI -->|Audio URL| UI
+    SessionAPI -->|Audio URL (GitHub)| UserUI
     
-    UI -->|Submit answer| SessionAPI
+    UserUI -->|Submit answer| SessionAPI
     SessionAPI -->|Validate| Validator
     Validator -->|Result| SessionAPI
     SessionAPI -->|Update| Memory
 ```
 
-### Workflow
+### User Practice Workflow
 
 ```mermaid
 sequenceDiagram
     participant User
     participant API
-    participant Repo as GitHub Repo
+    participant GitHub as GitHub Repo
     participant Session as Session Store
     
     User->>API: POST /api/web/numbers/sessions<br/>{types: ["PHONE", "PRICE"], count: 5}
-    API->>Repo: Fetch exercises by types
-    Repo-->>API: Available exercises
+    API->>GitHub: Fetch exercises by types
+    GitHub-->>API: Available exercises
     API->>API: Sample 5 random exercises
     API->>Session: Store session
     API-->>User: {session_id, types, count}
@@ -759,9 +849,9 @@ sequenceDiagram
         User->>API: GET /api/web/numbers/sessions/{id}/next
         API->>Session: Get next unanswered
         Session-->>API: Exercise
-        API-->>User: {exercise_id, audio_url, number_type}
+        API-->>User: {exercise_id, audio_url (GitHub), number_type}
         
-        User->>User: Listen to audio
+        User->>User: Listen to audio from GitHub
         User->>API: POST /api/web/numbers/sessions/{id}/answer<br/>{exercise_id, answer}
         API->>API: Validate answer (digit-by-digit)
         API->>Session: Store result
@@ -782,15 +872,65 @@ sequenceDiagram
 | `YEAR` | Years | 1998 |
 | `TIME` | Time expressions | 14h30 |
 
+### Storage Layout
+
+#### Google Drive (Admin Storage)
+
+```
+MemoMap/
+└── LearningTracker/
+    └── NumbersDictation/
+        └── {version}/                (e.g., 2025-W50)
+            ├── datasets/
+            │   ├── phone.json
+            │   ├── price.json
+            │   ├── year.json
+            │   └── time.json
+            └── audio/
+                ├── phone_0620015331.mp3
+                ├── price_4431.mp3
+                └── ...
+```
+
+#### GitHub (Public Storage for Users)
+
+```
+{BASE_URL}/number-dictation/{version}/
+├── datasets/
+│   ├── phone.json
+│   ├── price.json
+│   ├── year.json
+│   └── time.json
+└── audio/
+    ├── phone_0620015331.mp3
+    ├── price_4431.mp3
+    └── ...
+```
+
 ### Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/web/numbers/sessions` | Create dictation session |
-| GET | `/web/numbers/sessions/{id}/next` | Get next exercise |
-| POST | `/web/numbers/sessions/{id}/answer` | Submit answer |
-| GET | `/web/numbers/sessions/{id}/summary` | Get session summary |
-| GET | `/web/numbers/audio/{ref}` | Stream audio file |
+#### Admin Endpoints
+
+| Method | Endpoint | Description | Role |
+|--------|----------|-------------|------|
+| POST | `/web/numbers/admin/generate` | Generate exercise datasets | Admin |
+| POST | `/web/numbers/admin/upload` | Upload to Drive | Admin |
+| POST | `/web/numbers/admin/publish` | Publish to GitHub | Admin |
+| DELETE | `/web/numbers/admin/exercises/{id}` | Remove exercise | Admin |
+
+**Requirements:** JWT + Google Drive access token + GitHub access
+
+#### User Endpoints
+
+| Method | Endpoint | Description | Role |
+|--------|----------|-------------|------|
+| POST | `/web/numbers/sessions` | Create practice session | User |
+| GET | `/web/numbers/sessions/{id}/next` | Get next exercise | User |
+| POST | `/web/numbers/sessions/{id}/answer` | Submit answer | User |
+| GET | `/web/numbers/sessions/{id}/summary` | Get session summary | User |
+| GET | `/web/numbers/audio/{ref}` | Stream audio from GitHub | User |
+
+**Requirements:** JWT authentication
 
 ### Examples
 
@@ -932,14 +1072,23 @@ Content-Type: application/json
 
 ## Audio Lessons
 
-Upload, generate, and manage audio lessons with transcripts and comprehension questions.
+**Admin Workflow:** Admins create audio lessons (upload or TTS-generated), save to Google Drive, then publish to GitHub as public storage for shared learning content.
+
+**User Workflow (Two Modes):**
+1. **Learning Practice**: Access published audio lessons from GitHub for listening comprehension
+2. **Personal Dictation**: Upload own audio files (manually or via Whisper AI transcription) to personal Drive storage for dictation practice in the dictation workspace
 
 ### Architecture
 
 ```mermaid
 flowchart TB
-    subgraph Client
-        UI[User Interface]
+    subgraph Admin["Admin Workflow"]
+        AdminUI[Admin Interface]
+    end
+    
+    subgraph User["User Workflow"]
+        UserUI[User Interface]
+        Whisper[Whisper AI<br/>Transcription]
     end
     
     subgraph API
@@ -948,37 +1097,52 @@ flowchart TB
     end
     
     subgraph Storage
-        Drive[(Google Drive<br/>User Files)]
+        AdminDrive[(Google Drive<br/>Admin Storage)]
+        UserDrive[(Google Drive<br/>User Personal Storage)]
+        GitHub[(GitHub<br/>Public Storage)]
     end
     
-    UI -->|Upload audio + transcript| LessonAPI
-    LessonAPI -->|Store| Drive
-    
-    UI -->|Generate from text| LessonAPI
+    %% Admin workflow
+    AdminUI -->|1. Upload audio + transcript| LessonAPI
+    AdminUI -->|1. Generate from text (TTS)| LessonAPI
     LessonAPI -->|Synthesize| TTS
     TTS -->|Audio bytes| LessonAPI
-    LessonAPI -->|Store| Drive
+    LessonAPI -->|2. Save to Drive| AdminDrive
     
-    UI -->|Attach questions| LessonAPI
-    LessonAPI -->|Store questions_co.json<br/>or questions_ce.json| Drive
+    AdminUI -->|3. Attach questions| LessonAPI
+    LessonAPI -->|Store questions_co/ce.json| AdminDrive
     
-    UI -->|Retrieve| LessonAPI
-    LessonAPI -->|Fetch| Drive
-    Drive -->|Stream| UI
+    AdminUI -->|4. Publish to GitHub| LessonAPI
+    LessonAPI -->|Upload autoAudio| GitHub
+    
+    %% User workflow - Learning
+    UserUI -->|Retrieve published lessons| LessonAPI
+    LessonAPI -->|Fetch from public storage| GitHub
+    GitHub -->|Stream audio + transcript| UserUI
+    
+    %% User workflow - Personal Dictation
+    UserUI -->|Upload personal audio| LessonAPI
+    UserUI -->|Upload + transcribe (Whisper)| Whisper
+    Whisper -->|Transcript| LessonAPI
+    LessonAPI -->|Save to personal storage| UserDrive
+    UserUI -->|Fetch for dictation practice| LessonAPI
+    LessonAPI -->|Retrieve| UserDrive
 ```
 
-### Storage Layout (Google Drive)
+### Storage Layout
+
+#### Google Drive - Admin Storage
 
 ```
 MemoMap/
 └── LearningTracker/
     └── AudioLessons/
-        ├── {lesson-id}/
+        ├── {lesson-id}/              (Uploaded audio)
         │   ├── audio.mp3
         │   ├── transcript.json
         │   ├── questions_co.json  (optional)
         │   └── questions_ce.json  (optional)
-        └── autoAudio/              (TTS-generated)
+        └── autoAudio/                (TTS-generated by Admin)
             └── {lesson-id}/
                 ├── audio.mp3
                 ├── transcript.json
@@ -986,19 +1150,59 @@ MemoMap/
                 └── questions_ce.json
 ```
 
+#### Google Drive - User Personal Storage
+
+```
+MemoMap/
+└── LearningTracker/
+    └── AudioLessons/
+        └── {lesson-id}/              (User's personal uploads)
+            ├── audio.mp3             (Manual upload or Whisper)
+            └── transcript.json       (Manual or Whisper AI)
+```
+
+**Use Case**: Users upload their own audio files (podcasts, videos, etc.) with transcripts for dictation practice in the dictation workspace.
+
+#### GitHub (Public Storage for Users)
+
+```
+{BASE_URL}/audio-lessons/
+└── autoAudio/                    (Published by Admin)
+    └── {lesson-id}/
+        ├── audio.mp3
+        ├── transcript.json
+        ├── questions_co.json
+        └── questions_ce.json
+```
+
 ### Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/web/audio-lessons` | List audio lessons |
-| POST | `/web/audio-lessons` | Upload audio lesson |
-| POST | `/web/audio-lessons/tts` | Generate lesson from text (TTS) |
-| POST | `/web/audio-lessons/conversation` | Generate conversation lesson |
-| GET | `/web/audio-lessons/{id}/transcript` | Get transcript |
-| GET | `/web/audio-lessons/{id}/audio` | Stream audio |
-| POST | `/web/audio-lessons/{id}/questions` | Attach questions |
+#### Admin Endpoints
 
-**Note:** All endpoints require both JWT and Google Drive access token.
+| Method | Endpoint | Description | Role |
+|--------|----------|-------------|------|
+| POST | `/web/audio-lessons` | Upload audio lesson | Admin |
+| POST | `/web/audio-lessons/tts` | Generate lesson from text (TTS) | Admin |
+| POST | `/web/audio-lessons/conversation` | Generate conversation lesson | Admin |
+| POST | `/web/audio-lessons/{id}/questions` | Attach CO/CE questions | Admin |
+| POST | `/web/audio-lessons/{id}/publish` | Publish to GitHub (autoAudio) | Admin |
+
+**Requirements:** JWT + Google Drive access token (+ GitHub access for publish)
+
+#### User Endpoints
+
+| Method | Endpoint | Description | Role |
+|--------|----------|-------------|------|
+| GET | `/web/audio-lessons` | List published lessons (GitHub) | User |
+| POST | `/web/audio-lessons` | Upload personal audio for dictation | User |
+| GET | `/web/audio-lessons/{id}/transcript` | Get transcript (GitHub or personal) | User |
+| GET | `/web/audio-lessons/{id}/audio` | Stream audio (GitHub or personal) | User |
+
+**Requirements:** 
+- JWT authentication
+- Google Drive access token (for personal uploads)
+
+**Note**: Users can upload their own audio files (manually or via Whisper AI transcription) to their personal Drive storage for dictation practice. These are stored separately from admin-published content.
 
 ### Examples
 
@@ -1365,14 +1569,20 @@ Authorization: Bearer <jwt>
 
 ## Speaking Practice
 
-Structured speaking exercises with progressive difficulty levels.
+**Admin Workflow:** Admins create structured speaking exercises with TTS (intro, questions, model answers), save to Google Drive, then publish to GitHub as public storage.
+
+**User Workflow:** Users practice speaking with progressive difficulty levels (warmup → opinion → nuance), accessing audio prompts and model answers from GitHub.
 
 ### Architecture
 
 ```mermaid
 flowchart TB
-    subgraph Client
-        UI[User Interface]
+    subgraph Admin["Admin Workflow"]
+        AdminUI[Admin Interface]
+    end
+    
+    subgraph User["User Workflow"]
+        UserUI[User Interface]
     end
     
     subgraph API
@@ -1381,19 +1591,28 @@ flowchart TB
     end
     
     subgraph Storage
-        Drive[(Google Drive)]
+        Drive[(Google Drive<br/>Admin Storage)]
+        GitHub[(GitHub<br/>Public Storage)]
     end
     
-    UI -->|Create practice set| SpeakAPI
+    AdminUI -->|1. Create practice set| SpeakAPI
     SpeakAPI -->|Synthesize intro| TTS
     SpeakAPI -->|Synthesize questions| TTS
     SpeakAPI -->|Synthesize model answer| TTS
     TTS -->|Audio bytes| SpeakAPI
-    SpeakAPI -->|Store content.json + audio files| Drive
-    SpeakAPI -->|Storage result| UI
+    SpeakAPI -->|2. Save to Drive| Drive
+    
+    AdminUI -->|3. Publish to GitHub| SpeakAPI
+    SpeakAPI -->|Upload content + audio| GitHub
+    
+    UserUI -->|Retrieve topics| SpeakAPI
+    SpeakAPI -->|Fetch from public storage| GitHub
+    GitHub -->|Stream audio + content| UserUI
 ```
 
-### Storage Layout (Google Drive)
+### Storage Layout
+
+#### Google Drive (Admin Storage)
 
 ```
 MemoMap/
@@ -1410,16 +1629,32 @@ MemoMap/
                     └── model_answer.mp3
 ```
 
-### Workflow
+#### GitHub (Public Storage for Users)
+
+```
+{BASE_URL}/speaking-practice/
+└── {level}/                      (e.g., B2)
+    └── {topic-id}/                (e.g., teletravail)
+        ├── content.json
+        └── audio/
+            ├── intro.mp3
+            ├── q1_warmup.mp3
+            ├── q2_opinion.mp3
+            ├── q3_nuance.mp3
+            └── model_answer.mp3
+```
+
+### Admin Creation Workflow
 
 ```mermaid
 sequenceDiagram
-    participant User
+    participant Admin
     participant API
     participant TTS as Azure TTS
     participant Drive
+    participant GitHub
     
-    User->>API: POST /api/web/speaking-practice/sets<br/>{topic, audios: [intro, questions, model]}
+    Admin->>API: POST /api/web/speaking-practice/sets<br/>{topic, audios: [intro, questions, model]}
     
     API->>TTS: Synthesize intro audio
     TTS-->>API: intro.mp3
@@ -1437,14 +1672,35 @@ sequenceDiagram
     API->>Drive: Upload all audio files
     Drive-->>API: Storage confirmation
     
-    API-->>User: {topic_id, level, drive: {...}}
+    Admin->>API: POST /api/web/speaking-practice/sets/{id}/publish
+    API->>GitHub: Upload content.json + audio files
+    GitHub-->>API: Publish confirmation
+    
+    API-->>Admin: {topic_id, level, published: true}
 ```
 
 ### Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/web/speaking-practice/sets` | Create speaking practice set |
+#### Admin Endpoints
+
+| Method | Endpoint | Description | Role |
+|--------|----------|-------------|------|
+| POST | `/web/speaking-practice/sets` | Create speaking practice set | Admin |
+| PUT | `/web/speaking-practice/sets/{id}` | Update practice set | Admin |
+| POST | `/web/speaking-practice/sets/{id}/publish` | Publish to GitHub | Admin |
+| DELETE | `/web/speaking-practice/sets/{id}` | Remove practice set | Admin |
+
+**Requirements:** JWT + Google Drive access token (+ GitHub access for publish)
+
+#### User Endpoints
+
+| Method | Endpoint | Description | Role |
+|--------|----------|-------------|------|
+| GET | `/web/speaking-practice/topics?level={level}` | List available topics | User |
+| GET | `/web/speaking-practice/topics/{id}` | Get topic with questions | User |
+| GET | `/web/speaking-practice/topics/{id}/audio/{file}` | Stream audio from GitHub | User |
+
+**Requirements:** JWT authentication
 
 **Note:** Requires both JWT and Google Drive access token.
 
@@ -1937,83 +2193,3 @@ When you receive a `429` status code:
 3. Cache AI responses when possible
 4. Consider batching requests
 
----
-
-## 🚀 Deployment
-
-### Environment Variables
-
-Required for production:
-
-```env
-# Flask
-SECRET_KEY=<strong-random-key>
-FLASK_ENV=production
-
-# Database
-POSTGRES_DSN=postgresql://user:pass@host:5432/dbname
-
-# Redis
-REDIS_URL=redis://host:6379/0
-
-# Google OAuth
-GOOGLE_CLIENT_ID=<your-client-id>
-GOOGLE_WEB_CLIENT_ID=<your-web-client-id>
-
-# AI
-GEMINI_API_KEY=<your-gemini-key>
-
-# Azure TTS (optional)
-AZURE_SPEECH_KEY=<your-azure-key>
-AZURE_SPEECH_REGION=<your-region>
-
-# CORS
-WEB_ORIGIN=https://your-frontend.com
-ALLOWED_ORIGINS=https://your-frontend.com,https://extension-id.chromiumapp.org
-
-# Numbers Dictation
-NUMBERS_AUDIO_BASE_URL=https://raw.githubusercontent.com/your-org/audio-repo/main/
-NUMBERS_DATA_VERSION=2025-W50
-```
-
-### Database Migrations
-
-```bash
-# Run migrations
-alembic upgrade head
-
-# Create new migration
-alembic revision --autogenerate -m "Description"
-```
-
-### Production Checklist
-
-- [ ] Set strong `SECRET_KEY`
-- [ ] Configure PostgreSQL with connection pooling
-- [ ] Set up Redis with persistence
-- [ ] Configure CORS for your domains
-- [ ] Set up SSL/TLS certificates
-- [ ] Enable logging and monitoring
-- [ ] Configure rate limiting
-- [ ] Set up backup strategy for PostgreSQL
-- [ ] Review and adjust AI rate limits
-- [ ] Test Google OAuth flow in production
-- [ ] Verify Drive API permissions
-
----
-
-## 📝 License
-
-[Your License Here]
-
-## 🤝 Contributing
-
-[Your Contributing Guidelines Here]
-
-## 📧 Support
-
-[Your Support Information Here]
-
----
-
-**Built with ❤️ for language learners**
