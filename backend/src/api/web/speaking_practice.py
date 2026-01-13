@@ -36,7 +36,7 @@ from src.infra.tts.tts_service import TTSService
 from src.shared.drive_services import get_drive_services_from_request
 from src.shared.speaking_practice_repo import SpeakingPracticeRepository
 from src.utils.response_builder import ResponseBuilder
-from src.utils.config import Config
+from src.config import Config
 from src.extensions import logger
 
 
