@@ -259,6 +259,25 @@ class VocabularyQueries:
         return db.execute(stmt).scalar_one_or_none()
 
     @staticmethod
+    def get_by_ids(
+        db: Session,
+        card_ids: list[str],
+        user_id: str,
+    ) -> dict[str, VocabularyCardORM]:
+        """Get multiple cards by IDs in a single query, returning a dict keyed by card_id."""
+        if not card_ids:
+            return {}
+
+        stmt = select(VocabularyCardORM).where(
+            and_(
+                VocabularyCardORM.id.in_(card_ids),
+                VocabularyCardORM.user_id == user_id,
+            )
+        )
+        cards = db.execute(stmt).scalars().all()
+        return {card.id: card for card in cards}
+
+    @staticmethod
     def list_by_user(
         db: Session,
         user_id: str,
@@ -412,7 +431,10 @@ class VocabularyQueries:
 
         due_conditions = conditions + [
             VocabularyCardORM.status.in_(["new", "learning", "review"]),
-            VocabularyCardORM.due_at <= datetime.now(timezone.utc),
+            or_(
+                VocabularyCardORM.due_at.is_(None),
+                VocabularyCardORM.due_at <= datetime.now(timezone.utc),
+            ),
         ]
         due_stmt = (
             select(func.count())

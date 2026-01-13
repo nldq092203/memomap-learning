@@ -209,25 +209,40 @@ class SRSService:
         reviews: list[tuple[str, Grade]],
         user_id: str,
     ) -> list[VocabularyCardORM]:
-        """Process a batch of card reviews."""
+        """Process a batch of card reviews with optimized bulk operations."""
+        if not reviews:
+            return []
+
+        # Bulk fetch all cards in one query
+        card_ids = [card_id for card_id, _ in reviews]
+        cards_by_id = VocabularyQueries.get_by_ids(self.db, card_ids, user_id)
+
         updated_cards = []
 
+        # Process all reviews in memory
         for card_id, grade in reviews:
-            card = VocabularyQueries.get_by_id(self.db, card_id, user_id)
+            card = cards_by_id.get(card_id)
             if not card:
                 continue
 
+            # Calculate new stats
             new_stats = self.calculate_next_review(card, grade)
-            updated_card = VocabularyQueries.update_srs(
-                db=self.db,
-                card_id=card_id,
-                user_id=user_id,
-                **new_stats,
-            )
 
-            if updated_card:
-                updated_cards.append(updated_card)
+            # Update card in-place (no DB query yet)
+            card.status = new_stats["status"]
+            card.due_at = new_stats["due_at"]
+            card.last_reviewed_at = new_stats["last_reviewed_at"]
+            card.interval_days = new_stats["interval_days"]
+            card.ease = new_stats["ease"]
+            card.reps = new_stats["reps"]
+            card.lapses = new_stats["lapses"]
+            card.streak_correct = new_stats["streak_correct"]
+            card.last_grade = new_stats["last_grade"]
+            card.updated_at = datetime.now(timezone.utc)
 
+            updated_cards.append(card)
+
+        # Single flush for all updates
         self.db.flush()
         return updated_cards
 
