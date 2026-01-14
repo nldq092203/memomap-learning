@@ -53,7 +53,7 @@ class CoCeQuestionsMeta(BaseModel):
     type: str = Field(..., min_length=1)  # compréhension_orale / compréhension_écrite / ...
     niveau: str = Field(..., min_length=1)
     titre: str = Field(..., min_length=1)
-    consigne: str = Field(..., min_length=1)
+    consigne: str | None = None
     total_questions: int | None = None
 
 
