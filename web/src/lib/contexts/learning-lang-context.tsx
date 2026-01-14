@@ -1,6 +1,6 @@
 "use client"
 
-import React, { createContext, useContext, useEffect, useState } from "react"
+import React, { createContext, useContext } from "react"
 import type { LearningLanguage } from "@/lib/services/learning-api"
 
 type Ctx = {
@@ -11,27 +11,13 @@ type Ctx = {
 const LearningLangContext = createContext<Ctx | null>(null)
 
 export function LearningLangProvider({ children }: { children: React.ReactNode }) {
-  const [lang, setLangState] = useState<LearningLanguage>(() => {
-    try {
-      const v = localStorage.getItem("learning_lang") as LearningLanguage | null
-      return (v === "en" || v === "fr") ? v : "fr"
-    } catch { return "fr" }
-  })
-
-  const setLang = (v: LearningLanguage) => {
-    setLangState(v)
-    try { localStorage.setItem("learning_lang", v) } catch {}
+  // Hardcoded to French - app is now French-focused
+  const lang: LearningLanguage = "fr"
+  
+  // No-op function to maintain API compatibility
+  const setLang = (_v: LearningLanguage) => {
+    // Language is hardcoded to French, no changes allowed
   }
-
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === "learning_lang" && (e.newValue === "en" || e.newValue === "fr")) {
-        setLangState(e.newValue as LearningLanguage)
-      }
-    }
-    window.addEventListener("storage", onStorage)
-    return () => window.removeEventListener("storage", onStorage)
-  }, [])
 
   return (
     <LearningLangContext.Provider value={{ lang, setLang }}>

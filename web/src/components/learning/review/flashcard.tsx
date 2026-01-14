@@ -175,81 +175,83 @@ export function Flashcard({
   }
 
   return (
-    <div className="relative flex-1 flex items-center justify-center min-h-0">
+    <div className="relative flex-1 flex items-center justify-center min-h-0 w-full p-4">
       <Card
-        className={`w-full ${maxWidthClass} cursor-pointer bg-primary/5 border-2 border-primary/20 hover:border-primary/40 transition-colors flex flex-col items-center justify-center p-8 text-center overflow-hidden`}
+        className={`w-full ${maxWidthClass} h-[500px] max-h-full cursor-pointer 
+          bg-card border-none shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.4)]
+          hover:shadow-[0_12px_40px_rgb(0,0,0,0.16)] transition-all duration-300
+          relative overflow-hidden rounded-2xl
+        `}
         onClick={onFlip}
       >
-        <div className="flex w-full items-center justify-end gap-1 mb-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Speak text"
-            className={`h-8 w-8 rounded-full ${
-              isSpeaking ? "bg-primary/20" : "bg-background/80 hover:bg-background"
-            }`}
-            onClick={handleSpeak}
-          >
-            <Volume2 className={`h-4 w-4 ${isSpeaking ? "text-primary" : "text-muted-foreground"}`} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Copy text"
-            className="h-8 w-8 rounded-full bg-background/80 hover:bg-background"
-            onClick={handleCopy}
-          >
-            <Copy className="h-4 w-4 text-muted-foreground" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Show info"
-            className="h-8 w-8 rounded-full bg-background/80 hover:bg-background"
-            onClick={e => {
-              e.stopPropagation()
-              onInfo()
-            }}
-          >
-            <Info className="h-4 w-4 text-muted-foreground" />
-          </Button>
+        {/* Action Buttons (Top Right) */}
+        <div className="absolute top-4 right-4 z-20 flex gap-2">
+           <Button
+             variant="ghost"
+             size="icon"
+             className="h-9 w-9 bg-background/50 hover:bg-background rounded-full backdrop-blur-sm"
+             onClick={handleSpeak}
+           >
+             <Volume2 className={`h-4 w-4 ${isSpeaking ? "text-primary" : "text-muted-foreground"}`} />
+           </Button>
+           <Button
+             variant="ghost"
+             size="icon"
+             className="h-9 w-9 bg-background/50 hover:bg-background rounded-full backdrop-blur-sm"
+             onClick={handleCopy}
+           >
+             <Copy className="h-4 w-4 text-muted-foreground" />
+           </Button>
+           <Button
+             variant="ghost"
+             size="icon"
+             className="h-9 w-9 bg-background/50 hover:bg-background rounded-full backdrop-blur-sm"
+             onClick={e => {
+               e.stopPropagation()
+               onInfo()
+             }}
+           >
+             <Info className="h-4 w-4 text-muted-foreground" />
+           </Button>
         </div>
-        {!isFlipped ? (
-          <div className="space-y-4 w-full h-full flex flex-col items-center justify-center">
-            <p className="text-sm text-muted-foreground uppercase tracking-wide flex-shrink-0">
-              {direction === "word_to_translation" ? language : "Translation"}
-            </p>
-            <div className="overflow-y-auto max-h-[60%] w-full px-4 flex items-center justify-center">
-              <p
-                className={`${getFontSizeClass(
-                  questionText,
-                  false
-                )} font-bold text-foreground break-words leading-tight`}
-              >
-                {questionText}
-              </p>
-            </div>
-            <p className="text-sm text-muted-foreground flex-shrink-0">
-              Click to reveal answer
-            </p>
+
+        {/* Card Content Container */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center transition-all duration-500"
+        >
+          {/* Question Section */}
+          <div 
+            className={`transition-all duration-500 ease-out flex flex-col items-center justify-center w-full
+              ${isFlipped ? "-translate-y-16 scale-90" : "translate-y-0 scale-100"}
+            `}
+          >
+             <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-4">
+               {direction === "word_to_translation" ? language : "Translation"}
+             </p>
+             <h2 className={`${getFontSizeClass(questionText, false)} font-bold text-foreground leading-tight`}>
+               {questionText}
+             </h2>
+             {!isFlipped && (
+               <p className="mt-8 text-sm text-muted-foreground animate-pulse">
+                 Click to reveal
+               </p>
+             )}
           </div>
-        ) : (
-          <div className="space-y-4 w-full h-full flex flex-col items-center justify-center">
-            <p className="text-sm text-muted-foreground uppercase tracking-wide flex-shrink-0">
-              {direction === "word_to_translation" ? "Answer" : language}
-            </p>
-            <div className="overflow-y-auto max-h-[60%] w-full px-4 flex items-center justify-center">
-              <p
-                className={`${getFontSizeClass(
-                  answerText,
-                  true
-                )} font-semibold text-foreground break-words leading-relaxed`}
-              >
-                {answerText}
-              </p>
-            </div>
+
+          {/* Answer Section */}
+          <div 
+             className={`absolute top-1/2 left-0 right-0 pt-12 flex flex-col items-center justify-center transition-all duration-500 delay-75
+               ${isFlipped ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8 pointer-events-none"}
+             `}
+          >
+             <div className="w-16 h-1 bg-border rounded-full mb-6 mx-auto" />
+             <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-2">
+               {direction === "word_to_translation" ? "Answer" : language}
+             </p>
+             <p className={`${getFontSizeClass(answerText, true)} font-medium text-primary leading-relaxed px-8`}>
+               {answerText}
+             </p>
           </div>
-        )}
+        </div>
       </Card>
     </div>
   )

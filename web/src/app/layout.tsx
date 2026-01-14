@@ -5,6 +5,7 @@ import { AuthProvider } from "@/lib/contexts/auth-context"
 import { SettingsProvider } from "@/lib/contexts/settings-context"
 import { ToastProvider } from "@/lib/toast"
 import { LearningLangProvider } from "@/lib/contexts/learning-lang-context"
+import { OnboardingProvider } from "@/lib/contexts/onboarding-context"
 import { GoogleOAuthProvider } from "@react-oauth/google"
 
 export const metadata: Metadata = {
@@ -24,9 +25,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <AuthProvider>
               <SettingsProvider>
                 <LearningLangProvider>
-                  <Navigation />
-                  {children}
-                  <ToastProvider />
+                  <OnboardingProvider>
+                    <Navigation />
+                    {children}
+                    <ToastProvider />
+                  </OnboardingProvider>
                 </LearningLangProvider>
               </SettingsProvider>
             </AuthProvider>
@@ -35,9 +38,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AuthProvider>
             <SettingsProvider>
               <LearningLangProvider>
-                <Navigation />
-                {children}
-                <ToastProvider />
+                <OnboardingProvider>
+                  <Navigation />
+                  {children}
+                  <ToastProvider />
+                </OnboardingProvider>
               </LearningLangProvider>
             </SettingsProvider>
           </AuthProvider>

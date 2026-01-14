@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { ProtectedRoute } from "@/components/auth/protected-route"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { learningVocabApi } from "@/lib/services/learning-vocab-api"
@@ -13,7 +12,6 @@ import {
   RefreshCw,
   Calendar,
   ArrowRight,
-  Sparkles,
   BookOpen,
   Trash2,
   Plus,
@@ -24,6 +22,9 @@ import { ReviewModal } from "@/components/learning/review/session-review-modal"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { notificationService } from "@/lib/services/notification-service"
 import { VocabCardModal } from "@/components/learning/vocabulary/vocab-card-modal"
+import { VocabCard } from "@/components/learning/vocabulary/vocab-card"
+import { VocabControlBar } from "@/components/learning/vocabulary/vocab-control-bar"
+import { cn } from "@/lib/utils"
 
 export default function VocabPage() {
   const { lang: language } = useLearningLang()
@@ -40,12 +41,16 @@ export default function VocabPage() {
   const [editingCard, setEditingCard] = useState<LearningVocabCard | null>(null)
   const [showReview, setShowReview] = useState(false)
   const [reviewCards, setReviewCards] = useState<LearningVocabCard[]>([])
-  const limit = 10
+  const limit = 30
   const reqIdRef = useRef(0)
   const [deleteTarget, setDeleteTarget] = useState<LearningVocabCard | null>(null)
   const [hardDeleteTarget, setHardDeleteTarget] = useState<LearningVocabCard | null>(null)
   const pageCacheRef = useRef<Record<string, { items: LearningVocabCard[]; total: number }>>({})
   const [showAddModal, setShowAddModal] = useState(false)
+
+  // New state for revamped UI
+  const [selectedCards, setSelectedCards] = useState<Set<string>>(new Set())
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list")
 
   const parseDueDate = (iso?: string): Date | null => {
     if (!iso) return null
@@ -110,253 +115,165 @@ export default function VocabPage() {
 
   useEffect(() => {
     load()
-  }, [language, page])
+  }, [language, page, q, status, tag, dueBefore]) // Added q and status to dependency to auto-reload on filter change
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / limit)), [total])
+
+  const handleToggleSelect = (id: string, checked: boolean) => {
+    const next = new Set(selectedCards)
+    if (checked) next.add(id)
+    else next.delete(id)
+    setSelectedCards(next)
+  }
+
+  const handleClearSelection = () => setSelectedCards(new Set())
+
+  const handleBulkAction = async (action: string) => {
+     if (action === "delete") {
+        // Simple confirmation before bulk delete logic (placeholder)
+        // In a real app we'd use the dialog. For now we just show a toast state mock
+        notificationService.success(`Deleted ${selectedCards.size} cards (Demo)`)
+        setSelectedCards(new Set())
+     }
+  }
+  
+  // Update query state wrappers
+  const handleSearchChange = (val: string) => {
+    setQ(val)
+    setPage(0)
+  }
+  const handleStatusChange = (val: string) => {
+    console.log("Filter change:", val)
+    setStatus(val === "all" ? "" : val)
+    setPage(0)
+  }
+
+  useEffect(() => {
+    console.log("Loading with:", { language, q, status, tag, dueBefore, page })
+    load()
+  }, [language, page, q, status, tag, dueBefore])
 
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-muted/20">
-        <div className="mx-auto max-w-7xl p-6 md:p-8 space-y-8">
-          {/* Header */}
+        <div className="mx-auto max-w-7xl px-4 py-8 space-y-6">
+          
+          {/* Main Layout: Control Bar + Content */}
           <div className="space-y-6">
-            <div className="flex items-start justify-between flex-wrap gap-4">
-              <div className="space-y-2">
+             {/* Header Title Area */}
+             <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/10">
-                    <BookOpen className="h-6 w-6 text-primary" />
-                  </div>
-                  <h1 className="text-4xl font-bold tracking-tight">Vocabulary Lab</h1>
+                   <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                      <BookOpen className="h-6 w-6" />
+                   </div>
+                   <h1 className="text-3xl font-bold tracking-tight">Vocabulary Lab</h1>
                 </div>
-                <p className="text-muted-foreground text-base">
-                  Browse, edit, and manage your learning cards
+                <p className="text-muted-foreground ml-11">
+                   Manage your personal dictionary and track your mastery.
                 </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  onClick={load}
-                  disabled={loading || refreshing}
-                  className="gap-2 h-10 px-4 bg-transparent"
-                >
-                  {loading || refreshing ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="h-4 w-4" />
-                  )}
-                  {loading || refreshing ? (slow ? "Loading..." : "Refreshing") : "Refresh"}
-                </Button>
-                <Button
-                  onClick={() => setShowAddModal(true)}
-                  className="gap-2 h-10 px-4"
-                >
-                  <Plus className="h-4 w-4" />
-                  New vocab
-                </Button>
-              </div>
-            </div>
+             </div>
 
-            {/* Filter card removed */}
+             {/* Control Bar */}
+             <div className="sticky top-4 z-20 bg-background/80 backdrop-blur-md p-2 rounded-2xl border shadow-sm ring-1 ring-border/40">
+                <VocabControlBar 
+                   searchQuery={q}
+                   onSearchChange={handleSearchChange}
+                   statusFilter={status || "all"}
+                   onStatusFilterChange={handleStatusChange}
+                   viewMode={viewMode}
+                   onViewModeChange={setViewMode}
+                   totalCount={total}
+                   selectedCount={selectedCards.size}
+                   onClearSelection={handleClearSelection}
+                   onBulkAction={handleBulkAction}
+                   onAddWord={() => setShowAddModal(true)}
+                />
+             </div>
+             
+             {/* Content Area */}
+             <div className="min-h-[400px]">
+                {loading && list.length === 0 ? (
+                   <div className={cn(
+                      "grid gap-4",
+                      viewMode === "grid" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"
+                   )}>
+                      {[...Array(6)].map((_, i) => (
+                         <div key={i} className="h-32 rounded-xl bg-muted/40 animate-pulse" />
+                      ))}
+                   </div>
+                ) : list.length === 0 ? (
+                   <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 border-2 border-dashed rounded-2xl border-muted">
+                      <div className="p-4 rounded-full bg-muted/50">
+                         <BookOpen className="h-8 w-8 text-muted-foreground/60" />
+                      </div>
+                      <div className="space-y-1">
+                         <h3 className="text-lg font-medium">No words found</h3>
+                         <p className="text-muted-foreground max-w-xs mx-auto">
+                            Try adjusting your filters or add your first vocabulary word.
+                         </p>
+                      </div>
+                      <Button onClick={() => setShowAddModal(true)}>
+                         <Plus className="h-4 w-4 mr-2" /> Add Word
+                      </Button>
+                   </div>
+                ) : (
+                   <div className={cn(
+                      "grid gap-3 transition-all duration-300",
+                      viewMode === "grid" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"
+                   )}>
+                      {list.filter(card => {
+                        if (status && status !== "all" && card.status !== status) return false
+                        return true
+                      }).map((card) => (
+                         <VocabCard 
+                            key={card.id} 
+                            card={card}
+                            viewMode={viewMode}
+                            selected={selectedCards.has(card.id)}
+                            onSelect={(checked) => handleToggleSelect(card.id, checked)}
+                            onEdit={setEditingCard}
+                            onDelete={setDeleteTarget}
+                            onPlayAudio={(text) => {
+                               // Simple TTS placeholder
+                               const u = new SpeechSynthesisUtterance(text)
+                               u.lang = "fr-FR"
+                               window.speechSynthesis.speak(u)
+                            }}
+                         />
+                      ))}
+                   </div>
+                )}
+             </div>
+
+             {/* Pagination */}
+             {totalPages > 1 && (
+                <div className="flex justify-center pt-8 pb-12">
+                   <div className="flex items-center gap-2 bg-background p-1 rounded-lg border shadow-sm">
+                      <Button
+                         variant="ghost"
+                         size="sm"
+                         disabled={page === 0 || loading}
+                         onClick={() => setPage(p => p - 1)}
+                      >
+                         Previous
+                      </Button>
+                      <span className="text-sm font-medium px-4">
+                         {page + 1} of {totalPages}
+                      </span>
+                      <Button
+                         variant="ghost"
+                         size="sm"
+                         disabled={page >= totalPages - 1 || loading}
+                         onClick={() => setPage(p => p + 1)}
+                      >
+                         Next
+                      </Button>
+                   </div>
+               </div>
+             )}
           </div>
 
-          <Card className="border-border/50 shadow-sm">
-            <CardHeader className="border-b bg-muted/30">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-semibold">Your Cards</CardTitle>
-                <Badge variant="outline" className="font-mono">
-                  {total} total
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              {loading && list.length === 0 && (
-                <div className="p-6 space-y-3">
-                  {[...Array(5)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="h-20 rounded-lg bg-muted/40 animate-pulse"
-                    />
-                  ))}
-                </div>
-              )}
-
-              {list.length === 0 && !loading && (
-                <div className="py-16 text-center space-y-2">
-                  <div className="flex justify-center">
-                    <div className="p-3 rounded-full bg-muted">
-                      <BookOpen className="h-6 w-6 text-muted-foreground" />
-                    </div>
-                  </div>
-                  <p className="text-sm text-muted-foreground">No cards found</p>
-                  <p className="text-xs text-muted-foreground">
-                    Add a new card to get started
-                  </p>
-                </div>
-              )}
-
-              {list.length > 0 && (
-                <div className="divide-y">
-                  {list.map((c) => (
-                    <div
-                      key={c.id}
-                      className="p-4 sm:p-5 hover:bg-muted/30 transition-colors group"
-                    >
-                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
-                        <div className="min-w-0 flex-1 space-y-2">
-                          <div className="flex items-baseline gap-2 flex-wrap">
-                            <span className="text-base sm:text-lg">{c.word}</span>
-                            {c.translation && (
-                              <span className="text-muted-foreground text-sm sm:text-base">
-                                {c.translation}
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-                            {c.review_stats?.status && (
-                              <Badge
-                                variant={
-                                  c.review_stats.status === "new"
-                                    ? "default"
-                                    : c.review_stats.status === "learning"
-                                      ? "secondary"
-                                      : c.review_stats.status === "review"
-                                        ? "outline"
-                                        : "secondary"
-                                }
-                                className="h-5 sm:h-6 text-[10px] sm:text-xs capitalize"
-                              >
-                                {c.review_stats.status}
-                              </Badge>
-                            )}
-
-                            {(() => {
-                              const d = parseDueDate(c.review_stats?.due_at)
-                              return d ? (
-                                <span className="inline-flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs text-muted-foreground">
-                                  <Calendar className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                                  Due {d.toLocaleDateString()}
-                                </span>
-                              ) : null
-                            })()}
-
-                            {(c.tags || []).length > 0 && (
-                              <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
-                                {(c.tags || []).map((t, i) => (
-                                  <Badge
-                                    key={i}
-                                    variant="outline"
-                                    className="h-5 sm:h-6 text-[10px] sm:text-xs font-normal"
-                                  >
-                                    {t}
-                                  </Badge>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Mobile: always visible, row of icon buttons. Desktop: hover reveal with text */}
-                        <div className="flex items-center gap-1.5 sm:gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 px-2 sm:px-3 sm:gap-1.5 bg-transparent"
-                            onClick={() => {
-                              // Open editor immediately with current list data for better UX
-                              setEditingCard(c)
-
-                              // Then refresh details in the background
-                              ;(async () => {
-                                try {
-                                  const full = await learningVocabApi.get(c.id, language)
-                                  setEditingCard((prev) => {
-                                    // Only update if we're still editing this same card
-                                    if (!prev || prev.id !== c.id) return prev
-                                    return full
-                                  })
-                                } catch (error) {
-                                  console.error("Failed to load vocabulary card", error)
-                                  notificationService.error(
-                                    "Failed to load latest details. Editing cached version.",
-                                  )
-                                }
-                              })()
-                            }}
-                          >
-                            <span className="hidden sm:inline">Edit</span>
-                            <span className="sm:hidden text-xs">Edit</span>
-                          </Button>
-                          <Button
-                            size="sm"
-                            className="h-8 px-2 sm:px-3 gap-1 sm:gap-1.5 bg-primary hover:bg-primary/90"
-                            onClick={() => {
-                              setReviewCards([c])
-                              setShowReview(true)
-                            }}
-                          >
-                            <span className="text-xs sm:text-sm">Review</span>
-                            <ArrowRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 px-2 sm:px-3 bg-transparent hidden sm:flex sm:gap-1.5"
-                            onClick={() => setDeleteTarget(c)}
-                          >
-                            Suspend
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 px-2 sm:px-3 sm:gap-1.5 bg-transparent text-destructive border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
-                            onClick={() => setHardDeleteTarget(c)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            <span className="hidden sm:inline">Delete</span>
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-3 pb-4">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page === 0 || loading || refreshing}
-                onClick={() => {
-                  setPage((p) => p - 1)
-                }}
-                className="h-9"
-              >
-                Previous
-              </Button>
-              <div className="flex items-center gap-1.5 px-3 h-9 rounded-md border bg-muted/30 text-sm font-medium">
-                <span>Page</span>
-                <span className="font-mono">{page + 1}</span>
-                <span className="text-muted-foreground">/</span>
-                <span className="font-mono">{totalPages}</span>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page >= totalPages - 1 || loading || refreshing}
-                onClick={() => {
-                  setPage((p) => p + 1)
-                }}
-                className="h-9"
-              >
-                Next
-              </Button>
-            </div>
-          )}
-          {/* Edit drawer */}
+          {/* ... Modals (Edit, Review, Confirmation, Add) ... */}
           <CardEditDrawer
             open={!!editingCard}
             onOpenChange={(open) => {
@@ -372,7 +289,6 @@ export default function VocabPage() {
             }}
           />
 
-          {/* Single-card review */}
           <ReviewModal
             isOpen={showReview}
             vocabCards={reviewCards}
@@ -449,12 +365,10 @@ export default function VocabPage() {
             }}
           />
 
-          {/* Add new vocab */}
           <VocabCardModal
             isOpen={showAddModal}
             onClose={() => setShowAddModal(false)}
             onSave={() => {
-              // We already updated the server; just refresh current filters
               pageCacheRef.current = {}
               load()
             }}
@@ -472,14 +386,12 @@ export default function VocabPage() {
                 },
               ])
               const created = res.items[0]
-              // Update current page list lazily if we're on first page
               if (page === 0 && created) {
                 setList((prev) => [created, ...prev].slice(0, limit))
                 setTotal((prev) => prev + 1)
               } else if (created) {
                 setTotal((prev) => prev + 1)
               }
-              // Clear cache so next navigation refetches with fresh data
               pageCacheRef.current = {}
               return {
                 id: created.id,
@@ -491,6 +403,15 @@ export default function VocabPage() {
                 language: created.language,
                 createdAt: created.created_at,
                 updatedAt: created.updated_at,
+                status: 'new',
+                due_at: null,
+                last_reviewed_at: null,
+                interval_days: 0,
+                ease: 0,
+                reps: 0,
+                lapses: 0,
+                streak_correct: 0,
+                last_grade: null
               }
             }}
           />

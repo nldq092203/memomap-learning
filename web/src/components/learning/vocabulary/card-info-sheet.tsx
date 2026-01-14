@@ -298,19 +298,19 @@ export function CardInfoSheet({ open, onOpenChange, card, language, onCardUpdate
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div className="rounded-md border bg-muted/30 px-3 py-2 flex items-center justify-between">
                         <span className="text-muted-foreground">Status</span>
-                        <span className="capitalize">{card?.review_stats?.status ?? "—"}</span>
+                        <span className="capitalize">{card?.status ?? "—"}</span>
                       </div>
                       <div className="rounded-md border bg-muted/30 px-3 py-2 flex items-center justify-between">
                         <span className="text-muted-foreground">Ease</span>
-                        <span>{card?.review_stats ? card.review_stats.ease.toFixed(2) : "—"}</span>
+                        <span>{card?.ease ? card.ease.toFixed(2) : "—"}</span>
                       </div>
                       <div className="rounded-md border bg-muted/30 px-3 py-2 flex items-center justify-between">
                         <span className="text-muted-foreground">Reps</span>
-                        <span>{card?.review_stats?.reps ?? "—"}</span>
+                        <span>{card?.reps ?? "—"}</span>
                       </div>
                       <div className="rounded-md border bg-muted/30 px-3 py-2 flex items-center justify-between">
                         <span className="text-muted-foreground">Interval</span>
-                        <span>{card?.review_stats ? `${card.review_stats.interval_days} d` : "—"}</span>
+                        <span>{card?.interval_days ? `${card.interval_days} d` : "—"}</span>
                       </div>
                     </div>
                   </div>

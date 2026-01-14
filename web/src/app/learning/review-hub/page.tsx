@@ -30,6 +30,8 @@ export default function ReviewHub() {
   const [showReview, setShowReview] = useState(false)
   const [sessionCards, setSessionCards] = useState<LearningVocabCard[]>([])
 
+  const [sessionFilter, setSessionFilter] = useState<"all" | "new" | "learning" | "review">("all")
+
   useEffect(() => {
     if (!user) return
     setLoading(true)
@@ -109,8 +111,24 @@ export default function ReviewHub() {
   }, [challengePrefs])
 
   const handleStartReview = async () => {
-    if (dueCards.length > 0) {
-      const shuffled = [...dueCards]
+    let cardsToReview = [...dueCards]
+    
+    // Apply status filter if not "all"
+    if (sessionFilter !== "all") {
+       // Filter logic: match card status
+       // Note: 'review' stats usually map to 'review' or 'relearning' status. 
+       // We'll assume 'new' -> new, 'learning' -> learning, 'review' -> everything else (review, relearning)
+       cardsToReview = cardsToReview.filter(c => {
+         if (sessionFilter === "new") return c.status === "new"
+         if (sessionFilter === "learning") return c.status === "learning"
+         if (sessionFilter === "review") return c.status !== "new" && c.status !== "learning"
+         return true
+       })
+    }
+
+    if (cardsToReview.length > 0) {
+      // Shuffle
+      const shuffled = [...cardsToReview]
       for (let i = shuffled.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1))
         ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
@@ -120,168 +138,196 @@ export default function ReviewHub() {
     }
   }
 
-  // No recent sessions list on Review Hub — keep users focused on today’s review.
+  // Calculate circular progress
+  const maxDue = stats?.due || 1
+  const currentDue = dueCards.length
+  // Ensure we don't divide by zero and clamp
+  const progressPercent = Math.min(100, Math.max(0, (currentDue / (maxDue || 1)) * 100))
+  // Circle config
+  const radius = 80
+  const circumference = 2 * Math.PI * radius
+  const strokeDashoffset = circumference - (progressPercent / 100) * circumference
 
   if (loading) {
     return (
-      <div className="p-6">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-muted rounded w-48"></div>
-          <div className="h-32 bg-muted rounded"></div>
-          <div className="space-y-3">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-20 bg-muted rounded"></div>
-            ))}
-          </div>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     )
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header / Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-semibold">Review Hub</h1>
-          <p className="text-muted-foreground">Clear today&apos;s due cards with focus.</p>
-          {(loadingDue || loadingStats) && slow && (
-            <p className="text-xs text-muted-foreground mt-1">Still loading data…</p>
-          )}
+    <div className="min-h-screen bg-muted/20 p-4 md:p-8 space-y-8">
+      <div className="max-w-3xl mx-auto space-y-8">
+        
+        {/* Header with Streak */}
+        <div className="flex items-center justify-between">
+          <div>
+             <h1 className="text-3xl font-bold tracking-tight">Review Hub</h1>
+             <p className="text-muted-foreground">Mission Control</p>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-4">
-          {/* Count dropdown */}
-          <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-muted-foreground">Count</span>
-            <Select value={String(reviewLimit)} onValueChange={(v) => setReviewLimit(parseInt(v))}>
-              <SelectTrigger className="w-[110px] h-8 text-xs">
-                <SelectValue placeholder="Count" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="20">20</SelectItem>
-                <SelectItem value="30">30</SelectItem>
-                <SelectItem value="40">40</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
 
-          {/* Direction dropdown */}
-          <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-muted-foreground">Direction</span>
-            <Select
-              value={reviewDirection}
-              onValueChange={(value) =>
-                setReviewDirection(
-                  value === "translation_to_word" ? "translation_to_word" : "word_to_translation"
-                )
-              }
-            >
-              <SelectTrigger className="w-[160px] h-8 text-xs">
-                <SelectValue placeholder="Direction" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="word_to_translation">Word → Translation</SelectItem>
-                <SelectItem value="translation_to_word">Translation → Word</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Challenges dropdown */}
-          <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-muted-foreground">Challenges</span>
-            {(() => {
-              const activeId =
-                REVIEW_CHALLENGES.find(ch => challengePrefs[ch.id])?.id ?? "none"
-              return (
-                <Select
-                  value={activeId}
-                  onValueChange={(value) => {
-                    if (value === "none") {
-                      setChallengePrefs({})
-                    } else {
-                      setChallengePrefs({ [value as ReviewChallengeId]: true })
-                    }
-                  }}
+        {/* Filters / Segmented Controls */}
+        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-card p-2 rounded-xl border shadow-sm">
+           
+           {/* Limit Toggle */}
+           <div className="flex items-center bg-muted rounded-lg p-1">
+              {[10, 20, 50].map((limit) => (
+                <button
+                  key={limit}
+                  onClick={() => setReviewLimit(limit)}
+                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                    reviewLimit === limit 
+                      ? "bg-background text-foreground shadow-sm" 
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
                 >
-                  <SelectTrigger className="w-[160px] h-8 text-xs">
-                    <SelectValue placeholder="Select challenge" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {REVIEW_CHALLENGES.map(challenge => (
-                      <SelectItem key={challenge.id} value={challenge.id}>
-                        {challenge.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )
-            })()}
-          </div>
+                  {limit}
+                </button>
+              ))}
+           </div>
+
+           {/* Stats / Session Filters */}
+           <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSessionFilter("new")}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all ${
+                  sessionFilter === "new" 
+                    ? "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300 ring-2 ring-blue-500/20" 
+                    : "hover:bg-muted border-transparent"
+                }`}
+              >
+                <div className="w-2 h-2 rounded-full bg-blue-500" />
+                <span className="text-sm font-medium">New</span>
+                <span className="text-xs opacity-70 ml-1">{stats?.new || 0}</span>
+              </button>
+
+              <button
+                onClick={() => setSessionFilter("learning")}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all ${
+                  sessionFilter === "learning" 
+                    ? "bg-orange-50 border-orange-200 text-orange-700 dark:bg-orange-900/20 dark:border-orange-800 dark:text-orange-300 ring-2 ring-orange-500/20" 
+                    : "hover:bg-muted border-transparent"
+                }`}
+              >
+                <div className="w-2 h-2 rounded-full bg-orange-500" />
+                <span className="text-sm font-medium">Learning</span>
+                <span className="text-xs opacity-70 ml-1">{stats?.learning || 0}</span>
+              </button>
+
+              <button
+                onClick={() => setSessionFilter("review")}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all ${
+                  sessionFilter === "review" 
+                    ? "bg-green-50 border-green-200 text-green-700 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300 ring-2 ring-green-500/20" 
+                    : "hover:bg-muted border-transparent"
+                }`}
+              >
+                <div className="w-2 h-2 rounded-full bg-green-500" />
+                <span className="text-sm font-medium">To Review</span>
+                <span className="text-xs opacity-70 ml-1">{stats?.overdue || 0}</span>
+              </button>
+           </div>
         </div>
-      </div>
 
-      {/* Due Today - Primary CTA */}
-      <Card className="bg-card/80">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5 text-primary" />
-            Due Today
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="text-2xl font-bold text-primary">
-                {dueCards.length} cards ready for review
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {dueCards.length > 0 
-                  ? "Spaced repetition algorithm has selected these cards for you"
-                  : "No cards due today. Great job staying on top of your reviews!"
+        {/* Hero Section: Circular Progress */}
+        <div className="relative flex flex-col items-center justify-center py-12">
+           {/* SVG Circle */}
+           <div className="relative w-64 h-64">
+              {/* Background Circle */}
+              <svg className="w-full h-full transform -rotate-90">
+                <circle
+                  cx="128"
+                  cy="128"
+                  r={radius}
+                  stroke="currentColor"
+                  strokeWidth="12"
+                  fill="transparent"
+                  className="text-muted/20"
+                />
+                <circle
+                  cx="128"
+                  cy="128"
+                  r={radius}
+                  stroke="currentColor"
+                  strokeWidth="12"
+                  fill="transparent"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={strokeDashoffset}
+                  strokeLinecap="round"
+                  className="text-primary transition-all duration-1000 ease-out"
+                />
+              </svg>
+              
+              {/* Center Content */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                 <span className="text-6xl font-bold tracking-tighter leading-none">{dueCards.length}</span>
+                 <span className="text-[10px] text-muted-foreground uppercase tracking-widest mt-2 font-medium">Due Cards</span>
+              </div>
+           </div>
+
+           {/* CTA Button */}
+           <div className="mt-8">
+              <Button 
+                size="lg" 
+                className={`h-14 px-8 text-lg rounded-full shadow-lg shadow-primary/25 transition-all w-full
+                  ${dueCards.length > 0 ? "animate-pulse" : "opacity-50"}
+                `}
+                onClick={handleStartReview}
+                disabled={dueCards.length === 0}
+              >
+                <Play className="w-5 h-5 mr-2 fill-current" />
+                REVIEW NOW
+              </Button>
+           </div>
+           
+           <p className="mt-4 text-sm text-muted-foreground">
+             {dueCards.length === 0 ? "All caught up! Great job." : "Stay consistent to maintain your streak."}
+           </p>
+        </div>
+
+        {/* Session Settings */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+           {/* Direction Control */}
+           <div className="bg-card p-4 rounded-xl border shadow-sm flex items-center justify-between">
+              <span className="text-sm font-medium text-muted-foreground">Direction</span>
+              <Select
+                value={reviewDirection}
+                onValueChange={(value) =>
+                  setReviewDirection(
+                    value === "translation_to_word" ? "translation_to_word" : "word_to_translation"
+                  )
                 }
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">Limit: {reviewLimit}{stats ? ` • Total due: ${stats.due}` : ''}</p>
-              {stats && (
-                <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                  <div className="rounded-md border p-2">Due <div className="text-base font-semibold">{stats.due}</div></div>
-                  <div className="rounded-md border p-2">Overdue <div className="text-base font-semibold">{stats.overdue}</div></div>
-                  <div className="rounded-md border p-2">New <div className="text-base font-semibold">{stats.new}</div></div>
-                  <div className="rounded-md border p-2">Learning <div className="text-base font-semibold">{stats.learning}</div></div>
-                </div>
-              )}
-            </div>
-            <Button 
-              size="lg" 
-              onClick={handleStartReview}
-              disabled={dueCards.length === 0}
-            >
-              <Play className="h-4 w-4 mr-2" />
-              Start {reviewLimit}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="word_to_translation">Word → Translation</SelectItem>
+                  <SelectItem value="translation_to_word">Translation → Word</SelectItem>
+                </SelectContent>
+              </Select>
+           </div>
 
-      {/* Utility grid */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Review Tip</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
-            <p>
-              Focus on today’s due cards to stay on track with spaced repetition.
-            </p>
-            <p className="text-xs">
-              Pick a smaller count if you’re short on time—you can always come back for another batch.
-            </p>
-          </CardContent>
-        </Card>
+           {/* Challenge Control */}
+           <div className="bg-card p-4 rounded-xl border shadow-sm flex items-center justify-between">
+              <span className="text-sm font-medium text-muted-foreground">Extra Challenge</span>
+              <div className="flex items-center gap-2">
+                 <Button
+                   variant={challengePrefs["usage_sentence"] ? "default" : "outline"}
+                   size="sm"
+                   onClick={() => setChallengePrefs(prev => ({ ...prev, usage_sentence: !prev.usage_sentence }))}
+                   className="gap-2"
+                 >
+                   {challengePrefs["usage_sentence"] && <Target className="h-4 w-4" />}
+                   Make Sentences
+                 </Button>
+              </div>
+           </div>
+        </div>
+
       </div>
-
 
       <ReviewModal
         isOpen={showReview}
@@ -301,7 +347,6 @@ export default function ReviewHub() {
         }}
         onOpenChange={setShowReview}
       />
-          {/* AI Assistant is globally mounted in learning layout */}
     </div>
   )
 }

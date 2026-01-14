@@ -4,19 +4,15 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
-import { type LearningLanguage, LEARNING_LANGS } from "@/lib/services/learning-api"
 import { Play } from "lucide-react"
 import { notificationService } from "@/lib/services/notification-service"
 import { motion } from "framer-motion"
 import { useLearningTimeSession } from "@/lib/contexts/learning-time-session-context"
-import { useLearningLang } from "@/lib/contexts/learning-lang-context"
 
 const Motion = { div: motion.div }
 
 export function StartSessionModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
   const { startSession: startGlobalSession } = useLearningTimeSession()
-  const { lang: globalLang, setLang: setGlobalLang } = useLearningLang()
-  const [lang, setLang] = useState<LearningLanguage>(globalLang)
   const [title, setTitle] = useState("")
   const [mode, setMode] = useState<"timer" | "planned">("timer")
   const [planned, setPlanned] = useState<number>(25)
@@ -29,17 +25,14 @@ export function StartSessionModal({ open, onOpenChange }: { open: boolean; onOpe
       setTitle("")
       setMode("timer")
       setPlanned(25)
-      setLang(globalLang)
     }
-  }, [open, globalLang])
+  }, [open])
 
   const handleStart = async () => {
     setIsSubmitting(true)
     setError(null)
     try {
-      // Align global learning language with user selection.
-      setGlobalLang(lang)
-      // Start global learning time session (floating timer).
+      // Start global learning time session (floating timer) with French language
       startGlobalSession(
         title,
         mode === "planned" ? Math.max(1, planned) * 60 : null,
@@ -76,32 +69,8 @@ export function StartSessionModal({ open, onOpenChange }: { open: boolean; onOpe
             <div className="text-center text-sm text-muted-foreground">A quick ritual to begin learning.</div>
           </div>
           <div className="px-6 pb-6">
-            {/* Language */}
-            <div className="space-y-2">
-              <div className="text-sm font-medium">Language</div>
-              <div className="inline-flex rounded-xl border bg-muted/30 p-1">
-                {LEARNING_LANGS.map((l) => (
-                  <button
-                    key={l}
-                    type="button"
-                    onClick={() => setLang(l)}
-                    className={cn(
-                      "px-3 py-1.5 text-sm rounded-lg transition focus-visible:ring-2 focus-visible:ring-primary/40",
-                      lang === l 
-                        ? "bg-primary text-primary-foreground shadow-sm font-medium" 
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                    )}
-                    aria-pressed={lang===l}
-                  >
-                    <span className="mr-1" aria-hidden>{l === "fr" ? "🇫🇷" : "🇬🇧"}</span>
-                    {l.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Title */}
-            <div className="mt-4 space-y-1.5">
+            <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Title</span>
                 <span className="text-xs text-muted-foreground">{title.length}/200</span>

@@ -17,7 +17,7 @@ interface UsageChallengeProps {
 export function UsageChallenge({ card, language }: UsageChallengeProps) {
   const [sentence, setSentence] = useState("")
   const [feedback, setFeedback] = useState<string | null>(null)
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(true)
   const { askMore, isChatting, settings } = useAiAssist({ learning_lang: language })
 
   const word = card.word
@@ -25,18 +25,18 @@ export function UsageChallenge({ card, language }: UsageChallengeProps) {
   const hasSentence = sentence.trim().length > 0
   const hasFeedback = !!feedback
 
-  let statusLabel = "Not started"
-  let statusClass =
-    "bg-muted text-muted-foreground border-transparent"
+  let statusLabel = "Ready"
+  let statusClass = "bg-muted text-muted-foreground"
+  
   if (hasFeedback) {
-    statusLabel = "Completed"
-    statusClass = "bg-emerald-50 text-emerald-700 border-emerald-200"
+    statusLabel = "Feedback received"
+    statusClass = "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
   } else if (isChatting) {
-    statusLabel = "Checking…"
-    statusClass = "bg-primary/10 text-primary border-primary/30"
+    statusLabel = "AI is thinking…"
+    statusClass = "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
   } else if (hasSentence) {
-    statusLabel = "Draft"
-    statusClass = "bg-amber-50 text-amber-700 border-amber-200"
+    statusLabel = "Drafting"
+    statusClass = "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
   }
 
   const handleCheck = async () => {
@@ -68,99 +68,75 @@ export function UsageChallenge({ card, language }: UsageChallengeProps) {
   }
 
   return (
-    <Card
-      className={`mt-4 bg-background/40 transition-colors ${
-        hasFeedback ? "border-emerald-200 bg-emerald-50/40" : "border-dashed"
-      }`}
-    >
-      <CardHeader
-        className="py-3 cursor-pointer"
-        onClick={() => setIsExpanded((prev) => !prev)}
-      >
-        <div className="flex items-center justify-between gap-2">
-          <div className="space-y-0.5">
-            <CardTitle className="text-sm font-semibold">Usage challenge</CardTitle>
-            <p className="text-xs text-muted-foreground">
-              Use{" "}
-              <span className="font-semibold">{word}</span>
-              {translation ? <> ({translation})</> : null} in 1–2 sentences
-              and let AI check it.
-            </p>
-          </div>
-          <div className="flex flex-col items-end gap-1">
-            <span
-              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${statusClass}`}
-            >
-              {statusLabel}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-[11px] px-2 py-1 h-auto"
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
-                setIsExpanded((prev) => !prev)
-              }}
-            >
-              {isExpanded ? "Hide" : hasFeedback ? "Review" : "Start"}
-            </Button>
-          </div>
+    <Card className="mt-6 border shadow-sm bg-card/95 backdrop-blur overflow-hidden transition-all duration-300">
+      <CardHeader className="py-4 px-6 border-b bg-muted/20 flex flex-row items-center justify-between">
+        <div className="space-y-1">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <span>✨</span> Practice Sentence
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Write a sentence using <span className="font-bold text-foreground mx-0.5">{word}</span>
+            {translation && <span> ({translation})</span>}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+           <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusClass}`}>
+             {statusLabel}
+           </span>
+           <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setIsExpanded(!isExpanded)}>
+             {isExpanded ? "−" : "+"}
+           </Button>
         </div>
       </CardHeader>
+      
       {isExpanded && (
-        <CardContent className="pt-0">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">
-                Your sentence
-              </label>
-              <Textarea
-                value={sentence}
-                onChange={(e) => setSentence(e.target.value)}
-                placeholder={`Use "${word}" in a sentence…`}
-                disabled={isChatting}
-                className="min-h-[80px] text-sm"
-                onKeyDown={(e) => {
-                  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-                    e.preventDefault()
-                    handleCheck()
-                  }
-                }}
-              />
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-xs text-muted-foreground">
-                  Press ⌘+Enter / Ctrl+Enter to send.
-                </p>
-                <Button
-                  size="sm"
-                  type="button"
-                  onClick={handleCheck}
-                  disabled={isChatting || !sentence.trim()}
-                  className="gap-1.5"
-                >
-                  {isChatting && (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  )}
-                  {hasFeedback ? "Check again" : "Check with AI"}
-                </Button>
-              </div>
+        <CardContent className="p-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Input Section */}
+            <div className="flex flex-col gap-3">
+               <Textarea
+                 value={sentence}
+                 onChange={(e) => setSentence(e.target.value)}
+                 placeholder={`Example: I used the ${word} to...`}
+                 disabled={isChatting}
+                 className="min-h-[120px] resize-none text-base p-4 bg-muted/30 focus:bg-background transition-colors border-muted-foreground/20 focus-visible:ring-primary/20"
+                 onKeyDown={(e) => {
+                   if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                     e.preventDefault()
+                     handleCheck()
+                   }
+                 }}
+               />
+               <div className="flex items-center justify-between">
+                 <span className="text-xs text-muted-foreground">⌘ + Enter to submit</span>
+                 <Button
+                   size="sm"
+                   onClick={handleCheck}
+                   disabled={isChatting || !sentence.trim()}
+                   className="gap-2 font-semibold"
+                 >
+                   {isChatting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                   {hasFeedback ? "Check Again" : "Ask AI to Check"}
+                 </Button>
+               </div>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-                <span>AI feedback</span>
-              </div>
-              <div className="min-h-[80px] rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-                {feedback ? (
-                  <FormattedAiText text={feedback} />
-                ) : (
-                  <p>
-                    Your feedback will appear here. Focus on natural, everyday
-                    language rather than perfection.
-                  </p>
-                )}
-              </div>
+            {/* Feedback Section */}
+            <div className="relative flex flex-col h-full min-h-[120px] rounded-xl border bg-muted/10 p-0 overflow-hidden">
+               <div className="bg-muted/30 px-4 py-2 border-b flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                  <span className="text-xs font-semibold text-muted-foreground">AI Tutor Feedback</span>
+               </div>
+               <div className="p-4 text-sm leading-relaxed text-foreground/90 flex-1 overflow-y-auto">
+                 {feedback ? (
+                   <FormattedAiText text={feedback} />
+                 ) : (
+                   <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground py-4">
+                     <p>I&apos;m ready to review your sentence.</p>
+                     <p className="text-xs opacity-70 mt-1">Focus on natural usage!</p>
+                   </div>
+                 )}
+               </div>
             </div>
           </div>
         </CardContent>

@@ -12,7 +12,7 @@ export interface ReviewStats {
   last_grade: ReviewGrade | null
 }
 
-export interface LearningVocabCard {
+export interface LearningVocabCard extends ReviewStats {
   id: string
   type: "vocabulary_card"
   language: string
@@ -20,7 +20,6 @@ export interface LearningVocabCard {
   translation: string | null
   notes: string[]
   tags: string[]
-  review_stats: ReviewStats
   created_at: string
   updated_at: string
 }

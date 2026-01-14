@@ -5,6 +5,11 @@ import { cn } from "@/lib/utils"
 import { BookOpen } from "lucide-react"
 
 const LEVEL_INFO: Record<CoCeLevel, { name: string; description: string; color: string }> = {
+  A2: {
+    name: "A2 - Elementary",
+    description: "Can understand sentences and frequently used expressions",
+    color: "bg-emerald-500/10 border-emerald-500/30 hover:border-emerald-500/50",
+  },
   B1: {
     name: "B1 - Intermediate",
     description: "Independent user, can understand main points of clear standard input",
@@ -14,16 +19,6 @@ const LEVEL_INFO: Record<CoCeLevel, { name: string; description: string; color: 
     name: "B2 - Upper Intermediate",
     description: "Can understand complex texts and interact with native speakers",
     color: "bg-purple-500/10 border-purple-500/30 hover:border-purple-500/50",
-  },
-  C1: {
-    name: "C1 - Advanced",
-    description: "Can express ideas fluently and use language flexibly",
-    color: "bg-orange-500/10 border-orange-500/30 hover:border-orange-500/50",
-  },
-  C2: {
-    name: "C2 - Proficiency",
-    description: "Can understand virtually everything and express themselves precisely",
-    color: "bg-red-500/10 border-red-500/30 hover:border-red-500/50",
   },
 }
 
@@ -49,7 +44,7 @@ export function LevelSelection({ onSelectLevel }: LevelSelectionProps) {
 
       <div className="space-y-4">
         <h2 className="text-lg font-semibold">Select Your Level</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {(Object.keys(LEVEL_INFO) as CoCeLevel[]).map((lvl) => {
             const info = LEVEL_INFO[lvl]
             return (

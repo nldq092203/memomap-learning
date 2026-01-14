@@ -96,11 +96,111 @@ export const learningApi = {
     }
 
     try {
-      const response = await apiClient.get<LearningAnalytics>(`/web/analytics?${params.toString()}`)
-      requestCache.set(cacheKey, response, 60000) // Cache for 1 minute
-      return response
-    } catch (_error) {
-      console.warn('getAnalytics endpoint not available, returning empty data')
+      interface RawAnalyticsResponse {
+        avg_minutes_per_day: number
+        days: number
+        language: string
+        minutes_by_day: Record<string, number>
+        sessions_by_day: Record<string, number>
+        total_minutes: number
+        total_sessions: number
+      }
+
+      const raw = await apiClient.get<RawAnalyticsResponse>(`/web/analytics?${params.toString()}`)
+      
+      const minutesMap = raw.minutes_by_day || {}
+      const sessionsMap = raw.sessions_by_day || {}
+      
+      const toDateStr = (d: Date) => d.toISOString().split('T')[0]
+      
+      const today = new Date()
+      const todayStr = toDateStr(today)
+      const daily: { date: string; minutes: number; sessions: number }[] = []
+      
+      for (let i = days - 1; i >= 0; i--) {
+        const d = new Date()
+        d.setDate(today.getDate() - i)
+        const dateKey = toDateStr(d)
+        daily.push({
+          date: dateKey,
+          minutes: minutesMap[dateKey] || 0,
+          sessions: sessionsMap[dateKey] || 0,
+        })
+      }
+
+      let currentStreak = 0
+      let longestStreak = 0
+      let tempStreak = 0
+      
+      // Check all known dates for longest streak
+      const sortedDates = Object.keys(minutesMap).sort()
+      if (sortedDates.length > 0) {
+        // Iterate through all days in range of data to catch gaps
+        const firstDate = new Date(sortedDates[0])
+        const lastDate = new Date(sortedDates[sortedDates.length - 1])
+        
+        for (let d = new Date(firstDate); d <= lastDate; d.setDate(d.getDate() + 1)) {
+           const k = toDateStr(d)
+           if ((minutesMap[k] || 0) > 0) {
+             tempStreak++
+             longestStreak = Math.max(longestStreak, tempStreak)
+           } else {
+             tempStreak = 0
+           }
+        }
+      }
+
+      // Calculate Current Streak
+      // Start checking from Today. If 0, check Yesterday.
+      // If today > 0, streak includes today. 
+      // If today == 0, but yesterday > 0, streak is active but doesn't include today yet (contentious, but common logic). 
+      // Actually usually user loses streak if they miss a day. 
+      // We'll check backwards from today.
+      let checkDate = new Date()
+      // If no activity today, check if streak is kept alive by yesterday
+      if ((minutesMap[toDateStr(checkDate)] || 0) === 0) {
+         checkDate.setDate(checkDate.getDate() - 1)
+         if ((minutesMap[toDateStr(checkDate)] || 0) === 0) {
+           currentStreak = 0 // broke streak
+         } else {
+           // Yesterday was good, start counting from yesterday
+           while (true) {
+             const k = toDateStr(checkDate)
+             if ((minutesMap[k] || 0) > 0) {
+               currentStreak++
+               checkDate.setDate(checkDate.getDate() - 1)
+             } else {
+               break
+             }
+           }
+         }
+      } else {
+        // Today has activity
+        while (true) {
+             const k = toDateStr(checkDate)
+             if ((minutesMap[k] || 0) > 0) {
+               currentStreak++
+               checkDate.setDate(checkDate.getDate() - 1)
+             } else {
+               break
+             }
+        }
+      }
+
+      const analytics: LearningAnalytics = {
+        today_minutes: minutesMap[todayStr] || 0,
+        avg_minutes_7d: Math.round(daily.slice(-7).reduce((acc, d) => acc + d.minutes, 0) / 7),
+        avg_minutes_30d: parseFloat(raw.avg_minutes_per_day.toFixed(1)), // Use server calc
+        current_streak_days: currentStreak,
+        longest_streak_days: longestStreak,
+        daily
+      }
+
+      requestCache.set(cacheKey, analytics, 60000) 
+      return analytics
+
+    } catch (error) {
+      console.warn('getAnalytics failed:', error)
       return {
         today_minutes: 0,
         avg_minutes_7d: 0,

@@ -62,7 +62,7 @@ export function SessionVocabularyList({ vocabCards, editMode }: SessionVocabular
                   <Badge variant="outline" className="text-xs">
                     {card.language}
                   </Badge>
-                  {card.review_stats?.due_at && new Date(card.review_stats.due_at) <= new Date() && (
+                  {card.due_at && new Date(card.due_at) <= new Date() && (
                     <Badge variant="destructive" className="text-xs">
                       Due
                     </Badge>

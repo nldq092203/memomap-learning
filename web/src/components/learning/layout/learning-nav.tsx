@@ -14,7 +14,6 @@ import {
   Mic,
   List,
 } from "lucide-react"
-import { useLearningLang } from "@/lib/contexts/learning-lang-context"
 
 interface NavItem {
   label: string
@@ -83,7 +82,6 @@ export const LearningNav = ({
 }: LearningNavProps) => {
   const pathname = usePathname()
   const router = useRouter()
-  const { lang, setLang } = useLearningLang()
 
   const handleBack = () => {
     if (customBackAction) {
@@ -185,29 +183,8 @@ export const LearningNav = ({
               })}
             </nav>
 
-            {/* Right controls: Shared Language + Secondary Navigation */}
+            {/* Right controls: Secondary Navigation */}
             <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-2 rounded-full border bg-card/60 px-3 py-1">
-                <span className="text-xs text-muted-foreground">Language:</span>
-                <button
-                  onClick={() => setLang('en')}
-                  className={cn(
-                    "px-2 py-0.5 rounded-full text-xs font-medium transition",
-                    lang === 'en' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
-                  )}
-                >
-                  EN
-                </button>
-                <button
-                  onClick={() => setLang('fr')}
-                  className={cn(
-                    "px-2 py-0.5 rounded-full text-xs font-medium transition",
-                    lang === 'fr' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
-                  )}
-                >
-                  FR
-                </button>
-              </div>
               <div className="flex items-center gap-1">
                 {secondaryNavItems.map((item) => {
                   const Icon = item.icon

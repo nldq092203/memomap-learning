@@ -1,7 +1,7 @@
 // CO/CE Practice API Types
 
 // CEFR levels supported
-export type CoCeLevel = "B1" | "B2" | "C1" | "C2"
+export type CoCeLevel = "A2" | "B1" | "B2"
 
 // Exercise metadata from manifest
 export interface CoCeExercise {

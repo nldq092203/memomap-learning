@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useEffect, useState } from "react"
 import {
   Home,
   Target,
@@ -13,7 +14,6 @@ import { UserProfile } from "@/components/auth/user-profile"
 import { LoginButton } from "@/components/auth/login-button"
 import { useIsAuthenticated, useAuthLoading } from "@/lib/hooks/use-auth"
 import { cn } from "@/lib/utils"
-import { useLearningLang } from "@/lib/contexts/learning-lang-context"
 
 const primaryNavItems = [
   { label: "Dashboard", href: "/learning", icon: Home },
@@ -27,7 +27,25 @@ export function Navigation() {
   const isAuthenticated = useIsAuthenticated()
   const isLoading = useAuthLoading()
   const pathname = usePathname()
-  const { lang, setLang } = useLearningLang()
+
+   const [isReviewOpen, setIsReviewOpen] = useState(false)
+
+   useEffect(() => {
+     const handleOpen = () => setIsReviewOpen(true)
+     const handleClose = () => setIsReviewOpen(false)
+
+     window.addEventListener("learning-review-open", handleOpen)
+     window.addEventListener("learning-review-close", handleClose)
+
+     return () => {
+       window.removeEventListener("learning-review-open", handleOpen)
+       window.removeEventListener("learning-review-close", handleClose)
+     }
+   }, [])
+
+   if (isReviewOpen) {
+     return null
+   }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-colors duration-200">
@@ -70,34 +88,8 @@ export function Navigation() {
           </nav>
         )}
 
-        {/* Right: language + profile/auth */}
+        {/* Right: profile/auth */}
         <div className="flex items-center justify-end gap-3 flex-1">
-          {isAuthenticated && (
-            <>
-              <div className="hidden sm:flex items-center gap-2 rounded-full border bg-card/60 px-3 py-1">
-                <span className="text-xs text-muted-foreground">Language:</span>
-                <button
-                  onClick={() => setLang("en")}
-                  className={cn(
-                    "px-2 py-0.5 rounded-full text-xs font-medium transition",
-                    lang === "en" ? "bg-primary text-primary-foreground" : "hover:bg-muted",
-                  )}
-                >
-                  EN
-                </button>
-                <button
-                  onClick={() => setLang("fr")}
-                  className={cn(
-                    "px-2 py-0.5 rounded-full text-xs font-medium transition",
-                    lang === "fr" ? "bg-primary text-primary-foreground" : "hover:bg-muted",
-                  )}
-                >
-                  FR
-                </button>
-              </div>
-            </>
-          )}
-
           {isLoading ? (
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
