@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/services/api-client'
+import type { ChatResponse } from '@/lib/types/api/ai'
 
 export interface ExplainRequest {
   text: string
@@ -23,10 +24,7 @@ export interface ChatRequest {
   conversation_id?: string
 }
 
-export interface ChatResponse {
-  response: string
-  conversation_id: string
-}
+// ChatResponse is now imported from @/lib/types/api/ai
 
 export const learningAiApi = {
   async explain(payload: ExplainRequest): Promise<ExplainResponse> {

@@ -1,7 +1,7 @@
 """Request/Response schemas using Pydantic."""
 
 from __future__ import annotations
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Any
 
 
@@ -65,20 +65,17 @@ class VocabReviewRequest(BaseModel):
     reviews: list[dict[str, str]]
 
 
-class AIExplainRequest(BaseModel):
-    """AI explain text request."""
-
-    text: str = Field(..., min_length=1)
-    language: str = Field(default="fr")
-    context: str | None = None
 
 
 class AIChatRequest(BaseModel):
     """AI chat request."""
 
-    message: str = Field(..., min_length=1)
+    model_config = ConfigDict(populate_by_name=True)
+
+    message: str = Field(..., min_length=1, alias="question")
     language: str = Field(default="fr")
     conversation_id: str | None = None
+    history_max_turns: int | None = Field(default=None, ge=1, le=50)
 
 
 class NumbersSessionRequest(BaseModel):
@@ -87,4 +84,16 @@ class NumbersSessionRequest(BaseModel):
     language: str = Field(default="fr")
     difficulty: str = Field(default="medium")
     count: int = Field(default=10, ge=1, le=50)
+
+
+class ExplainTextInput(BaseModel):
+    """Structured AI explain text request with detailed options."""
+
+    text: str = Field(..., min_length=1)
+    learning_lang: str = Field(default="fr")
+    native_lang: str | None = None
+    level: str = Field(default="beginner")
+    target_langs: list[str] = Field(default_factory=list)
+    include_synonyms: bool = Field(default=True)
+    include_examples: bool = Field(default=True)
 

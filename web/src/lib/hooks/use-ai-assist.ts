@@ -19,7 +19,7 @@ const DEFAULT_SETTINGS: Settings = {
   native_lang: "vi",
 }
 
-type CacheEntry = { data: ExplainResponse | ChatResponse; ts: number }
+type CacheEntry = { data: ExplainResponse; ts: number }
 const TTL = 10 * 60 * 1000
 
 const storeKey = "ai_assist_settings_v1"
@@ -125,7 +125,7 @@ export function useAiAssist(initial?: Partial<Settings>) {
       const errorCode = (e as { response?: { status?: number; data?: { message?: string } } })?.response?.status
       const errorMessage = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
 
-      console.error("ai_error", { endpoint: "/learning/ai/assist", code: errorCode })
+      console.error("ai_error", { endpoint: "web/ai/assist", code: errorCode })
 
       if (errorCode === 429) {
         // Rate limit error - extract retry time from message
@@ -163,20 +163,24 @@ export function useAiAssist(initial?: Partial<Settings>) {
       console.log("ai_chat_request", { use_context: body.use_context })
       setChat(prev => [...prev, { role: "user", content: body.question }])
       const res: ChatResponse = await aiService.chat(body)
-      setChat(prev => [...prev, { role: "assistant", content: res.content }])
-      // Ensure a thread id exists after first successful exchange
-      if (!threadId) {
+      setChat(prev => [...prev, { role: "assistant", content: res.response }])
+      // Update thread ID from response if we got a conversation_id
+      if (res.conversation_id && res.conversation_id !== threadId) {
+        setThreadId(res.conversation_id)
+        try { localStorage.setItem('ai_thread_id', res.conversation_id) } catch {}
+      } else if (!threadId) {
+        // Fallback: create a thread id if we don't have one and API didn't provide one
         const id = `t_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
         setThreadId(id)
         try { localStorage.setItem('ai_thread_id', id) } catch {}
       }
-      console.log("ai_chat_success", { latency_ms: Math.round(performance.now() - t0) })
+      console.log("ai_chat_success", { latency_ms: Math.round(performance.now() - t0), conversation_id: res.conversation_id })
       return res
     } catch (e: unknown) {
       const errorCode = (e as { response?: { status?: number; data?: { message?: string } } })?.response?.status
       const errorMessage = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
 
-      console.error("ai_error", { endpoint: "/learning/ai/chat", code: errorCode })
+      console.error("ai_error", { endpoint: "web/ai/chat", code: errorCode })
 
       if (errorCode === 429) {
         // Rate limit error - extract retry time from message

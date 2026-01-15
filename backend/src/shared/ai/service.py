@@ -20,31 +20,6 @@ class AIService:
         self._client = AIClient()
         self._redis = get_redis_client()
 
-    def explain_text(
-        self,
-        text: str,
-        language: str = "fr",
-        context: str | None = None,
-    ) -> dict[str, Any]:
-        """Explain text in the given language."""
-        prompt = self._build_explain_prompt(text, language, context)
-
-        try:
-            response = self._client.call(prompt)
-            return {
-                "text": text,
-                "explanation": response,
-                "language": language,
-            }
-        except Exception as e:
-            logger.error(f"[AI] Explain error: {e}")
-            return {
-                "text": text,
-                "explanation": f"Error: {str(e)}",
-                "language": language,
-                "error": True,
-            }
-
     def chat(
         self,
         user_id: str,
@@ -90,26 +65,90 @@ class AIService:
                 "error": True,
             }
 
-    def _build_explain_prompt(
+
+    def explain_text_structured(
         self,
         text: str,
-        language: str,
-        context: str | None,
+        learning_lang: str = "fr",
+        native_lang: str | None = None,
+        level: str = "beginner",
+        target_langs: list[str] | None = None,
+        include_synonyms: bool = True,
+        include_examples: bool = True,
+    ) -> dict[str, Any]:
+        """Explain text with structured JSON output."""
+        prompt = self._build_explain_prompt_structured(
+            text=text,
+            learning_lang=learning_lang,
+            native_lang=native_lang,
+            level=level,
+            target_langs=target_langs or [],
+            include_synonyms=include_synonyms,
+            include_examples=include_examples,
+        )
+
+        try:
+            raw_response = self._client.call(prompt)
+            logger.debug(f"[AI] Structured explain raw response: {raw_response}")
+
+            try:
+                # Parse JSON from response
+                parsed = AIClient.parse_json_object(raw_response)
+                return {"content": parsed, "meta": {"isJson": True}}
+            except Exception as e:
+                logger.warning(f"[AI] JSON parse failed: {e}, falling back to text")
+                return {"content": raw_response, "meta": {"isJson": False}}
+
+        except Exception as e:
+            logger.error(f"[AI] Structured explain error: {e}")
+            return {
+                "content": f"Error: {str(e)}",
+                "meta": {"isJson": False, "error": True},
+            }
+
+    def _build_explain_prompt_structured(
+        self,
+        text: str,
+        learning_lang: str,
+        native_lang: str | None,
+        level: str,
+        target_langs: list[str],
+        include_synonyms: bool,
+        include_examples: bool,
     ) -> str:
-        lang_name = {"fr": "French", "en": "English"}.get(language, language)
-        ctx_part = f"\nContext: {context}" if context else ""
+        """Build prompt for structured explain response."""
+        targets = ", ".join(target_langs) if target_langs else ""
+        ask_syn = "Suggest 3-5 everyday synonyms (if any)." if include_synonyms else ""
+        ask_ex = (
+            f"Provide 2 usage examples with {learning_lang} plus translations into the target languages."
+            if include_examples
+            else ""
+        )
 
-        return f"""You are a {lang_name} language tutor. Explain the following text clearly.
-
-Text to explain: "{text}"{ctx_part}
-
-Provide:
-1. Translation (if not in user's language)
-2. Key vocabulary with definitions
-3. Grammar notes if relevant
-4. Usage examples
-
-Be concise and helpful."""
+        return (
+            "You are a supportive language tutor. Be concise and practical.\n"
+            f"Learner native language: {native_lang or 'unknown'}; Learning language: {learning_lang}.\n"
+            f"Learner level: {level}.\n\n"
+            f"Input text (in {learning_lang}):\n{text}\n\n"
+            "Tasks:\n"
+            f"- Explain the sentence(s) in {learning_lang} with simple wording and context.\n"
+            "- Identify register: everyday/common/formal/slang, and if common in daily use.\n"
+            + (f"- Provide translations into: {targets}.\n" if targets else "")
+            + (f"- {ask_syn}\n" if ask_syn else "")
+            + (f"- {ask_ex}\n" if ask_ex else "")
+            + "\n"
+            "Return ONLY valid JSON with this schema (use ISO codes as keys):\n"
+            "{\n"
+            '  "detected_language": "fr",\n'
+            '  "register": "everyday|common|formal|slang",\n'
+            '  "usage": {"everyday": true, "notes": "..."},\n'
+            '  "translations": {"en": "...", "vi": "..."},  // include the listed target_langs\n'
+            '  "explanations": [{"fr": "...", "notes": ["..."]}],\n'
+            '  "synonyms": [{"fr": "...", "notes": "..."}],\n'
+            '  "examples": [{"fr": "...", "translations": {"en": "...", "vi": "..."}}],\n'
+            '  "notes": ["..."]\n'
+            "}"
+        )
 
     def _build_chat_prompt(self, history: list[dict], language: str) -> str:
         lang_name = {"fr": "French", "en": "English"}.get(language, language)

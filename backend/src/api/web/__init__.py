@@ -23,7 +23,7 @@ from src.api.web.vocab import (
     vocab_stats,
 )
 from src.api.web.analytics import analytics_summary
-from src.api.web.ai import ai_explain_text, ai_chat
+from src.api.web.ai import ai_chat, web_ai_assist
 from src.api.web.numbers import (
     numbers_create_session,
     numbers_get_next_exercise,
@@ -130,13 +130,13 @@ web_bp.add_url_rule(
 
 # ==================== AI ====================
 web_bp.add_url_rule(
-    "/ai/explain",
-    view_func=ai_explain_text,
+    "/ai/chat",
+    view_func=ai_chat,
     methods=["POST"],
 )
 web_bp.add_url_rule(
-    "/ai/chat",
-    view_func=ai_chat,
+    "/ai/assist",
+    view_func=web_ai_assist,
     methods=["POST"],
 )
 

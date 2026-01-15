@@ -59,8 +59,8 @@ export function UsageChallenge({ card, language }: UsageChallengeProps) {
 
     try {
       const res = await askMore(prompt, undefined, false)
-      if (res?.content) {
-        setFeedback(res.content)
+      if (res?.response) {
+        setFeedback(res.response)
       }
     } catch {
       // Errors are surfaced by useAiAssist notification handling

@@ -69,4 +69,9 @@ export interface ChatRequest {
   history_max_turns?: number
 }
 
-export interface ChatResponse { content: string; meta: { isJson: false } }
+export interface ChatResponse { 
+  conversation_id: string
+  language: string
+  message: string
+  response: string
+}

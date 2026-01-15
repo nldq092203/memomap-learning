@@ -4,9 +4,9 @@ import type { ExplainRequest, ExplainResponse, ChatRequest, ChatResponse } from 
 export const aiService = {
   async explain(body: ExplainRequest): Promise<ExplainResponse> {
     // Endpoint baseURL is /api/web via apiClient; use relative path
-    return apiClient.post<ExplainResponse>("web/learning/ai/assist", body)
+    return apiClient.post<ExplainResponse>("web/ai/assist", body)
   },
   async chat(body: ChatRequest): Promise<ChatResponse> {
-    return apiClient.post<ChatResponse>("web/learning/ai/chat", body)
+    return apiClient.post<ChatResponse>("web/ai/chat", body)
   }
 }
