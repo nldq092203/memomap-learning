@@ -1,8 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import type { CoCeExercise, CEFRLevel } from "@/lib/types/api/coce"
+import type { CoCeExercise, CEFRLevel, ExerciseTopic } from "@/lib/types/api/coce"
 import { LEVEL_INFO } from "./level-selection"
+import { TopicSelector, TOPICS } from "./topic-selector"
 import { ChevronLeft, Headphones, Play, Volume2, RefreshCw, Video, Sparkles } from "lucide-react"
 
 interface ExerciseListProps {
@@ -11,6 +12,8 @@ interface ExerciseListProps {
   loading: boolean
   onSelectExercise: (exerciseId: string) => void
   onBackToLevelSelection: () => void
+  currentTopic: ExerciseTopic | null
+  onSelectTopic: (topic: ExerciseTopic | null) => void
 }
 
 export function ExerciseList({
@@ -19,6 +22,8 @@ export function ExerciseList({
   loading,
   onSelectExercise,
   onBackToLevelSelection,
+  currentTopic,
+  onSelectTopic,
 }: ExerciseListProps) {
   return (
     <div className="space-y-6">
@@ -34,6 +39,8 @@ export function ExerciseList({
           Change Level
         </Button>
       </div>
+
+      <TopicSelector currentTopic={currentTopic} onSelectTopic={onSelectTopic} />
 
       {loading ? (
         <Card>
@@ -83,8 +90,14 @@ export function ExerciseList({
                     </div>
                   </div>
 
-                  {/* Type Badge */}
+                  {/* Type Badge & Topic Badge */}
                   <div className="absolute right-2 top-2 flex gap-2">
+                    {exercise.topic && (
+                      <Badge className="bg-black/60 hover:bg-black/70 backdrop-blur-sm gap-1 border-none text-white" variant="secondary">
+                        <span>{TOPICS.find((t) => t.id === exercise.topic)?.icon}</span>
+                        {TOPICS.find((t) => t.id === exercise.topic)?.label}
+                      </Badge>
+                    )}
                     {isVideo && (
                       <Badge className="bg-black/60 hover:bg-black/70 backdrop-blur-sm gap-1 border-none text-white" variant="secondary">
                         <Video className="h-3 w-3" />

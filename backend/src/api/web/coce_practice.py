@@ -25,6 +25,8 @@ from src.shared.coce_practice.github_manager import GitHubCoCeManager
 from src.shared.coce_practice.repository import GitHubCoCePracticeRepository
 from src.shared.coce_practice.schemas import (
     CreateExerciseRequest,
+    ExerciseDetail,
+    ExerciseResponse,
     SaveQcmRequest,
     SaveTranscriptRequest,
     UpdateExerciseRequest,
@@ -46,43 +48,46 @@ def _get_level() -> str:
 @require_auth
 def coce_list_exercises(user_id: str):
     """
-    GET /web/coce/exercises?level=B2
+    GET /web/coce/exercises?level=B2&topic=health
 
     Returns list of available CO/CE practice exercises for a given level (from database).
+    Optionally filter by topic.
     """
     level = _get_level()
+    topic = request.args.get("topic", "").strip() or None
 
     # Get exercises from DATABASE
     exercise_repo = CoCeExerciseRepository()
-    exercises = exercise_repo.get_by_level(level)
+    exercises = exercise_repo.get_by_level(level, topic=topic)
 
     github_repo = GitHubCoCePracticeRepository(level=level)
 
     items = []
     for ex in exercises:
-        item = {
-            "id": ex.id,
-            "name": ex.name,
-            "level": ex.level,
-            "duration_seconds": ex.duration_seconds,
-            "media_type": ex.media_type,
-            "media_id": ex.media_id,
-            "created_at": ex.created_at.isoformat(),
-        }
+        # Construct computed fields
+        video_url = f"https://www.youtube.com/embed/{ex.media_id}" if ex.media_type == "video" else None
+        audio_url = github_repo.audio_url(ex.media_id) if ex.media_type != "video" else None
+        
+        item = ExerciseResponse(
+            id=ex.id,
+            name=ex.name,
+            level=ex.level,
+            duration_seconds=ex.duration_seconds,
+            media_type=ex.media_type,
+            media_id=ex.media_id,
+            topic=ex.topic,
+            created_at=ex.created_at,
+            video_url=video_url,
+            audio_url=audio_url,
+        )
 
-        # Add media URL
-        if ex.media_type == "video":
-            item["video_url"] = f"https://www.youtube.com/embed/{ex.media_id}"
-        else:
-            item["audio_url"] = github_repo.audio_url(ex.media_id)
-
-        items.append(item)
+        items.append(item.model_dump(mode="json"))
 
     return ResponseBuilder().success(data={"items": items, "level": level}).build()
 
 
 @require_auth
-def coce_get_exercise(user_id: str, exercise_id: str):
+def coce_get_exercise(exercise_id: str):
     """
     GET /web/coce/exercises/<exercise_id>
 
@@ -97,32 +102,37 @@ def coce_get_exercise(user_id: str, exercise_id: str):
     github_repo = GitHubCoCePracticeRepository(level=ex.level)
     base_url = github_repo._root_prefix()
 
-    result = {
-        "id": ex.id,
-        "name": ex.name,
-        "level": ex.level,
-        "duration_seconds": ex.duration_seconds,
-        "media_type": ex.media_type,
-        "media_id": ex.media_id,
-        "created_at": ex.created_at.isoformat(),
-        "updated_at": ex.updated_at.isoformat(),
-    }
+    base_url = github_repo._root_prefix()
+    
+    # Construct computed fields
+    video_url = f"https://www.youtube.com/embed/{ex.media_id}" if ex.media_type == "video" else None
+    audio_url = github_repo.audio_url(ex.media_id) if ex.media_type != "video" else None
+    
+    co_github_url = f"{base_url}/{ex.media_id}/questions_co.json" if ex.co_path else None
+    ce_github_url = f"{base_url}/{ex.media_id}/questions_ce.json" if ex.ce_path else None
+    transcript_github_url = f"{base_url}/{ex.media_id}/transcript.json" if ex.transcript_path else None
 
-    # Add media URL
-    if ex.media_type == "video":
-        result["video_url"] = f"https://www.youtube.com/embed/{ex.media_id}"
-    else:
-        result["audio_url"] = github_repo.audio_url(ex.media_id)
-
-    # Add GitHub URLs for QCM and transcript if paths exist
-    if ex.co_path:
-        result["co_github_url"] = f"{base_url}/{ex.media_id}/questions_co.json"
-    if ex.ce_path:
-        result["ce_github_url"] = f"{base_url}/{ex.media_id}/questions_ce.json"
-    if ex.transcript_path:
-        result["transcript_github_url"] = f"{base_url}/{ex.media_id}/transcript.json"
-
-    return ResponseBuilder().success(data=result).build()
+    result = ExerciseDetail(
+        id=ex.id,
+        name=ex.name,
+        level=ex.level,
+        duration_seconds=ex.duration_seconds,
+        media_type=ex.media_type,
+        media_id=ex.media_id,
+        topic=ex.topic,
+        created_at=ex.created_at,
+        updated_at=ex.updated_at,
+        co_path=ex.co_path,
+        ce_path=ex.ce_path,
+        transcript_path=ex.transcript_path,
+        video_url=video_url,
+        audio_url=audio_url,
+        co_github_url=co_github_url,
+        ce_github_url=ce_github_url,
+        transcript_github_url=transcript_github_url,
+    )
+    
+    return ResponseBuilder().success(data=result.model_dump(mode="json")).build()
 
 
 @require_auth
@@ -218,6 +228,7 @@ def admin_create_exercise(user_id: str):
         duration_seconds=req.duration_seconds,
         media_id=req.media_id,
         media_type=req.media_type,
+        topic=req.topic.value if req.topic else None,
         co_path=paths["co_path"],
         ce_path=paths["ce_path"],
         transcript_path=paths["transcript_path"],

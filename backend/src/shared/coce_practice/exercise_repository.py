@@ -17,6 +17,7 @@ class CoCeExerciseRepository:
         duration_seconds: int,
         media_id: str,
         media_type: str = "audio",
+        topic: str | None = None,
         co_path: str | None = None,
         ce_path: str | None = None,
         transcript_path: str | None = None,
@@ -29,6 +30,7 @@ class CoCeExerciseRepository:
                 level=level.upper(),
                 duration_seconds=duration_seconds,
                 media_id=media_id,
+                topic=topic,
                 co_path=co_path,
                 ce_path=ce_path,
                 transcript_path=transcript_path,
@@ -51,15 +53,18 @@ class CoCeExerciseRepository:
         finally:
             db.close()
 
-    def get_by_level(self, level: str) -> list[CoCeExerciseORM]:
-        """Get all exercises for a specific level, ordered by creation date (newest first)."""
+    def get_by_level(self, level: str, topic: str | None = None) -> list[CoCeExerciseORM]:
+        """Get all exercises for a specific level, optionally filtered by topic, ordered by creation date (newest first)."""
         db = SessionLocal()
         try:
             stmt = (
                 select(CoCeExerciseORM)
                 .where(CoCeExerciseORM.level == level.upper())
-                .order_by(CoCeExerciseORM.created_at.desc())
             )
+            if topic:
+                stmt = stmt.where(CoCeExerciseORM.topic == topic)
+            
+            stmt = stmt.order_by(CoCeExerciseORM.created_at.desc())
             return list(db.execute(stmt).scalars().all())
         finally:
             db.close()

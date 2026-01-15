@@ -15,10 +15,10 @@ export const learningCoCeApi = {
    * List all exercises for a given level
    * GET /web/coce/exercises?level=B2
    */
-  async listExercises(level: CEFRLevel): Promise<CoCeExercise[]> {
+  async listExercises(level: CEFRLevel, topic?: string): Promise<CoCeExercise[]> {
     const response = await apiClient.get<CoCeExerciseListResponse>(
       `${BASE}/exercises`,
-      { level }
+      { level, topic }
     )
     return response.items
   },

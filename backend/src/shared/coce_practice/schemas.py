@@ -3,8 +3,34 @@ from __future__ import annotations
 """Schemas for CO/CE practice manifest, transcript and questions files."""
 
 from datetime import datetime
+from enum import Enum
 
 from pydantic import BaseModel, Field
+
+
+class ExerciseTopic(str, Enum):
+    """Exercise topic/category for filtering."""
+    
+    # Common topics
+    POLITICS = "politics"
+    HEALTH = "health"
+    ENVIRONMENT = "environment"
+    CULTURE = "culture"
+    TECHNOLOGY = "technology"
+    SOCIETY = "society"
+    ECONOMY = "economy"
+    SCIENCE = "science"
+    EDUCATION = "education"
+    SPORTS = "sports"
+    FOOD = "food"
+    TRANSPORT = "transport"
+    HOUSING = "housing"
+    AGRICULTURE = "agriculture"
+    MUSIC = "music"
+    ART = "art"
+    HISTORY = "history"
+    GEOGRAPHY = "geography"
+    OTHER = "other"
 
 
 class CoCeManifestExercise(BaseModel):
@@ -77,6 +103,7 @@ __all__ = [
     "SaveQcmRequest",
     "SaveTranscriptRequest",
     "ExerciseDetail",
+    "ExerciseResponse",
 ]
 
 
@@ -93,6 +120,7 @@ class CreateExerciseRequest(BaseModel):
     duration_seconds: int = Field(..., ge=0)
     media_id: str = Field(..., min_length=1)  # YouTube video ID or audio UUID
     media_type: str = Field(default="audio", pattern="^(audio|video)$")
+    topic: ExerciseTopic | None = Field(default=None, description="Exercise topic/category")
 
 
 class UpdateExerciseRequest(BaseModel):
@@ -103,6 +131,7 @@ class UpdateExerciseRequest(BaseModel):
     duration_seconds: int | None = Field(None, ge=0)
     media_id: str | None = Field(None, min_length=1)
     media_type: str | None = Field(None, pattern="^(audio|video)$")
+    topic: ExerciseTopic | None = Field(None, description="Exercise topic/category")
 
 
 class SaveQcmRequest(BaseModel):
@@ -125,8 +154,8 @@ class SaveTranscriptRequest(BaseModel):
 # ============================================================================
 
 
-class ExerciseDetail(BaseModel):
-    """Detailed exercise information."""
+class ExerciseResponse(BaseModel):
+    """Base exercise information for lists."""
 
     id: str
     name: str
@@ -134,15 +163,25 @@ class ExerciseDetail(BaseModel):
     duration_seconds: int
     media_type: str
     media_id: str
-    co_path: str | None = None
-    ce_path: str | None = None
-    transcript_path: str | None = None
+    topic: ExerciseTopic | None = None
     created_at: datetime
-    updated_at: datetime
-
+    
     # Computed URLs
     audio_url: str | None = None
     video_url: str | None = None
+
+
+class ExerciseDetail(ExerciseResponse):
+    """Detailed exercise information."""
+
+    updated_at: datetime
+    
+    # File paths (internal use mostly, but good for debug)
+    co_path: str | None = None
+    ce_path: str | None = None
+    transcript_path: str | None = None
+
+    # Computed GitHub URLs (for frontend to fetch content)
     co_github_url: str | None = None
     ce_github_url: str | None = None
     transcript_github_url: str | None = None

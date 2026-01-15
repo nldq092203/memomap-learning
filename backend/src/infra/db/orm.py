@@ -238,10 +238,13 @@ class CoCeExerciseORM(Base):
         sa.String(500), nullable=True
     )
 
+    # Topic/category for filtering (e.g., 'politics', 'health', 'environment', etc.)
+    topic: so.Mapped[str | None] = so.mapped_column(sa.String(50), nullable=True)
+
     # media_type stored in extra JSON: extra['media_type'] = 'audio' | 'video'
 
     __table_args__ = (
-        sa.Index("ix_coce_exercises_level", "level"),
+        sa.Index("ix_coce_exercises_level_topic", "level", "topic"),
         sa.Index("ix_coce_exercises_media_id", "media_id"),
         sa.CheckConstraint(
             "duration_seconds >= 0", name="ck_coce_duration_positive"

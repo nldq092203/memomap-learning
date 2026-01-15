@@ -6,4 +6,5 @@ export { TranscriptView } from "./transcript-view"
 export { PracticeTypeSelector } from "./practice-type-selector"
 export { QuestionsView } from "./questions-view"
 export { QuestionCard } from "./question-card"
+export { TopicSelector } from "./topic-selector"
 

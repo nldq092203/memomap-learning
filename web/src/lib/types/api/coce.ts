@@ -17,6 +17,7 @@ export interface CoCeExercise {
   duration_seconds: number
   media_type: ExerciseMediaType
   media_id: string
+  topic?: ExerciseTopic // Filter category (e.g., 'health', 'politics')
   created_at: string
   updated_at?: string
   
@@ -29,6 +30,27 @@ export interface CoCeExercise {
   ce_github_url?: string
   transcript_github_url?: string
 }
+
+export type ExerciseTopic = 
+  | 'politics'
+  | 'health'
+  | 'environment'
+  | 'culture'
+  | 'technology'
+  | 'society'
+  | 'economy'
+  | 'science'
+  | 'education'
+  | 'sports'
+  | 'food'
+  | 'transport'
+  | 'housing'
+  | 'agriculture'
+  | 'music'
+  | 'art'
+  | 'history'
+  | 'geography'
+  | 'other'
 
 // Transcript structure
 export interface CoCeTranscript {

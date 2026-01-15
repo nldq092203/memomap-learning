@@ -8,6 +8,7 @@ import type {
   CoCeTranscript,
   CoCeQuestions,
   CoCeQuestion,
+  ExerciseTopic,
 } from "@/lib/types/api/coce"
 import { notificationService } from "@/lib/services/notification-service"
 
@@ -20,6 +21,7 @@ interface UserAnswer {
 
 export function useCoCePractice() {
   const [level, setLevel] = useState<CEFRLevel>("B2")
+  const [topic, setTopic] = useState<ExerciseTopic | null>(null)
   const [exercises, setExercises] = useState<CoCeExercise[]>([])
   const [currentExercise, setCurrentExercise] = useState<CoCeExercise | null>(null)
   const [transcript, setTranscript] = useState<CoCeTranscript | null>(null)
@@ -30,12 +32,13 @@ export function useCoCePractice() {
   const [showResults, setShowResults] = useState(false)
 
   // Load exercises for selected level
-  const loadExercises = useCallback(async (selectedLevel: CEFRLevel) => {
+  const loadExercises = useCallback(async (selectedLevel: CEFRLevel, selectedTopic?: ExerciseTopic | null) => {
     setLoading(true)
     try {
-      const data = await learningCoCeApi.listExercises(selectedLevel)
+      const data = await learningCoCeApi.listExercises(selectedLevel, selectedTopic || undefined)
       setExercises(data)
       setLevel(selectedLevel)
+      if (selectedTopic !== undefined) setTopic(selectedTopic)
     } catch (error) {
       console.error("Failed to load exercises:", error)
       notificationService.error("Failed to load exercises")
@@ -193,11 +196,13 @@ export function useCoCePractice() {
   const backToLevelSelection = useCallback(() => {
     setExercises([])
     reset()
+    setTopic(null)
   }, [reset])
 
   return {
     // State
     level,
+    topic,
     exercises,
     currentExercise,
     transcript,
@@ -220,5 +225,6 @@ export function useCoCePractice() {
     backToList,
     backToLevelSelection,
     setMode,
+    setTopic,
   }
 }

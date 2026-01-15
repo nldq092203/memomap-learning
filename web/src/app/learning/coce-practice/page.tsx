@@ -20,6 +20,7 @@ import { Headphones, Volume2, ChevronLeft } from "lucide-react"
 export default function CoCePracticePage() {
   const {
     level,
+    topic,
     exercises,
     currentExercise,
     transcript,
@@ -37,6 +38,7 @@ export default function CoCePracticePage() {
     isAnswerCorrect,
     backToList,
     backToLevelSelection,
+    setTopic,
   } = useCoCePractice()
 
   const [showTranscript, setShowTranscript] = useState(false)
@@ -120,6 +122,8 @@ export default function CoCePracticePage() {
             loading={loading}
             onSelectExercise={handleExerciseSelect}
             onBackToLevelSelection={backToLevelSelection}
+            currentTopic={topic}
+            onSelectTopic={(t) => void loadExercises(level, t)}
           />
         </div>
       </div>
