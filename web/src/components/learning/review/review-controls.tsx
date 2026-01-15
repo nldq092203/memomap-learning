@@ -81,7 +81,7 @@ export function ReviewControls({ currentIndex, total, isFlipped, onPrev, onNext,
           </Button>
           <div className="h-4 w-px bg-border" />
           <Button variant="ghost" size="sm" onClick={onSubmitClick} className="ml-4 text-muted-foreground">
-             Edit / Fix
+             Submit
           </Button>
        </div>
     </div>
