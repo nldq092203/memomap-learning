@@ -87,7 +87,7 @@ def coce_list_exercises(user_id: str):
 
 
 @require_auth
-def coce_get_exercise(exercise_id: str):
+def coce_get_exercise(user_id: str, exercise_id: str):
     """
     GET /web/coce/exercises/<exercise_id>
 
@@ -206,6 +206,7 @@ def admin_create_exercise(user_id: str):
         "duration_seconds": 300,
         "media_id": "youtube_video_id",
         "media_type": "video"
+        "topic": "topic"
     }
     """
     body = request.get_json() or {}
