@@ -10,12 +10,15 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from src.domain.db_queries import SessionQueries, TranscriptQueries, VocabularyQueries
+from src.domain.db_queries import (
+    SessionQueries,
+    TranscriptQueries,
+    VocabularyQueries,
+)
 from src.domain.errors import ResourceNotFoundError, ValidationError
-from src.domain.services.srs import SRSService
 from src.domain.services.analytics import AnalyticsService
+from src.domain.services.srs import SRSService
 from src.utils.constants import LEARNING_LANGS
-
 
 # ==================== Sessions Controllers ====================
 

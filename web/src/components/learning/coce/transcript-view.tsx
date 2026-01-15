@@ -30,7 +30,7 @@ export function TranscriptView({ transcript, loading }: TranscriptViewProps) {
           ) : transcript ? (
             <div className="prose prose-sm max-w-none dark:prose-invert">
               <p className="whitespace-pre-wrap leading-relaxed text-foreground/90">
-                {transcript.text}
+                {transcript.transcript}
               </p>
             </div>
           ) : (

@@ -24,6 +24,7 @@ dependencies = [
     "requests>=2.32.5",
     "sqlalchemy>=2.0.0",
     "werkzeug>=1.0.1",
+    "youtube-transcript-api>=1.2.3",
 ]
 
 [project.scripts]

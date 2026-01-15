@@ -7,8 +7,8 @@ Simplified AI endpoints:
 from flask import request
 
 from src.api.decorators import require_auth
-from src.api.schemas import AIChatRequest
 from src.api.errors import BadRequestError
+from src.api.schemas import AIChatRequest
 from src.shared.ai import AIService, enforce_rate_limit
 from src.utils.response_builder import ResponseBuilder
 

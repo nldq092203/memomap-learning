@@ -8,6 +8,7 @@ from src.infra.db.orm import (
     LearningTranscriptORM,
     LearningAudioLessonORM,
     VocabularyCardORM,
+    CoCeExerciseORM,
 )
 
 __all__ = [
@@ -23,5 +24,6 @@ __all__ = [
     "LearningTranscriptORM",
     "LearningAudioLessonORM",
     "VocabularyCardORM",
+    "CoCeExerciseORM",
 ]
 

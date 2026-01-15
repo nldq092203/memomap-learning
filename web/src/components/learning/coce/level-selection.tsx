@@ -1,10 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import type { CoCeLevel } from "@/lib/types/api/coce"
+import type { CEFRLevel } from "@/lib/types/api/coce"
 import { cn } from "@/lib/utils"
 import { BookOpen } from "lucide-react"
 
-const LEVEL_INFO: Record<CoCeLevel, { name: string; description: string; color: string }> = {
+const LEVEL_INFO: Record<CEFRLevel, { name: string; description: string; color: string }> = {
+  A1: {
+    name: "A1 - Beginner",
+    description: "Can understand basic phrases and everyday expressions",
+    color: "bg-green-500/10 border-green-500/30 hover:border-green-500/50",
+  },
   A2: {
     name: "A2 - Elementary",
     description: "Can understand sentences and frequently used expressions",
@@ -20,10 +25,20 @@ const LEVEL_INFO: Record<CoCeLevel, { name: string; description: string; color: 
     description: "Can understand complex texts and interact with native speakers",
     color: "bg-purple-500/10 border-purple-500/30 hover:border-purple-500/50",
   },
+  C1: {
+    name: "C1 - Advanced",
+    description: "Can express ideas fluently and understand implicit meaning",
+    color: "bg-orange-500/10 border-orange-500/30 hover:border-orange-500/50",
+  },
+  C2: {
+    name: "C2 - Proficient",
+    description: "Can understand virtually everything with ease",
+    color: "bg-red-500/10 border-red-500/30 hover:border-red-500/50",
+  },
 }
 
 interface LevelSelectionProps {
-  onSelectLevel: (level: CoCeLevel) => void
+  onSelectLevel: (level: CEFRLevel) => void
 }
 
 export function LevelSelection({ onSelectLevel }: LevelSelectionProps) {
@@ -45,7 +60,7 @@ export function LevelSelection({ onSelectLevel }: LevelSelectionProps) {
       <div className="space-y-4">
         <h2 className="text-lg font-semibold">Select Your Level</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {(Object.keys(LEVEL_INFO) as CoCeLevel[]).map((lvl) => {
+          {(Object.keys(LEVEL_INFO) as CEFRLevel[]).map((lvl) => {
             const info = LEVEL_INFO[lvl]
             return (
               <Card

@@ -3,9 +3,8 @@
 import { useState, useCallback, useMemo } from "react"
 import { learningCoCeApi } from "@/lib/services/learning-coce-api"
 import type {
-  CoCeLevel,
+  CEFRLevel,
   CoCeExercise,
-  CoCeExerciseDetail,
   CoCeTranscript,
   CoCeQuestions,
   CoCeQuestion,
@@ -20,9 +19,9 @@ interface UserAnswer {
 }
 
 export function useCoCePractice() {
-  const [level, setLevel] = useState<CoCeLevel>("B2")
+  const [level, setLevel] = useState<CEFRLevel>("B2")
   const [exercises, setExercises] = useState<CoCeExercise[]>([])
-  const [currentExercise, setCurrentExercise] = useState<CoCeExerciseDetail | null>(null)
+  const [currentExercise, setCurrentExercise] = useState<CoCeExercise | null>(null)
   const [transcript, setTranscript] = useState<CoCeTranscript | null>(null)
   const [questions, setQuestions] = useState<CoCeQuestions | null>(null)
   const [mode, setMode] = useState<PracticeMode>("audio")
@@ -31,7 +30,7 @@ export function useCoCePractice() {
   const [showResults, setShowResults] = useState(false)
 
   // Load exercises for selected level
-  const loadExercises = useCallback(async (selectedLevel: CoCeLevel) => {
+  const loadExercises = useCallback(async (selectedLevel: CEFRLevel) => {
     setLoading(true)
     try {
       const data = await learningCoCeApi.listExercises(selectedLevel)
@@ -50,7 +49,7 @@ export function useCoCePractice() {
     async (exerciseId: string) => {
       setLoading(true)
       try {
-        const data = await learningCoCeApi.getExercise(exerciseId, level)
+        const data = await learningCoCeApi.getExercise(exerciseId)
         setCurrentExercise(data)
         setMode("audio")
         setTranscript(null)
@@ -64,7 +63,7 @@ export function useCoCePractice() {
         setLoading(false)
       }
     },
-    [level]
+    []
   )
 
   // Load transcript
@@ -72,7 +71,7 @@ export function useCoCePractice() {
     if (!currentExercise) return
     setLoading(true)
     try {
-      const data = await learningCoCeApi.getTranscript(currentExercise.id, level)
+      const data = await learningCoCeApi.getTranscript(currentExercise.id)
       setTranscript(data)
       setMode("transcript")
     } catch (error) {
@@ -81,7 +80,7 @@ export function useCoCePractice() {
     } finally {
       setLoading(false)
     }
-  }, [currentExercise, level])
+  }, [currentExercise])
 
   // Load questions (CO or CE)
   const loadQuestions = useCallback(
@@ -89,7 +88,7 @@ export function useCoCePractice() {
       if (!currentExercise) return
       setLoading(true)
       try {
-        const data = await learningCoCeApi.getQuestions(currentExercise.id, level, type)
+        const data = await learningCoCeApi.getQuestions(currentExercise.id, type)
         setQuestions(data)
         setMode(type)
         setUserAnswers([])
@@ -101,7 +100,7 @@ export function useCoCePractice() {
         setLoading(false)
       }
     },
-    [currentExercise, level]
+    [currentExercise]
   )
 
   // Update user answer for a question

@@ -9,11 +9,10 @@ from contextlib import contextmanager
 from flask import request
 from sqlalchemy.orm import Session
 
-from src.infra.auth.jwt import decode_jwt
-from src.infra.db.connection import db_session, get_db
 from src.api.errors import ForbiddenError, UnauthorizedError
 from src.config import Config
-from src.extensions import logger
+from src.infra.auth.jwt import decode_jwt
+from src.infra.db.connection import db_session, get_db
 
 
 def get_bearer_token() -> str | None:

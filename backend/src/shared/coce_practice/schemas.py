@@ -71,5 +71,80 @@ __all__ = [
     "CoCeQuestionsFile",
     "CoCeQuestionsMeta",
     "CoCeQuestion",
+    # Admin API schemas
+    "CreateExerciseRequest",
+    "UpdateExerciseRequest",
+    "SaveQcmRequest",
+    "SaveTranscriptRequest",
+    "ExerciseDetail",
 ]
+
+
+# ============================================================================
+# Admin API Request Schemas
+# ============================================================================
+
+
+class CreateExerciseRequest(BaseModel):
+    """Request to create a new exercise."""
+
+    name: str = Field(..., min_length=1, max_length=200)
+    level: str = Field(..., pattern="^(A1|A2|B1|B2|C1|C2)$")
+    duration_seconds: int = Field(..., ge=0)
+    media_id: str = Field(..., min_length=1)  # YouTube video ID or audio UUID
+    media_type: str = Field(default="audio", pattern="^(audio|video)$")
+
+
+class UpdateExerciseRequest(BaseModel):
+    """Request to update an exercise."""
+
+    name: str | None = Field(None, min_length=1, max_length=200)
+    level: str | None = Field(None, pattern="^(A1|A2|B1|B2|C1|C2)$")
+    duration_seconds: int | None = Field(None, ge=0)
+    media_id: str | None = Field(None, min_length=1)
+    media_type: str | None = Field(None, pattern="^(audio|video)$")
+
+
+class SaveQcmRequest(BaseModel):
+    """Request to save QCM data to GitHub."""
+
+    exercise_id: str
+    variant: str = Field(..., pattern="^(co|ce)$")  # 'co' or 'ce'
+    qcm_data: CoCeQuestionsFile  # The actual QCM content
+
+
+class SaveTranscriptRequest(BaseModel):
+    """Request to save transcript data to GitHub."""
+
+    exercise_id: str
+    transcript_data: CoCeTranscript  # The actual transcript content
+
+
+# ============================================================================
+# Response Schemas
+# ============================================================================
+
+
+class ExerciseDetail(BaseModel):
+    """Detailed exercise information."""
+
+    id: str
+    name: str
+    level: str
+    duration_seconds: int
+    media_type: str
+    media_id: str
+    co_path: str | None = None
+    ce_path: str | None = None
+    transcript_path: str | None = None
+    created_at: datetime
+    updated_at: datetime
+
+    # Computed URLs
+    audio_url: str | None = None
+    video_url: str | None = None
+    co_github_url: str | None = None
+    ce_github_url: str | None = None
+    transcript_github_url: str | None = None
+
 

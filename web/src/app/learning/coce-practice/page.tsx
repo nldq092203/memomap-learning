@@ -5,11 +5,11 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { LearningNav } from "@/components/learning/layout/learning-nav"
 import { useCoCePractice } from "@/lib/hooks/use-coce-practice"
-import type { CoCeLevel } from "@/lib/types/api/coce"
+import type { CEFRLevel } from "@/lib/types/api/coce"
 import {
   LevelSelection,
   ExerciseList,
-  AudioPlayer,
+  MediaPlayer,
   TranscriptView,
   PracticeTypeSelector,
   QuestionsView,
@@ -43,7 +43,7 @@ export default function CoCePracticePage() {
   const [activeQuestionType, setActiveQuestionType] = useState<"co" | "ce" | null>(null)
 
   // Handle level selection
-  const handleLevelSelect = (selectedLevel: CoCeLevel) => {
+  const handleLevelSelect = (selectedLevel: CEFRLevel) => {
     void loadExercises(selectedLevel)
   }
 
@@ -174,9 +174,9 @@ export default function CoCePracticePage() {
             </div>
           </div>
 
-          {/* Audio Player */}
-          <AudioPlayer
-            audioUrl={currentExercise.audio_url}
+          {/* Media Player (Audio or Video) */}
+          <MediaPlayer
+            exercise={currentExercise}
             showTranscript={showTranscript}
             onTranscriptToggle={handleTranscriptToggle}
             isLoadingTranscript={loading && !transcript}

@@ -53,10 +53,18 @@ from src.api.web.speaking_practice import (
     speaking_practice_stream_audio,
 )
 from src.api.web.coce_practice import (
+    # User endpoints
     coce_list_exercises,
     coce_get_exercise,
     coce_get_transcript,
     coce_get_questions,
+    # Admin endpoints
+    admin_create_exercise,
+    admin_update_exercise,
+    admin_delete_exercise,
+    admin_save_qcm,
+    admin_save_transcript,
+    admin_generate_youtube_transcript,
 )
 from src.api.errors import register_error_handlers
 
@@ -251,7 +259,8 @@ web_bp.add_url_rule(
     methods=["GET"],
 )
 
-# ==================== CO/CE Practice (GitHub-backed) ====================
+# ==================== CO/CE Practice (GitHub + DB backed) ====================
+# User endpoints
 web_bp.add_url_rule(
     "/coce/exercises",
     view_func=coce_list_exercises,
@@ -273,5 +282,36 @@ web_bp.add_url_rule(
     methods=["GET"],
 )
 
+# Admin endpoints
+web_bp.add_url_rule(
+    "/coce/admin/exercises",
+    view_func=admin_create_exercise,
+    methods=["POST"],
+)
+web_bp.add_url_rule(
+    "/coce/admin/exercises/<exercise_id>",
+    view_func=admin_update_exercise,
+    methods=["PATCH"],
+)
+web_bp.add_url_rule(
+    "/coce/admin/exercises/<exercise_id>",
+    view_func=admin_delete_exercise,
+    methods=["DELETE"],
+)
+web_bp.add_url_rule(
+    "/coce/admin/qcm",
+    view_func=admin_save_qcm,
+    methods=["POST"],
+)
+web_bp.add_url_rule(
+    "/coce/admin/transcript",
+    view_func=admin_save_transcript,
+    methods=["POST"],
+)
+web_bp.add_url_rule(
+    "/coce/admin/youtube-transcript",
+    view_func=admin_generate_youtube_transcript,
+    methods=["POST"],
+)
 
 __all__ = ["web_bp"]

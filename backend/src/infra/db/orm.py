@@ -218,3 +218,50 @@ class VocabularyCardORM(Base):
     def __repr__(self) -> str:
         return f"<VocabularyCardORM(id={self.id!r}, word={self.word!r}, language={self.language!r}, status={self.status!r})>"
 
+
+class CoCeExerciseORM(Base):
+    """CO/CE practice exercise metadata (audio or video based)."""
+
+    __tablename__ = "coce_exercises"
+
+    name: so.Mapped[str] = so.mapped_column(sa.String(200), nullable=False)
+    level: so.Mapped[str] = so.mapped_column(sa.String(16), nullable=False)
+    duration_seconds: so.Mapped[int] = so.mapped_column(sa.Integer, nullable=False)
+
+    # Media identifier (YouTube video ID or audio UUID)
+    media_id: so.Mapped[str] = so.mapped_column(sa.String(255), nullable=False)
+
+    # File paths in GitHub (relative paths)
+    co_path: so.Mapped[str | None] = so.mapped_column(sa.String(500), nullable=True)
+    ce_path: so.Mapped[str | None] = so.mapped_column(sa.String(500), nullable=True)
+    transcript_path: so.Mapped[str | None] = so.mapped_column(
+        sa.String(500), nullable=True
+    )
+
+    # media_type stored in extra JSON: extra['media_type'] = 'audio' | 'video'
+
+    __table_args__ = (
+        sa.Index("ix_coce_exercises_level", "level"),
+        sa.Index("ix_coce_exercises_media_id", "media_id"),
+        sa.CheckConstraint(
+            "duration_seconds >= 0", name="ck_coce_duration_positive"
+        ),
+        sa.CheckConstraint(
+            "level IN ('A1', 'A2', 'B1', 'B2', 'C1', 'C2')", name="ck_coce_level"
+        ),
+    )
+
+    @property
+    def media_type(self) -> str:
+        """Get media type from extra JSON."""
+        return self.extra.get("media_type", "audio")
+
+    @media_type.setter
+    def media_type(self, value: str) -> None:
+        """Set media type in extra JSON."""
+        if not isinstance(self.extra, dict):
+            self.extra = {}
+        self.extra["media_type"] = value
+
+    def __repr__(self) -> str:
+        return f"<CoCeExerciseORM(id={self.id!r}, name={self.name!r}, level={self.level!r}, media_type={self.media_type!r})>"
