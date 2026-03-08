@@ -7,12 +7,14 @@ All direct database access is encapsulated here.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from time import perf_counter
 from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import func, select, and_, or_
 from sqlalchemy.orm import Session
 
+from src.config import Config
 from src.infra.db.orm import (
     UserORM,
     LearningSessionORM,
@@ -22,6 +24,7 @@ from src.infra.db.orm import (
 
 from src.infra.cache.client import get_redis_client
 from src.extensions import logger
+
 
 class UserQueries:
     """Database queries for users."""
@@ -35,18 +38,21 @@ class UserQueries:
     def get_by_id(db: Session, user_id: str) -> UserORM | None:
         """
         Get user by ID with Redis caching.
-        
+
         Cache TTL: 5 minutes
         Cache key: user:{user_id}
         """
         cache = get_redis_client()
         cache_key = f"user:{user_id}"
-        
+
         # Try cache first
+        redis_ms: float | None = None
+        t0 = perf_counter()
         try:
             cached_data = cache.get_json(cache_key)
+            redis_ms = (perf_counter() - t0) * 1000
             if cached_data:
-                logger.info(f"[CACHE HIT] User {user_id}")
+                logger.debug(f"[CACHE HIT] User {user_id}")
                 # Reconstruct UserORM from cached data
                 user = UserORM(
                     id=cached_data["id"],
@@ -61,12 +67,21 @@ class UserQueries:
                 return user
         except Exception as e:
             logger.warning(f"[CACHE ERROR] Failed to get user from cache: {e}")
-        
+
         # Cache miss - query database
-        logger.info(f"[CACHE MISS] User {user_id}")
+        logger.debug(f"[CACHE MISS] User {user_id}")
+        db_t0 = perf_counter()
         stmt = select(UserORM).where(UserORM.id == user_id)
         user = db.execute(stmt).scalar_one_or_none()
-        
+        db_ms = (perf_counter() - db_t0) * 1000
+
+        # If Redis is down/misconfigured, the connect attempt can dominate request time.
+        slow_ms = float(Config.SLOW_USER_LOOKUP_MS)
+        if (redis_ms is not None and redis_ms > slow_ms) or db_ms > slow_ms:
+            logger.warning(
+                f"[SLOW] User lookup user_id={user_id} redis_ms={redis_ms:.1f} db_ms={db_ms:.1f}"
+            )
+
         # Cache the result
         if user:
             try:
@@ -74,14 +89,18 @@ class UserQueries:
                     "id": user.id,
                     "email": user.email,
                     "extra": user.extra,
-                    "created_at": user.created_at.isoformat() if user.created_at else None,
-                    "updated_at": user.updated_at.isoformat() if user.updated_at else None,
+                    "created_at": (
+                        user.created_at.isoformat() if user.created_at else None
+                    ),
+                    "updated_at": (
+                        user.updated_at.isoformat() if user.updated_at else None
+                    ),
                 }
                 cache.set_json(cache_key, cache_data, ex=300)  # 5 minutes TTL
-                logger.info(f"[CACHE SET] User {user_id}")
+                logger.debug(f"[CACHE SET] User {user_id}")
             except Exception as e:
                 logger.warning(f"[CACHE ERROR] Failed to cache user: {e}")
-        
+
         return user
 
     @staticmethod
@@ -119,7 +138,9 @@ class SessionQueries:
         return session
 
     @staticmethod
-    def get_by_id(db: Session, session_id: str, user_id: str) -> LearningSessionORM | None:
+    def get_by_id(
+        db: Session, session_id: str, user_id: str
+    ) -> LearningSessionORM | None:
         stmt = select(LearningSessionORM).where(
             and_(
                 LearningSessionORM.id == session_id,
@@ -145,7 +166,9 @@ class SessionQueries:
         if day_filter:
             try:
                 filter_date = datetime.strptime(day_filter, "%Y-%m-%d").date()
-                conditions.append(func.date(LearningSessionORM.created_at) == filter_date)
+                conditions.append(
+                    func.date(LearningSessionORM.created_at) == filter_date
+                )
             except ValueError:
                 pass
 
@@ -199,7 +222,9 @@ class TranscriptQueries:
         return obj
 
     @staticmethod
-    def get_by_id(db: Session, transcript_id: str, user_id: str) -> LearningTranscriptORM | None:
+    def get_by_id(
+        db: Session, transcript_id: str, user_id: str
+    ) -> LearningTranscriptORM | None:
         stmt = select(LearningTranscriptORM).where(
             and_(
                 LearningTranscriptORM.id == transcript_id,
@@ -239,12 +264,21 @@ class TranscriptQueries:
         return transcripts, total
 
     @staticmethod
-    def update(db: Session, transcript_id: str, user_id: str, **updates) -> LearningTranscriptORM | None:
+    def update(
+        db: Session, transcript_id: str, user_id: str, **updates
+    ) -> LearningTranscriptORM | None:
         transcript = TranscriptQueries.get_by_id(db, transcript_id, user_id)
         if not transcript:
             return None
 
-        allowed_fields = ["source_url", "lesson_audio_folder_id", "transcript", "notes", "tags", "extra"]
+        allowed_fields = [
+            "source_url",
+            "lesson_audio_folder_id",
+            "transcript",
+            "notes",
+            "tags",
+            "extra",
+        ]
         for field, value in updates.items():
             if field in allowed_fields and value is not None:
                 setattr(transcript, field, value)
@@ -395,7 +429,9 @@ class VocabularyQueries:
         return list(db.execute(stmt).scalars().all())
 
     @staticmethod
-    def update_content(db: Session, card_id: str, user_id: str, **updates) -> VocabularyCardORM | None:
+    def update_content(
+        db: Session, card_id: str, user_id: str, **updates
+    ) -> VocabularyCardORM | None:
         card = VocabularyQueries.get_by_id(db, card_id, user_id)
         if not card:
             return None
@@ -462,7 +498,9 @@ class VocabularyQueries:
         return True
 
     @staticmethod
-    def get_stats(db: Session, user_id: str, language: str | None = None) -> dict[str, Any]:
+    def get_stats(
+        db: Session, user_id: str, language: str | None = None
+    ) -> dict[str, Any]:
         conditions = [VocabularyCardORM.user_id == user_id]
         if language:
             conditions.append(VocabularyCardORM.language == language)
@@ -493,7 +531,9 @@ class VocabularyQueries:
         )
         due_today = db.execute(due_stmt).scalar_one()
 
-        overdue_date = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        overdue_date = datetime.now(timezone.utc).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
         overdue_conditions = conditions + [
             VocabularyCardORM.status.in_(["learning", "review"]),
             VocabularyCardORM.due_at < overdue_date,
@@ -514,4 +554,3 @@ class VocabularyQueries:
             "due_today": due_today,
             "overdue": overdue,
         }
-

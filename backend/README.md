@@ -2192,4 +2192,3 @@ When you receive a `429` status code:
 2. Implement exponential backoff
 3. Cache AI responses when possible
 4. Consider batching requests
-

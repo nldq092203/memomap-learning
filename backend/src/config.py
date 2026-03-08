@@ -53,6 +53,7 @@ class LearningConfig:
     AI_RATE_GLOBAL_PER_MINUTE = int(os.getenv("AI_RATE_GLOBAL_PER_MINUTE", "120"))
 
     # Redis Configuration
+    REDIS_ENABLED = os.getenv("REDIS_ENABLED", "true").lower() == "true"
     REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
     REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
     REDIS_DB = int(os.getenv("REDIS_DB", "0"))
@@ -61,6 +62,19 @@ class LearningConfig:
     REDIS_MAX_CONNECTIONS = int(os.getenv("REDIS_MAX_CONNECTIONS", "50"))
     REDIS_URL = os.getenv("REDIS_URL", None)
     DEFAULT_CACHE_TTL = int(os.getenv("DEFAULT_CACHE_TTL", "3600"))
+    REDIS_POOL_BLOCKING = os.getenv("REDIS_POOL_BLOCKING", "true").lower() == "true"
+    REDIS_POOL_BLOCKING_TIMEOUT = float(
+        os.getenv("REDIS_POOL_BLOCKING_TIMEOUT", "1.0")
+    )
+    REDIS_SOCKET_CONNECT_TIMEOUT = float(
+        os.getenv("REDIS_SOCKET_CONNECT_TIMEOUT", "0.2")
+    )
+    REDIS_SOCKET_TIMEOUT = float(os.getenv("REDIS_SOCKET_TIMEOUT", "0.5"))
+    REDIS_SOCKET_KEEPALIVE = os.getenv("REDIS_SOCKET_KEEPALIVE", "true").lower() == "true"
+    REDIS_HEALTH_CHECK_INTERVAL = int(os.getenv("REDIS_HEALTH_CHECK_INTERVAL", "30"))
+    REDIS_RETRY_ON_TIMEOUT = os.getenv("REDIS_RETRY_ON_TIMEOUT", "false").lower() == "true"
+    REDIS_DISABLE_SECONDS = int(os.getenv("REDIS_DISABLE_SECONDS", "30"))
+    SLOW_USER_LOOKUP_MS = int(os.getenv("SLOW_USER_LOOKUP_MS", "200"))
 
     # Numbers Dictation
     NUMBERS_ADMIN_TOKEN = os.getenv("NUMBERS_ADMIN_TOKEN")
