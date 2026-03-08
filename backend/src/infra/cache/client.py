@@ -200,9 +200,15 @@ class RedisClient:
             return False
 
 
+_redis_client_singleton: RedisClient | None = None
+
+
 def get_redis_client() -> RedisClient:
     """Get the singleton Redis client instance."""
-    return RedisClient()
+    global _redis_client_singleton
+    if _redis_client_singleton is None:
+        _redis_client_singleton = RedisClient()
+    return _redis_client_singleton
 
 
 def with_redis_fallback(fallback_value: typing.Any = None):
