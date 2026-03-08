@@ -7,14 +7,12 @@ All direct database access is encapsulated here.
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from time import perf_counter
 from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import func, select, and_, or_
 from sqlalchemy.orm import Session
 
-from src.config import Config
 from src.infra.db.orm import (
     UserORM,
     LearningSessionORM,
@@ -22,7 +20,6 @@ from src.infra.db.orm import (
     VocabularyCardORM,
 )
 
-from src.infra.cache.client import get_redis_client
 from src.extensions import logger
 
 
@@ -37,71 +34,10 @@ class UserQueries:
     @staticmethod
     def get_by_id(db: Session, user_id: str) -> UserORM | None:
         """
-        Get user by ID with Redis caching.
-
-        Cache TTL: 5 minutes
-        Cache key: user:{user_id}
+        Get user by ID.
         """
-        cache = get_redis_client()
-        cache_key = f"user:{user_id}"
-
-        # Try cache first
-        redis_ms: float | None = None
-        t0 = perf_counter()
-        try:
-            cached_data = cache.get_json(cache_key)
-            redis_ms = (perf_counter() - t0) * 1000
-            if cached_data:
-                logger.debug(f"[CACHE HIT] User {user_id}")
-                # Reconstruct UserORM from cached data
-                user = UserORM(
-                    id=cached_data["id"],
-                    email=cached_data["email"],
-                    extra=cached_data.get("extra", {}),
-                )
-                # Parse datetime strings back to datetime objects
-                if cached_data.get("created_at"):
-                    user.created_at = datetime.fromisoformat(cached_data["created_at"])
-                if cached_data.get("updated_at"):
-                    user.updated_at = datetime.fromisoformat(cached_data["updated_at"])
-                return user
-        except Exception as e:
-            logger.warning(f"[CACHE ERROR] Failed to get user from cache: {e}")
-
-        # Cache miss - query database
-        logger.debug(f"[CACHE MISS] User {user_id}")
-        db_t0 = perf_counter()
         stmt = select(UserORM).where(UserORM.id == user_id)
-        user = db.execute(stmt).scalar_one_or_none()
-        db_ms = (perf_counter() - db_t0) * 1000
-
-        # If Redis is down/misconfigured, the connect attempt can dominate request time.
-        slow_ms = float(Config.SLOW_USER_LOOKUP_MS)
-        if (redis_ms is not None and redis_ms > slow_ms) or db_ms > slow_ms:
-            logger.warning(
-                f"[SLOW] User lookup user_id={user_id} redis_ms={redis_ms:.1f} db_ms={db_ms:.1f}"
-            )
-
-        # Cache the result
-        if user:
-            try:
-                cache_data = {
-                    "id": user.id,
-                    "email": user.email,
-                    "extra": user.extra,
-                    "created_at": (
-                        user.created_at.isoformat() if user.created_at else None
-                    ),
-                    "updated_at": (
-                        user.updated_at.isoformat() if user.updated_at else None
-                    ),
-                }
-                cache.set_json(cache_key, cache_data, ex=300)  # 5 minutes TTL
-                logger.debug(f"[CACHE SET] User {user_id}")
-            except Exception as e:
-                logger.warning(f"[CACHE ERROR] Failed to cache user: {e}")
-
-        return user
+        return db.execute(stmt).scalar_one_or_none()
 
     @staticmethod
     def create(db: Session, email: str, extra: dict[str, Any] | None = None) -> UserORM:

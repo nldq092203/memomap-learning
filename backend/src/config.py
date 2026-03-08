@@ -74,7 +74,6 @@ class LearningConfig:
     REDIS_HEALTH_CHECK_INTERVAL = int(os.getenv("REDIS_HEALTH_CHECK_INTERVAL", "30"))
     REDIS_RETRY_ON_TIMEOUT = os.getenv("REDIS_RETRY_ON_TIMEOUT", "false").lower() == "true"
     REDIS_DISABLE_SECONDS = int(os.getenv("REDIS_DISABLE_SECONDS", "30"))
-    SLOW_USER_LOOKUP_MS = int(os.getenv("SLOW_USER_LOOKUP_MS", "200"))
 
     # Numbers Dictation
     NUMBERS_ADMIN_TOKEN = os.getenv("NUMBERS_ADMIN_TOKEN")
