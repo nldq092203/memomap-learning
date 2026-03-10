@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from sqlalchemy import select, delete
+from sqlalchemy import select
 from src.infra.db.orm import CoCeExerciseORM
-from src.infra.db import SessionLocal
+from src.infra.db.connection import db_session
 
 
 class CoCeExerciseRepository:
@@ -23,8 +23,7 @@ class CoCeExerciseRepository:
         transcript_path: str | None = None,
     ) -> CoCeExerciseORM:
         """Create a new exercise record."""
-        db = SessionLocal()
-        try:
+        with db_session() as db:
             exercise = CoCeExerciseORM(
                 name=name,
                 level=level.upper(),
@@ -41,63 +40,48 @@ class CoCeExerciseRepository:
             db.commit()
             db.refresh(exercise)
             return exercise
-        finally:
-            db.close()
 
     def get_by_id(self, exercise_id: str) -> CoCeExerciseORM | None:
         """Get exercise by ID."""
-        db = SessionLocal()
-        try:
+        with db_session() as db:
             stmt = select(CoCeExerciseORM).where(CoCeExerciseORM.id == exercise_id)
             return db.execute(stmt).scalar_one_or_none()
-        finally:
-            db.close()
 
     def get_by_level(self, level: str, topic: str | None = None) -> list[CoCeExerciseORM]:
         """Get all exercises for a specific level, optionally filtered by topic, ordered by creation date (newest first)."""
-        db = SessionLocal()
-        try:
+        with db_session() as db:
             stmt = (
                 select(CoCeExerciseORM)
                 .where(CoCeExerciseORM.level == level.upper())
             )
             if topic:
                 stmt = stmt.where(CoCeExerciseORM.topic == topic)
-            
+
             stmt = stmt.order_by(CoCeExerciseORM.created_at.desc())
             return list(db.execute(stmt).scalars().all())
-        finally:
-            db.close()
 
     def get_all(self) -> list[CoCeExerciseORM]:
         """Get all exercises, ordered by level and creation date."""
-        db = SessionLocal()
-        try:
+        with db_session() as db:
             stmt = select(CoCeExerciseORM).order_by(
                 CoCeExerciseORM.level, CoCeExerciseORM.created_at.desc()
             )
             return list(db.execute(stmt).scalars().all())
-        finally:
-            db.close()
 
     def get_by_media_id(self, media_id: str) -> CoCeExerciseORM | None:
         """Get exercise by media ID (video ID or audio UUID)."""
-        db = SessionLocal()
-        try:
+        with db_session() as db:
             stmt = select(CoCeExerciseORM).where(CoCeExerciseORM.media_id == media_id)
             return db.execute(stmt).scalar_one_or_none()
-        finally:
-            db.close()
 
     def update_exercise(
         self, exercise_id: str, **updates
     ) -> CoCeExerciseORM | None:
         """Update exercise fields."""
-        db = SessionLocal()
-        try:
+        with db_session() as db:
             stmt = select(CoCeExerciseORM).where(CoCeExerciseORM.id == exercise_id)
             exercise = db.execute(stmt).scalar_one_or_none()
-            
+
             if not exercise:
                 return None
 
@@ -112,24 +96,19 @@ class CoCeExerciseRepository:
             db.commit()
             db.refresh(exercise)
             return exercise
-        finally:
-            db.close()
 
     def delete_exercise(self, exercise_id: str) -> bool:
         """Delete an exercise."""
-        db = SessionLocal()
-        try:
+        with db_session() as db:
             stmt = select(CoCeExerciseORM).where(CoCeExerciseORM.id == exercise_id)
             exercise = db.execute(stmt).scalar_one_or_none()
-            
+
             if not exercise:
                 return False
 
             db.delete(exercise)
             db.commit()
             return True
-        finally:
-            db.close()
 
 
 __all__ = ["CoCeExerciseRepository"]

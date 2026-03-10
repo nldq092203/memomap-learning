@@ -64,7 +64,17 @@ export function Navigation() {
         {isAuthenticated && (
           <nav className="hidden md:flex items-center justify-center gap-1 flex-1">
             {primaryNavItems.map(({ label, href, icon: Icon }) => {
-              const isActive = pathname === href
+              // Custom active logic so that subpages of "Training" highlight the "Training" tab
+              let isActive = pathname === href
+              if (href === "/learning/workspace") {
+                isActive = 
+                  pathname === href || 
+                  pathname.startsWith("/learning/coce-practice") || 
+                  pathname.startsWith("/learning/delf-practice") || 
+                  pathname.startsWith("/learning/speaking-practice") || 
+                  pathname.startsWith("/learning/numbers-dictation")
+              }
+
               return (
                 <Link
                   key={href}

@@ -18,6 +18,7 @@ import {
   TrendingUp,
   Award,
   MessageSquare,
+  ClipboardList,
 } from "lucide-react"
 import { useLearningLang } from "@/lib/contexts/learning-lang-context"
 import { useConfirmationDialog } from "@/components/ui/confirmation-dialog"
@@ -304,6 +305,34 @@ export default function WorkspacePage() {
                   >
                     <Play className="h-4 w-4" />
                     Start Speaking Practice
+                  </Button>
+                </div>
+              </div>
+
+              {/* DELF Practice Activity */}
+              <div className="group relative overflow-hidden rounded-xl border border-border/60 bg-gradient-to-br from-background to-muted/30 p-6 transition-all hover:border-primary/40 hover:shadow-lg">
+                <div className="absolute right-4 top-4 opacity-10 transition-opacity group-hover:opacity-20">
+                  <ClipboardList className="h-16 w-16 text-primary" />
+                </div>
+                <div className="relative space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <ClipboardList className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">DELF Exam Practice</h3>
+                      <p className="text-xs text-muted-foreground">Mock Tests (A1-C2)</p>
+                    </div>
+                  </div>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    Simulate real DELF exam conditions with structured listening and reading tests tailored to your CEFR level.
+                  </p>
+                  <Button
+                    className="w-full gap-2"
+                    onClick={() => router.push("/learning/delf-practice")}
+                  >
+                    <Play className="h-4 w-4" />
+                    Start DELF Practice
                   </Button>
                 </div>
               </div>

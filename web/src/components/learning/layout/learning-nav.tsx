@@ -72,7 +72,7 @@ const secondaryNavItems: NavItem[] = [
 interface LearningNavProps {
   showBackButton?: boolean
   customBackAction?: () => void
-  breadcrumbs?: Array<{ label: string; href?: string }>
+  breadcrumbs?: Array<{ label: string; href?: string; onClick?: () => void }>
 }
 
 export const LearningNav = ({ 
@@ -94,7 +94,8 @@ export const LearningNav = ({
   const isSessionDetail = pathname.includes("/learning/session/")
   const isNumbersDictation = pathname.startsWith("/learning/numbers-dictation")
   const isCoCePractice = pathname.startsWith("/learning/coce-practice")
-  const hidePrimaryNav = isSessionDetail || isNumbersDictation || isCoCePractice
+  const isDelfPractice = pathname.startsWith("/learning/delf-practice")
+  const hidePrimaryNav = isSessionDetail || isNumbersDictation || isCoCePractice || isDelfPractice
 
   // Dynamic back label for better context (e.g., "Back to Dashboard")
   const backLabel = breadcrumbs && breadcrumbs.length > 0
@@ -136,10 +137,13 @@ export const LearningNav = ({
                   {index === 1 && breadcrumbs.length > 2 && (
                     <span className="sm:hidden text-muted-foreground">...</span>
                   )}
-                  {crumb.href ? (
+                  {crumb.href || crumb.onClick ? (
                     <button
-                      onClick={() => router.push(crumb.href!)}
-                      className="hover:text-foreground transition-colors truncate max-w-[100px] sm:max-w-none"
+                      onClick={() => {
+                        if (crumb.onClick) crumb.onClick()
+                        else if (crumb.href) router.push(crumb.href)
+                      }}
+                      className="cursor-pointer hover:text-foreground transition-colors truncate max-w-[100px] sm:max-w-none"
                     >
                       {crumb.label}
                     </button>
