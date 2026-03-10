@@ -66,6 +66,17 @@ from src.api.web.coce_practice import (
     admin_save_transcript,
     admin_generate_youtube_transcript,
 )
+from src.api.web.delf_practice import (
+    # User endpoints
+    delf_list_tests,
+    delf_get_test,
+    delf_proxy_audio,
+    delf_proxy_asset,
+    # Admin endpoints
+    delf_admin_create_test,
+    delf_admin_update_test,
+    delf_admin_delete_test,
+)
 from src.api.errors import register_error_handlers
 
 
@@ -315,3 +326,43 @@ web_bp.add_url_rule(
 )
 
 __all__ = ["web_bp"]
+
+# ==================== DELF Exam Practice (GitHub + DB backed) ====================
+# User endpoints
+web_bp.add_url_rule(
+    "/delf/tests",
+    view_func=delf_list_tests,
+    methods=["GET"],
+)
+web_bp.add_url_rule(
+    "/delf/tests/<test_id>",
+    view_func=delf_get_test,
+    methods=["GET"],
+)
+web_bp.add_url_rule(
+    "/delf/audio/<path:audio_path>",
+    view_func=delf_proxy_audio,
+    methods=["GET"],
+)
+web_bp.add_url_rule(
+    "/delf/assets/<path:asset_path>",
+    view_func=delf_proxy_asset,
+    methods=["GET"],
+)
+
+# Admin endpoints
+web_bp.add_url_rule(
+    "/delf/admin/tests",
+    view_func=delf_admin_create_test,
+    methods=["POST"],
+)
+web_bp.add_url_rule(
+    "/delf/admin/tests/<test_paper_id>",
+    view_func=delf_admin_update_test,
+    methods=["PATCH"],
+)
+web_bp.add_url_rule(
+    "/delf/admin/tests/<test_paper_id>",
+    view_func=delf_admin_delete_test,
+    methods=["DELETE"],
+)

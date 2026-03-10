@@ -268,3 +268,33 @@ class CoCeExerciseORM(Base):
 
     def __repr__(self) -> str:
         return f"<CoCeExerciseORM(id={self.id!r}, name={self.name!r}, level={self.level!r}, media_type={self.media_type!r})>"
+
+
+class DelfTestPaperORM(Base):
+    """DELF exam test paper metadata."""
+
+    __tablename__ = "delf_test_papers"
+
+    test_id: so.Mapped[str] = so.mapped_column(sa.String(50), nullable=False)
+    level: so.Mapped[str] = so.mapped_column(sa.String(16), nullable=False)
+    variant: so.Mapped[str] = so.mapped_column(sa.String(100), nullable=False)
+    section: so.Mapped[str] = so.mapped_column(sa.String(100), nullable=False)
+    exercise_count: so.Mapped[int] = so.mapped_column(sa.Integer, default=0, nullable=False)
+    audio_filename: so.Mapped[str | None] = so.mapped_column(sa.String(255), nullable=True)
+    status: so.Mapped[str] = so.mapped_column(sa.String(16), default="active", nullable=False)
+    github_path: so.Mapped[str] = so.mapped_column(sa.String(500), nullable=False)
+
+    __table_args__ = (
+        sa.Index("ix_delf_test_papers_level_section_status", "level", "section", "status"),
+        sa.UniqueConstraint("test_id", "level", "variant", "section", name="uq_delf_test_paper"),
+        sa.CheckConstraint(
+            "level IN ('A1', 'A2', 'B1', 'B2', 'C1', 'C2')", name="ck_delf_level"
+        ),
+        sa.CheckConstraint(
+            "status IN ('active', 'draft', 'archived')", name="ck_delf_status"
+        ),
+        sa.CheckConstraint("exercise_count >= 0", name="ck_delf_exercise_count"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<DelfTestPaperORM(id={self.id!r}, test_id={self.test_id!r}, level={self.level!r}, section={self.section!r})>"

@@ -9,6 +9,7 @@ from src.infra.db.orm import (
     LearningAudioLessonORM,
     VocabularyCardORM,
     CoCeExerciseORM,
+    DelfTestPaperORM,
 )
 
 __all__ = [
@@ -25,5 +26,6 @@ __all__ = [
     "LearningAudioLessonORM",
     "VocabularyCardORM",
     "CoCeExerciseORM",
+    "DelfTestPaperORM",
 ]
 
