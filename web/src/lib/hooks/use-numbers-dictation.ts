@@ -14,6 +14,7 @@ type ExerciseState = {
   audioRef: string
   blueprintId: string
   answer: string
+  script: string | null
   isCorrect: boolean | null
   errors: NumbersAnswerError[]
 }
@@ -67,6 +68,7 @@ export function useNumbersDictation() {
           audioRef,
           blueprintId,
           answer: "",
+          script: null,
           isCorrect: null,
           errors: [],
         })
@@ -131,6 +133,7 @@ export function useNumbersDictation() {
 
       const evaluated: ExerciseState = {
         ...current,
+        script: res.script ?? null,
         isCorrect,
         errors: res.errors,
       }

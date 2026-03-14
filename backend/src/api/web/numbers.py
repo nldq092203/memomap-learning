@@ -145,6 +145,7 @@ def numbers_submit_answer(session_id: str, user_id: str):
             data={
                 "exercise_id": state.id,
                 "correct": result.is_correct,
+                "script": state.exercise.sentence,
                 "errors": [e.model_dump(mode="json") for e in result.errors],
             }
         )

@@ -127,6 +127,7 @@ export default function NumbersDictationPage() {
         lines.push(
           [
             `#${index + 1} [${ex.numberType}] ${statusLabel}`,
+            ...(ex.script ? [`Script:   ${ex.script}`] : []),
             `Expected: ${expectedDisplay}`,
             `Answer:   ${answerDisplay}`,
           ].join("\n"),
@@ -253,6 +254,17 @@ export default function NumbersDictationPage() {
             >
               Your browser does not support the audio element.
             </audio>
+          </div>
+        )}
+
+        {feedbackExercise.script && (
+          <div className="space-y-1 rounded-md border bg-background px-3 py-2">
+            <p className="text-[11px] font-medium text-muted-foreground">
+              Script
+            </p>
+            <p className="text-sm leading-relaxed text-foreground">
+              {feedbackExercise.script}
+            </p>
           </div>
         )}
 
