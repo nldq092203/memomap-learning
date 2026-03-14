@@ -6,8 +6,8 @@ import type {
   SessionListResponse as ApiSessionListResponse,
 } from "@/lib/types/api/learning"
 
-export type LearningLanguage = "fr" | "en"
-export const LEARNING_LANGS: LearningLanguage[] = ["fr", "en"]
+export type LearningLanguage = "fr"
+export const LEARNING_LANGS: LearningLanguage[] = ["fr"]
 
 export interface AudioLessonTimestampSegment {
   text: string

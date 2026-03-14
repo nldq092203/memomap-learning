@@ -1,26 +1,16 @@
 "use client"
 
 import React, { createContext, useContext } from "react"
-import type { LearningLanguage } from "@/lib/services/learning-api"
 
 type Ctx = {
-  lang: LearningLanguage
-  setLang: (v: LearningLanguage) => void
+  lang: "fr"
 }
 
 const LearningLangContext = createContext<Ctx | null>(null)
 
 export function LearningLangProvider({ children }: { children: React.ReactNode }) {
-  // Hardcoded to French - app is now French-focused
-  const lang: LearningLanguage = "fr"
-  
-  // No-op function to maintain API compatibility
-  const setLang = (_v: LearningLanguage) => {
-    // Language is hardcoded to French, no changes allowed
-  }
-
   return (
-    <LearningLangContext.Provider value={{ lang, setLang }}>
+    <LearningLangContext.Provider value={{ lang: "fr" }}>
       {children}
     </LearningLangContext.Provider>
   )

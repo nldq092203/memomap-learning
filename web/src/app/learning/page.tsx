@@ -11,7 +11,7 @@ import {
   CardContent,
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent } from "@/components/ui/tabs"
+
 import { Progress } from "@/components/ui/progress"
 import {
   Flame,
@@ -108,8 +108,7 @@ export default function LearningPage() {
         <ShortcutPanel />
       </div>
 
-      <Tabs defaultValue="dashboard" className="space-y-8">
-        <TabsContent value="dashboard" className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
           {isLoadingAnalytics ? (
             <div className="grid gap-6 lg:grid-cols-3">
               <div className="h-64 lg:col-span-2 animate-pulse rounded-3xl bg-muted/40" />
@@ -257,25 +256,7 @@ export default function LearningPage() {
               <WorkspaceShelf language={selectedLanguage} />
             </>
           )}
-        </TabsContent>
-
-        <TabsContent value="transcribe">
-          <div className="rounded-3xl border bg-card/80 p-4 sm:p-6">
-            <p className="text-sm text-muted-foreground mb-4">
-              Open the full transcription workspace to record or upload audio and generate transcripts.
-            </p>
-            <Button
-              variant="default"
-              className="gap-2"
-              onClick={() => router.push("/learning/transcribe")}
-            >
-              <Mic className="h-4 w-4" />
-              Go to Transcribe
-            </Button>
-          </div>
-        </TabsContent>
-
-      </Tabs>
+      </div>
 
       <BottomDock actions={dockActions} />
       <StartSessionModal open={isStartOpen} onOpenChange={setIsStartOpen} />
