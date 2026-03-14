@@ -25,16 +25,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const login = useCallback(async (googleToken: string, isAccessToken = false) => {
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
-      const { token } = await authService.exchangeGoogleToken(googleToken, isAccessToken);
-      localStorage.setItem('auth_token', token);
-      
-      // Fetch user data after successful token exchange
-      const user = await authService.getCurrentUser();
+      setState({
+        user: null,
+        isAuthenticated: false,
+        isLoading: true,
+        error: null,
+      });
+
+      const { user } = await authService.exchangeGoogleToken(googleToken, isAccessToken);
       setState({
         user,
-        isAuthenticated: user !== null,
+        isAuthenticated: true,
         isLoading: false,
         error: null,
+      });
+
+      void authService.getCurrentUser().then(freshUser => {
+        if (!freshUser) return;
+        setState(prev => {
+          if (!prev.isAuthenticated) return prev;
+          return {
+            ...prev,
+            user: freshUser,
+          };
+        });
       });
     } catch (error) {
       setState(prev => ({
@@ -42,6 +56,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         isLoading: false,
         error: error instanceof Error ? error.message : 'Login failed',
       }));
+      throw error;
     }
   }, []);
 

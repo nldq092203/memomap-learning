@@ -1,142 +1,131 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { useAuth } from "@/lib/hooks/use-auth"
 import { LoginButton } from "@/components/auth/login-button"
 import {
-  AlertTriangle,
   ArrowRight,
   BookOpen,
+  ChevronRight,
   Layers,
+  LineChart,
   Mic,
   Target,
 } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
+const featureCards = [
+  {
+    href: "/learning/review-hub",
+    icon: Target,
+    label: "Révisions",
+    description: "Pratiquez ce que vous avez appris aujourd&apos;hui.",
+    accent: "bg-blue-50",
+    iconClassName: "bg-blue-100/80 text-blue-600",
+  },
+  {
+    href: "/learning/vocab",
+    icon: BookOpen,
+    label: "Vocabulaire",
+    description: "Gérez et révisez votre liste de mots.",
+    accent: "bg-emerald-50",
+    iconClassName: "bg-emerald-100/80 text-emerald-600",
+  },
+  {
+    href: "/learning/workspace",
+    icon: Layers,
+    label: "Entraînement",
+    description: "Exercices quotidiens de langue et dictée.",
+    accent: "bg-amber-50",
+    iconClassName: "bg-amber-100/80 text-amber-600",
+  },
+  {
+    href: "/learning/transcribe",
+    icon: Mic,
+    label: "Transcrire",
+    description: "Convertissez la voix en texte et retravaillez-la.",
+    accent: "bg-violet-50",
+    iconClassName: "bg-violet-100/80 text-violet-600",
+  },
+] as const
+
 export default function HomePage() {
-  const router = useRouter()
-  const { isAuthenticated, isLoading, user, error } = useAuth()
+  const { isAuthenticated, isLoading } = useAuth()
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-8 w-8 rounded-full bg-primary animate-pulse" />
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-muted/10">
+        <p className="text-sm text-muted-foreground">Préparation de votre espace…</p>
       </div>
     )
   }
 
   return (
     <div className="min-h-screen bg-muted/10">
-      <div className="max-w-6xl mx-auto px-4 md:px-6 py-14 md:py-20">
-        {/* Backend Status Alert */}
-        {error && error.includes("Failed to fetch") && (
-          <div className="mb-8 p-4 border border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950 rounded-lg animate-fade-in">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-orange-600" />
-              <div className="text-sm">
-                <strong className="text-orange-800 dark:text-orange-200">Backend not available:</strong> Cannot connect
-                to Flask server. Make sure your Flask backend is running on{" "}
-                <code className="bg-orange-100 dark:bg-orange-900 px-1 rounded">http://127.0.0.1:5000</code>
-              </div>
-            </div>
+      <div className="mx-auto flex min-h-screen max-w-6xl items-center px-6 py-16">
+        <div className="grid w-full gap-10 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-center">
+          <div className="space-y-8">
+            <h1 className="text-5xl font-semibold tracking-tight text-slate-950 sm:text-6xl md:text-7xl">
+              MemoMap
+            </h1>
+
+            <p className="max-w-3xl text-2xl font-medium leading-tight text-slate-800 sm:text-3xl md:text-4xl">
+              Votre espace unifié pour progresser en français, chaque jour.
+            </p>
+
+            {isAuthenticated ? (
+              <Button asChild size="lg" className="h-12 rounded-full px-6 text-base">
+                <Link href="/learning">
+                  Continuer l&apos;apprentissage
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            ) : (
+              <LoginButton size="lg" className="h-12 rounded-full px-6 text-base">
+                Continuer l&apos;apprentissage
+              </LoginButton>
+            )}
           </div>
-        )}
 
-        <section className="animate-fade-in">
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] gap-10 lg:gap-16 items-center">
-            {/* Left: hero copy */}
-            <div className="space-y-6">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight">
-                <span className="block">Welcome to</span>
-                <span className="block text-primary">MemoMap</span>
-              </h1>
-              <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-xl leading-relaxed">
-                Learn French with MemoMap, a tool that helps you learn language with multiple activities and AI assistant.
-              </p>
-
-              <div className="space-y-4">
-                {isAuthenticated ? (
-                  <>
-                    <p className="text-sm sm:text-base text-foreground">
-                      Welcome back,{" "}
-                      <span className="font-semibold">
-                        {user?.name || "learner"}
-                      </span>
-                      !
-                    </p>
-                    <Link
-                      href="/learning"
-                      className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-primary text-primary-foreground hover:shadow-lg hover:shadow-primary/25 transition-all duration-200 font-medium"
-                    >
-                      Continue learning
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-sm sm:text-base text-muted-foreground">
-                      Sign in to start building your vocabulary, reviewing sessions, and tracking progress.
-                    </p>
-                    <LoginButton size="lg" />
-                  </>
-                )}
+          <Card className="overflow-hidden border-border/70 bg-white py-0 shadow-[0_22px_50px_-38px_rgba(15,23,42,0.3)]">
+            <CardContent className="px-5 py-5 sm:px-6 sm:py-6">
+              <div className="mb-5 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                    Accueil
+                  </p>
+                  <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
+                    Espace d&apos;apprentissage
+                  </h2>
+                </div>
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <LineChart className="h-5 w-5" />
+                </div>
               </div>
-            </div>
 
-            {/* Right: feature overview card */}
-            <div className="flex justify-center lg:justify-end">
-              <Card className="w-full max-w-md border-none shadow-lg shadow-primary/5 bg-card/90 backdrop-blur">
-                <CardHeader className="pb-4">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                    <span className="h-2 w-2 rounded-full bg-primary" />
-                    Learning workspace
-                  </div>
-                  <CardTitle className="mt-3 text-lg">Everything you need in one place</CardTitle>
-                  <CardDescription className="text-sm">
-                    Jump back into your practice flow or explore a focused tool.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="grid grid-cols-1 gap-2">
-                    <HomeRow
-                      href="/learning/review-hub"
-                      icon={Target}
-                      label="Review Hub"
-                      description="Run spaced‑repetition reviews for due vocabulary."
-                      active={false}
-                    />
-                    <HomeRow
-                      href="/learning/vocab"
-                      icon={BookOpen}
-                      label="Vocabulary"
-                      description="Browse, edit, and add cards to your deck."
-                      active={false}
-                    />
-                    <HomeRow
-                      href="/learning/workspace"
-                      icon={Layers}
-                      label="Training"
-                      description="Practice dictation and other guided activities."
-                      active={false}
-                    />
-                    <HomeRow
-                      href="/learning/transcribe"
-                      icon={Mic}
-                      label="Transcribe"
-                      description="Record, upload, and turn audio into transcripts."
-                      active={false}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
+              <div className="space-y-3">
+                {featureCards.map(item => (
+                  <HomeRow key={item.href} {...item} />
+                ))}
+              </div>
+
+              <div className="mt-5">
+                <Button
+                  asChild
+                  variant="outline"
+                  className="h-12 w-full rounded-2xl border-dashed border-slate-300 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-50"
+                >
+                  <Link href="/learning">
+                    Explorer toutes les fonctionnalités
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   )
@@ -147,25 +136,45 @@ type HomeRowProps = {
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>
   label: string
   description: string
-  active?: boolean
+  accent: string
+  iconClassName: string
 }
 
-function HomeRow({ href, icon: Icon, label, description, active }: HomeRowProps) {
+function HomeRow({
+  href,
+  icon: Icon,
+  label,
+  description,
+  accent,
+  iconClassName,
+}: HomeRowProps) {
   return (
     <Link
       href={href}
-      className={cn(
-        "group flex items-start gap-3 rounded-lg border px-3 py-2.5 text-left transition-all",
-        "hover:bg-muted/60 hover:border-primary/40",
-        active && "border-primary bg-primary/5",
-      )}
+      className="group block rounded-[1.75rem] border border-slate-200/80 bg-white p-2 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
     >
-      <div className="mt-1 flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
-        <Icon className="h-4 w-4" />
-      </div>
-      <div className="space-y-0.5">
-        <p className="text-sm font-medium">{label}</p>
-        <p className="text-xs text-muted-foreground">{description}</p>
+      <div className={cn("rounded-[1.2rem] p-0", accent)}>
+        <div className="flex items-center gap-4 rounded-[1.15rem] border border-white/80 bg-white/90 px-4 py-4">
+          <div
+            className={cn(
+              "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl",
+              iconClassName,
+            )}
+          >
+            <Icon className="h-6 w-6" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xl font-semibold tracking-tight text-slate-950">
+              {label}
+            </p>
+            <p className="mt-1 max-w-xs text-sm leading-6 text-slate-500">
+              {description}
+            </p>
+          </div>
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-300 transition-colors group-hover:border-slate-300 group-hover:text-slate-600">
+            <ChevronRight className="h-5 w-5" />
+          </div>
+        </div>
       </div>
     </Link>
   )

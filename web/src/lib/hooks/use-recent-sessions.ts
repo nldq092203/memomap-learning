@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react"
-import { learningApi, type LearningLanguage } from "@/lib/services/learning-api"
+import { LEARNING_LANGS, learningApi, type LearningLanguage } from "@/lib/services/learning-api"
 import type { SessionSummary } from "@/lib/types/learning-session"
 
 export interface UseRecentSessionsReturn {
@@ -20,17 +20,24 @@ export const useRecentSessions = (filterLanguage?: LearningLanguage): UseRecentS
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const defaultLanguage = LEARNING_LANGS[0]
   
   // Track pagination state per language
-  const [nextPageTokens, setNextPageTokens] = useState<Record<string, string | undefined>>({
-    en: undefined,
-    fr: undefined,
-  })
+  const [nextPageTokens, setNextPageTokens] = useState<Record<LearningLanguage, string | undefined>>(
+    () =>
+      Object.fromEntries(
+        LEARNING_LANGS.map(language => [language, undefined]),
+      ) as Record<LearningLanguage, string | undefined>,
+  )
 
   // Track if we've made the initial backend fetch
   const hasInitialBackendFetch = useRef<boolean>(false)
   // Track initial fetch per language (for filtered mode)
-  const hasFetchedByLang = useRef<Record<LearningLanguage, boolean>>({ en: false, fr: false })
+  const hasFetchedByLang = useRef<Record<LearningLanguage, boolean>>(
+    Object.fromEntries(
+      LEARNING_LANGS.map(language => [language, false]),
+    ) as Record<LearningLanguage, boolean>,
+  )
   const isBackendFetching = useRef<boolean>(false)
 
   // Load sessions from backend
@@ -103,39 +110,21 @@ export const useRecentSessions = (filterLanguage?: LearningLanguage): UseRecentS
           hasFetchedByLang.current[filterLanguage] = true
         }
       } else {
-        const [enResult, frResult] = await Promise.allSettled([
-          learningApi.getSessions("en", 20, append ? nextPageTokens.en : undefined, force),
-          learningApi.getSessions("fr", 20, append ? nextPageTokens.fr : undefined, force),
-        ])
-        
-        // Extract successful results
-        const enData = enResult.status === "fulfilled" ? enResult.value : { sessions: [], nextPageToken: undefined }
-        const frData = frResult.status === "fulfilled" ? frResult.value : { sessions: [], nextPageToken: undefined }
-        
-        console.log("EN sessions result:", enResult.status, enData)
-        console.log("FR sessions result:", frResult.status, frData)
-        
-        // Log any rejected requests
-        if (enResult.status === "rejected") {
-          console.warn("Failed to load English sessions:", enResult.reason)
-        }
-        if (frResult.status === "rejected") {
-          console.warn("Failed to load French sessions:", frResult.reason)
-        }
-        
-        // Update pagination tokens
+        const result = await learningApi.getSessions(
+          defaultLanguage,
+          20,
+          append ? nextPageTokens[defaultLanguage] : undefined,
+          force,
+        )
+
+        console.log(`${defaultLanguage.toUpperCase()} sessions result:`, result.sessions.length)
+
         setNextPageTokens(prev => ({
-          en: enData.nextPageToken,
-          fr: frData.nextPageToken,
+          ...prev,
+          [defaultLanguage]: result.nextPageToken,
         }))
-        
-        // Combine sessions from both languages
-        const allSessions = [
-          ...(Array.isArray(enData.sessions) ? enData.sessions : []),
-          ...(Array.isArray(frData.sessions) ? frData.sessions : []),
-        ]
-        
-        console.log("Combined sessions:", allSessions)
+
+        const allSessions = Array.isArray(result.sessions) ? result.sessions : []
         
         const mapped: SessionSummary[] = allSessions.map(s => ({
           id: s.id,
@@ -168,7 +157,7 @@ export const useRecentSessions = (filterLanguage?: LearningLanguage): UseRecentS
       setIsLoadingMore(false)
       isBackendFetching.current = false
     }
-  }, [nextPageTokens, filterLanguage])
+  }, [nextPageTokens, filterLanguage, defaultLanguage])
 
   // Update last accessed timestamp
   const updateLastAccessed = useCallback(async (sessionId: string) => {
@@ -187,17 +176,21 @@ export const useRecentSessions = (filterLanguage?: LearningLanguage): UseRecentS
   const loadMoreSessions = useCallback(async () => {
     const hasMore = filterLanguage 
       ? nextPageTokens[filterLanguage]
-      : (nextPageTokens.en || nextPageTokens.fr)
+      : nextPageTokens[defaultLanguage]
     if (!hasMore || isLoadingMore) {
       return
     }
     await loadBackendSessions(false, true) // Append mode
-  }, [nextPageTokens, isLoadingMore, loadBackendSessions, filterLanguage])
+  }, [nextPageTokens, isLoadingMore, loadBackendSessions, filterLanguage, defaultLanguage])
 
   // Refresh sessions (both local and backend)
   const refreshSessions = useCallback(async () => {
     // Reset pagination tokens on refresh
-    setNextPageTokens({ en: undefined, fr: undefined })
+    setNextPageTokens(
+      Object.fromEntries(
+        LEARNING_LANGS.map(language => [language, undefined]),
+      ) as Record<LearningLanguage, string | undefined>,
+    )
     await loadBackendSessions(true, false)
   }, [loadBackendSessions])
 
@@ -218,7 +211,7 @@ export const useRecentSessions = (filterLanguage?: LearningLanguage): UseRecentS
   const hasMore = !!(
     filterLanguage 
       ? nextPageTokens[filterLanguage]
-      : (nextPageTokens.en || nextPageTokens.fr)
+      : nextPageTokens[defaultLanguage]
   )
 
   return {

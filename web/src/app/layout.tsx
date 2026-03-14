@@ -26,9 +26,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <SettingsProvider>
                 <LearningLangProvider>
                   <OnboardingProvider>
-                    <Navigation />
-                    {children}
-                    <ToastProvider />
+                    <div className="min-h-screen lg:flex">
+                      <Navigation />
+                      <main className="min-w-0 flex-1 pt-16 lg:pt-0">
+                        {children}
+                      </main>
+                      <ToastProvider />
+                    </div>
                   </OnboardingProvider>
                 </LearningLangProvider>
               </SettingsProvider>
@@ -39,9 +43,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <SettingsProvider>
               <LearningLangProvider>
                 <OnboardingProvider>
-                  <Navigation />
-                  {children}
-                  <ToastProvider />
+                  <div className="min-h-screen lg:flex">
+                    <Navigation />
+                    <main className="min-w-0 flex-1 pt-16 lg:pt-0">
+                      {children}
+                    </main>
+                    <ToastProvider />
+                  </div>
                 </OnboardingProvider>
               </LearningLangProvider>
             </SettingsProvider>

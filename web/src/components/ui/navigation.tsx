@@ -4,113 +4,256 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import {
-  Home,
-  Target,
   BookOpen,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Home,
   Layers,
+  LineChart,
+  Menu,
   Mic,
+  Target,
+  X,
 } from "lucide-react"
 import { UserProfile } from "@/components/auth/user-profile"
 import { LoginButton } from "@/components/auth/login-button"
+import { LogoutButton } from "@/components/auth/logout-button"
 import { useIsAuthenticated, useAuthLoading } from "@/lib/hooks/use-auth"
 import { cn } from "@/lib/utils"
 
 const primaryNavItems = [
-  { label: "Dashboard", href: "/learning", icon: Home },
-  { label: "Review Hub", href: "/learning/review-hub", icon: Target },
-  { label: "Vocabulary", href: "/learning/vocab", icon: BookOpen },
-  { label: "Training", href: "/learning/workspace", icon: Layers },
-  { label: "Transcribe", href: "/learning/transcribe", icon: Mic },
+  { label: "Accueil", href: "/learning", icon: Home },
+  { label: "Révisions", href: "/learning/review-hub", icon: Target },
+  { label: "Vocabulaire", href: "/learning/vocab", icon: BookOpen },
+  { label: "Entraînement", href: "/learning/workspace", icon: Layers },
+  { label: "Transcrire", href: "/learning/transcribe", icon: Mic },
 ] as const
+
+function isNavItemActive(pathname: string, href: string) {
+  if (href === "/learning/workspace") {
+    return (
+      pathname === href ||
+      pathname.startsWith("/learning/coce-practice") ||
+      pathname.startsWith("/learning/delf-practice") ||
+      pathname.startsWith("/learning/speaking-practice") ||
+      pathname.startsWith("/learning/numbers-dictation")
+    )
+  }
+
+  return pathname === href
+}
 
 export function Navigation() {
   const isAuthenticated = useIsAuthenticated()
   const isLoading = useAuthLoading()
   const pathname = usePathname()
+  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isMobileOpen, setIsMobileOpen] = useState(false)
+  const [isReviewOpen, setIsReviewOpen] = useState(false)
 
-   const [isReviewOpen, setIsReviewOpen] = useState(false)
+  useEffect(() => {
+    const handleOpen = () => setIsReviewOpen(true)
+    const handleClose = () => setIsReviewOpen(false)
 
-   useEffect(() => {
-     const handleOpen = () => setIsReviewOpen(true)
-     const handleClose = () => setIsReviewOpen(false)
+    window.addEventListener("learning-review-open", handleOpen)
+    window.addEventListener("learning-review-close", handleClose)
 
-     window.addEventListener("learning-review-open", handleOpen)
-     window.addEventListener("learning-review-close", handleClose)
+    return () => {
+      window.removeEventListener("learning-review-open", handleOpen)
+      window.removeEventListener("learning-review-close", handleClose)
+    }
+  }, [])
 
-     return () => {
-       window.removeEventListener("learning-review-open", handleOpen)
-       window.removeEventListener("learning-review-close", handleClose)
-     }
-   }, [])
+  useEffect(() => {
+    setIsMobileOpen(false)
+  }, [pathname])
 
-   if (isReviewOpen) {
-     return null
-   }
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem("memomap_sidebar_collapsed")
+      if (raw === "1") setIsCollapsed(true)
+    } catch {}
+  }, [])
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        "memomap_sidebar_collapsed",
+        isCollapsed ? "1" : "0",
+      )
+    } catch {}
+  }, [isCollapsed])
+
+  if (isReviewOpen) {
+    return null
+  }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-colors duration-200">
-      <div className="flex h-16 items-center px-4 sm:px-6 max-w-7xl mx-auto gap-4">
-        {/* Left: logo */}
-        <div className="flex items-center gap-3 sm:gap-4 flex-1">
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-lg shadow-sm">
-              M
+    <>
+      <div className="fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between border-b border-border/60 bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:hidden">
+        <Link href="/" className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
+            <LineChart className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold">MemoMap</p>
+            <p className="text-xs text-muted-foreground">Espace d&apos;apprentissage</p>
+          </div>
+        </Link>
+
+        <button
+          type="button"
+          onClick={() => setIsMobileOpen(true)}
+          className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/70 bg-background text-foreground shadow-sm"
+          aria-label="Ouvrir la navigation"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+      </div>
+
+      <div
+        className={cn(
+          "fixed inset-0 z-50 bg-slate-950/30 transition-opacity lg:hidden",
+          isMobileOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0",
+        )}
+        onClick={() => setIsMobileOpen(false)}
+      />
+
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-[60] flex w-[84vw] max-w-[320px] flex-col border-r border-border/70 bg-background shadow-2xl transition-transform duration-300 lg:static lg:z-auto lg:max-w-none lg:translate-x-0 lg:shadow-none",
+          isMobileOpen ? "translate-x-0" : "-translate-x-full",
+          isCollapsed ? "lg:w-24" : "lg:w-72",
+        )}
+      >
+        <div className="flex items-center justify-between border-b border-border/60 px-4 py-4 lg:px-5">
+          <Link
+            href="/"
+            className={cn(
+              "flex items-center gap-3 overflow-hidden",
+              isCollapsed && "lg:justify-center",
+            )}
+          >
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
+              <LineChart className="h-5 w-5" />
             </div>
-            <span className="font-semibold text-sm hidden sm:inline">MemoMap</span>
+            <div className={cn("min-w-0", isCollapsed && "lg:hidden")}>
+              <p className="font-semibold tracking-tight">MemoMap</p>
+              <p className="text-xs text-muted-foreground">
+                Espace d&apos;apprentissage
+              </p>
+            </div>
           </Link>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsMobileOpen(false)}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/70 lg:hidden"
+              aria-label="Fermer la navigation"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsCollapsed(prev => !prev)}
+              className="hidden h-9 w-9 items-center justify-center rounded-xl border border-border/70 text-muted-foreground transition hover:text-foreground lg:flex"
+              aria-label={isCollapsed ? "Ouvrir la barre latérale" : "Réduire la barre latérale"}
+            >
+              {isCollapsed ? (
+                <ChevronsRight className="h-4 w-4" />
+              ) : (
+                <ChevronsLeft className="h-4 w-4" />
+              )}
+            </button>
+          </div>
         </div>
 
-        {/* Center: main nav */}
-        {isAuthenticated && (
-          <nav className="hidden md:flex items-center justify-center gap-1 flex-1">
+        <div className="flex-1 overflow-y-auto px-3 py-4">
+          <div className={cn("mb-4 px-2", isCollapsed && "lg:hidden")}>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+              Navigation
+            </p>
+          </div>
+
+          <nav className="space-y-1.5">
             {primaryNavItems.map(({ label, href, icon: Icon }) => {
-              // Custom active logic so that subpages of "Training" highlight the "Training" tab
-              let isActive = pathname === href
-              if (href === "/learning/workspace") {
-                isActive = 
-                  pathname === href || 
-                  pathname.startsWith("/learning/coce-practice") || 
-                  pathname.startsWith("/learning/delf-practice") || 
-                  pathname.startsWith("/learning/speaking-practice") || 
-                  pathname.startsWith("/learning/numbers-dictation")
-              }
+              const isActive = isNavItemActive(pathname, href)
 
               return (
                 <Link
                   key={href}
                   href={href}
                   className={cn(
-                    "relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all",
-                    "hover:bg-muted/50",
+                    "group flex items-center gap-3 rounded-2xl px-3 py-3 transition-all",
                     isActive
-                      ? "text-primary bg-primary/10"
-                      : "text-muted-foreground hover:text-foreground",
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
+                    isCollapsed && "lg:justify-center lg:px-2",
                   )}
+                  title={label}
                 >
-                  <Icon className="h-4 w-4" />
-                  <span className="hidden sm:inline whitespace-nowrap">{label}</span>
-                  {isActive && (
-                    <span className="absolute inset-x-2 -bottom-2 h-0.5 rounded-full bg-primary" />
-                  )}
+                  <div
+                    className={cn(
+                      "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl",
+                      isActive
+                        ? "bg-primary/15"
+                        : "bg-muted/80 text-muted-foreground group-hover:text-foreground",
+                    )}
+                  >
+                    <Icon className="h-5 w-5" />
+                  </div>
+
+                  <div className={cn("min-w-0 flex-1", isCollapsed && "lg:hidden")}>
+                    <p className="font-medium">{label}</p>
+                  </div>
+
+                  <ChevronRight
+                    className={cn(
+                      "h-4 w-4 shrink-0 text-muted-foreground/60",
+                      isCollapsed && "lg:hidden",
+                    )}
+                  />
                 </Link>
               )
             })}
           </nav>
-        )}
+        </div>
 
-        {/* Right: profile/auth */}
-        <div className="flex items-center justify-end gap-3 flex-1">
+        <div className="border-t border-border/60 p-3">
           {isLoading ? (
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
+            <div className="flex items-center gap-3 rounded-2xl bg-muted/60 px-3 py-3">
+              <div className="h-10 w-10 animate-pulse rounded-full bg-muted" />
+              <div className={cn("space-y-2", isCollapsed && "lg:hidden")}>
+                <div className="h-3 w-24 animate-pulse rounded bg-muted" />
+                <div className="h-3 w-32 animate-pulse rounded bg-muted" />
+              </div>
             </div>
           ) : isAuthenticated ? (
-            <UserProfile />
+            <div
+              className={cn(
+                "rounded-2xl border border-border/70 bg-muted/40 p-3",
+                isCollapsed && "lg:px-2",
+              )}
+            >
+              <UserProfile
+                showLogout={false}
+                className={cn(isCollapsed && "lg:justify-center")}
+              />
+              <div className={cn("mt-3", isCollapsed && "lg:hidden")}>
+                <LogoutButton variant="ghost" className="w-full justify-start rounded-xl">
+                  Se déconnecter
+                </LogoutButton>
+              </div>
+            </div>
           ) : (
-            <LoginButton size="sm" />
+            <div className={cn(isCollapsed && "lg:hidden")}>
+              <LoginButton className="w-full justify-center rounded-xl" />
+            </div>
           )}
         </div>
-      </div>
-    </header>
+      </aside>
+    </>
   )
 }

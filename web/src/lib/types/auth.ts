@@ -1,8 +1,20 @@
 export interface User {
   sub: string;
   email: string;
-  name: string;
+  name?: string;
   picture?: string;
+}
+
+export interface AuthTokenExchangeResponse {
+  token: string;
+  user_id: string;
+  email: string;
+}
+
+export interface BackendCurrentUser {
+  user_id: string;
+  email: string;
+  created_at?: string | null;
 }
 
 export interface AuthTokens {

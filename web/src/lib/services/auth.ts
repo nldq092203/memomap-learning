@@ -1,4 +1,8 @@
-import { User } from '@/lib/types/auth';
+import {
+  AuthTokenExchangeResponse,
+  BackendCurrentUser,
+  User,
+} from '@/lib/types/auth';
 import { apiClient } from '@/lib/services/api-client';
 
 export class AuthService {
@@ -18,17 +22,24 @@ export class AuthService {
   /**
    * Exchange Google token (id_token or access_token) for app JWT token
    */
-  async exchangeGoogleToken(token: string, isAccessToken = false): Promise<{ token: string; user_id: string; email: string }> {
+  async exchangeGoogleToken(
+    token: string,
+    isAccessToken = false,
+  ): Promise<{ token: string; user: User }> {
     try {
       const payload = isAccessToken 
         ? { access_token: token }
         : { id_token: token };
       
-      const response = await apiClient.post<{ token: string; user_id: string; email: string }>(
+      const response = await apiClient.post<AuthTokenExchangeResponse>(
         '/auth/token',
         payload
       );
-      return response;
+      this.setToken(response.token);
+      return {
+        token: response.token,
+        user: this.normalizeExchangeUser(response),
+      };
     } catch (error) {
       console.error('Failed to exchange Google token:', error);
       throw new Error('Failed to authenticate with Google');
@@ -66,8 +77,8 @@ export class AuthService {
         return null;
       }
 
-      const user = await apiClient.get<User>('/auth/me');
-      return user;
+      const user = await apiClient.get<BackendCurrentUser>('/auth/me');
+      return this.normalizeBackendUser(user);
     } catch (error) {
       const err = error as Error;
       console.error('Failed to get current user:', err.message);
@@ -107,6 +118,22 @@ export class AuthService {
    */
   private clearClientData(): void {
     this.clearToken();
+  }
+
+  private normalizeExchangeUser(data: AuthTokenExchangeResponse): User {
+    return {
+      sub: data.user_id,
+      email: data.email,
+      name: data.email,
+    };
+  }
+
+  private normalizeBackendUser(data: BackendCurrentUser): User {
+    return {
+      sub: data.user_id,
+      email: data.email,
+      name: data.email,
+    };
   }
 }
 
