@@ -53,7 +53,8 @@ export interface NumbersAnswerError {
 export interface NumbersAnswerResponse {
   session_id: string
   exercise_id: string
-  is_correct: boolean
+  correct?: boolean
+  is_correct?: boolean
   script?: string
   errors: NumbersAnswerError[]
 }

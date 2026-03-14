@@ -129,7 +129,9 @@ export function useNumbersDictation() {
         exercise_id: current.id,
         answer: current.answer,
       })
-      const isCorrect = (res.is_correct ?? (res as any).isCorrect) as boolean
+      const isCorrect = Boolean(
+        res.correct ?? res.is_correct ?? (res as any).isCorrect,
+      )
 
       const evaluated: ExerciseState = {
         ...current,
