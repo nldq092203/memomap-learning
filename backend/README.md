@@ -26,6 +26,7 @@
   - [Numbers Dictation](#numbers-dictation)
   - [Audio Lessons](#audio-lessons)
   - [CO/CE Practice](#coce-practice-comprehension-exercises)
+  - [DELF Practice](#delf-practice)
   - [Speaking Practice](#speaking-practice)
   - [AI Features](#ai-features)
   - [Learning Sessions](#learning-sessions)
@@ -46,6 +47,7 @@
 - 🔢 **Numbers Dictation** - Practice understanding numbers in context with real audio
 - 🎧 **Audio Lessons** - Upload, generate (TTS), and practice with audio content
 - 📖 **CO/CE Practice** - Compréhension Orale/Écrite exercises with questions
+- 📝 **DELF Practice** - Full DELF-style test papers with audio, assets, and structured questions
 - 🗣️ **Speaking Practice** - Structured speaking exercises with model answers
 - 🤖 **AI Tutor** - Powered by Google Gemini for explanations and chat
 - 📊 **Analytics** - Track learning progress and statistics
@@ -91,7 +93,12 @@
    - Multiple question types: single choice, inference, lexical
    - Level-based organization (A1-C2)
 
-5. **Speaking Practice**
+5. **DELF Practice**
+   - DELF exam-style test papers by level, variant, and section
+   - Rich exercise formats: MCQ, matching, image questions, reading documents
+   - Audio and visual assets proxied from GitHub
+
+6. **Speaking Practice**
    - Topic-based speaking exercises
    - Progressive difficulty (warmup → opinion → nuance)
    - Model answers for comparison
@@ -421,6 +428,21 @@ The API is designed with clear separation between **Admin** and **User** roles. 
 
 **Use Case:** Create comprehension exercises (listening/reading) with questions, then publish to static hosting for user access.
 
+#### DELF Practice - Admin
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/web/delf/admin/tests` | Register DELF test paper metadata |
+| PATCH | `/web/delf/admin/tests/{id}` | Update DELF test metadata |
+| DELETE | `/web/delf/admin/tests/{id}` | Remove DELF test metadata |
+
+**Requirements:**
+- JWT authentication
+- Admin privileges
+- GitHub test paper JSON must already exist at the registered path
+
+**Use Case:** Register and manage DELF test paper metadata in the database while the actual paper content, audio, and assets remain stored in GitHub-backed static storage.
+
 ---
 
 ### User Endpoints
@@ -474,6 +496,17 @@ The API is designed with clear separation between **Admin** and **User** roles. 
 | GET | `/web/coce/exercises/{id}/questions?level={level}&type={co\|ce}` | Get questions |
 
 **Use Case:** Users practice listening (CO) or reading (CE) comprehension with level-appropriate exercises (A1-C2).
+
+#### DELF Practice - User
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/web/delf/tests?level={level}&variant={variant}&section={section}` | List DELF test papers |
+| GET | `/web/delf/tests/{testId}?level={level}&variant={variant}&section={section}` | Get full DELF test paper |
+| GET | `/web/delf/audio/{level}/{variant}/{section}/audio/{file}` | Proxy DELF audio |
+| GET | `/web/delf/assets/{level}/{variant}/{section}/assets/{file}` | Proxy DELF image assets |
+
+**Use Case:** Users open full DELF exam papers with their original structure, then load associated audio and visual assets through the backend.
 
 #### Speaking Practice - User
 
@@ -821,7 +854,7 @@ flowchart TB
     UserUI -->|Get next exercise| SessionAPI
     SessionAPI -->|Retrieve| Memory
     Memory -->|Exercise| SessionAPI
-    SessionAPI -->|Audio URL (GitHub)| UserUI
+    SessionAPI -->|Audio URL from GitHub| UserUI
     
     UserUI -->|Submit answer| SessionAPI
     SessionAPI -->|Validate| Validator
@@ -1104,7 +1137,7 @@ flowchart TB
     
     %% Admin workflow
     AdminUI -->|1. Upload audio + transcript| LessonAPI
-    AdminUI -->|1. Generate from text (TTS)| LessonAPI
+    AdminUI -->|1. Generate from text via TTS| LessonAPI
     LessonAPI -->|Synthesize| TTS
     TTS -->|Audio bytes| LessonAPI
     LessonAPI -->|2. Save to Drive| AdminDrive
@@ -1122,7 +1155,7 @@ flowchart TB
     
     %% User workflow - Personal Dictation
     UserUI -->|Upload personal audio| LessonAPI
-    UserUI -->|Upload + transcribe (Whisper)| Whisper
+    UserUI -->|Upload and transcribe via Whisper| Whisper
     Whisper -->|Transcript| LessonAPI
     LessonAPI -->|Save to personal storage| UserDrive
     UserUI -->|Fetch for dictation practice| LessonAPI
@@ -1561,6 +1594,265 @@ Authorization: Bearer <jwt>
         "explanation": "L'article traite des biais de l'IA..."
       }
     ]
+  }
+}
+```
+
+---
+
+## DELF Practice
+
+**Admin Workflow:** Admins register DELF test paper metadata in PostgreSQL so papers can be discovered in the app, while the source JSON, audio, and assets are hosted in GitHub-backed storage.
+
+**User Workflow:** Users browse DELF papers by level, variant, and section, then retrieve the complete test paper content together with resolved audio and asset URLs.
+
+### Architecture
+
+```mermaid
+flowchart TB
+    subgraph Admin["Admin Workflow"]
+        AdminUI[Admin Interface]
+        AdminAPI[DELF Admin API]
+    end
+
+    subgraph User["User Workflow"]
+        UserUI[User Interface]
+        UserAPI[DELF User API]
+    end
+
+    subgraph Data
+        DB[(PostgreSQL<br/>Test Metadata)]
+        GitHub[(GitHub Repository<br/>DELF Content)]
+    end
+
+    AdminUI -->|Register test metadata| AdminAPI
+    AdminAPI -->|Create or update metadata| DB
+
+    UserUI -->|List tests by level variant section| UserAPI
+    UserAPI -->|Query available papers| DB
+    DB -->|Paper metadata| UserAPI
+    UserAPI -->|List response| UserUI
+
+    UserUI -->|Open selected test| UserAPI
+    UserAPI -->|Lookup metadata| DB
+    DB -->|GitHub path + audio filename| UserAPI
+    UserAPI -->|Fetch test JSON| GitHub
+    GitHub -->|Structured paper content| UserAPI
+    UserAPI -->|Resolved content + audio URL| UserUI
+
+    UserUI -->|Request audio or asset| UserAPI
+    UserAPI -->|Proxy raw file| GitHub
+    GitHub -->|Streamed binary content| UserAPI
+    UserAPI -->|Audio or image stream| UserUI
+```
+
+### Content Model
+
+DELF papers are stored as structured JSON with:
+
+- Test metadata: `test_id`, `section`, `audio_filename`
+- Exercises: multiple choice, multiple choice with images, matching, and nested sub-questions
+- Reading documents: embedded article or email-style documents
+- Extra transcripts: standalone transcript blocks not attached to a question
+
+### Storage Layout
+
+#### Database Metadata
+
+Each DELF paper is registered in PostgreSQL with:
+
+- `test_id`
+- `level`
+- `variant`
+- `section`
+- `github_path`
+- `exercise_count`
+- `audio_filename`
+- `status`
+
+#### GitHub Content Layout
+
+```
+{BASE_URL}/delf/
+└── a2/
+    └── tout-public-a2/
+        └── CO/
+            ├── tp/
+            │   ├── tp-01.json
+            │   └── tp-02.json
+            ├── audio/
+            │   ├── DELF_TP_A2_Piste05.mp3
+            │   └── DELF_TP_A2_Piste06.mp3
+            └── assets/
+                ├── tp01-q1-a.webp
+                ├── tp01-q1-b.webp
+                └── ...
+```
+
+### Retrieval Workflow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant API
+    participant DB
+    participant GitHub
+
+    User->>API: GET /api/web/delf/tests?level=A2&variant=tout-public-a2&section=CO
+    API->>DB: Query registered papers
+    DB-->>API: Metadata list
+    API-->>User: {items, level}
+
+    User->>API: GET /api/web/delf/tests/tp-01?level=A2&variant=tout-public-a2&section=CO
+    API->>DB: Find metadata for tp-01
+    DB-->>API: github_path + audio_filename
+    API->>GitHub: Fetch tp/tp-01.json
+    GitHub-->>API: Structured DELF paper
+    API->>API: Build audio_url when audio exists
+    API-->>User: {metadata, content, audio_url}
+
+    opt Audio or image rendering
+        User->>API: GET /api/web/delf/audio/{path}
+        API->>GitHub: Fetch raw audio
+        GitHub-->>API: Audio stream
+        API-->>User: Stream audio
+
+        User->>API: GET /api/web/delf/assets/{path}
+        API->>GitHub: Fetch raw image
+        GitHub-->>API: Asset stream
+        API-->>User: Stream asset
+    end
+```
+
+### Endpoints
+
+#### Admin Endpoints
+
+| Method | Endpoint | Description | Role |
+|--------|----------|-------------|------|
+| POST | `/web/delf/admin/tests` | Register DELF test paper metadata | Admin |
+| PATCH | `/web/delf/admin/tests/{id}` | Update DELF test metadata | Admin |
+| DELETE | `/web/delf/admin/tests/{id}` | Delete DELF test metadata | Admin |
+
+**Requirements:** JWT authentication and admin privileges.
+
+#### User Endpoints
+
+| Method | Endpoint | Description | Role |
+|--------|----------|-------------|------|
+| GET | `/web/delf/tests?level=A2&variant=tout-public-a2&section=CO` | List available DELF papers | User |
+| GET | `/web/delf/tests/{testId}?level=A2&variant=tout-public-a2&section=CO` | Get full DELF paper detail | User |
+| GET | `/web/delf/audio/{level}/{variant}/{section}/audio/{file}` | Proxy DELF audio from GitHub | User |
+| GET | `/web/delf/assets/{level}/{variant}/{section}/assets/{file}` | Proxy DELF image assets from GitHub | User |
+
+**Requirements:** JWT authentication.
+
+### Examples
+
+#### List DELF Test Papers
+
+**Request:**
+```http
+GET /api/web/delf/tests?level=A2&variant=tout-public-a2&section=CO
+Authorization: Bearer <jwt>
+```
+
+**Response (200):**
+```json
+{
+  "status": "success",
+  "data": {
+    "items": [
+      {
+        "id": "550e8400-e29b-41d4-a716-446655440000",
+        "test_id": "tp-01",
+        "level": "A2",
+        "variant": "tout-public-a2",
+        "section": "CO",
+        "exercise_count": 6,
+        "audio_filename": "DELF_TP_A2_Piste05.mp3",
+        "status": "active",
+        "created_at": "2026-03-14T10:00:00Z"
+      }
+    ],
+    "level": "A2"
+  }
+}
+```
+
+#### Get DELF Test Paper
+
+**Request:**
+```http
+GET /api/web/delf/tests/tp-01?level=A2&variant=tout-public-a2&section=CO
+Authorization: Bearer <jwt>
+```
+
+**Response (200):**
+```json
+{
+  "status": "success",
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "test_id": "tp-01",
+    "level": "A2",
+    "variant": "tout-public-a2",
+    "section": "CO",
+    "exercise_count": 6,
+    "audio_filename": "DELF_TP_A2_Piste05.mp3",
+    "status": "active",
+    "created_at": "2026-03-14T10:00:00Z",
+    "updated_at": "2026-03-14T10:00:00Z",
+    "github_path": "delf/a2/tout-public-a2/CO/tp/tp-01.json",
+    "audio_url": "https://raw.githubusercontent.com/.../delf/a2/tout-public-a2/CO/audio/DELF_TP_A2_Piste05.mp3",
+    "content": {
+      "test_id": "tp-01",
+      "section": "CO",
+      "audio_filename": "DELF_TP_A2_Piste05.mp3",
+      "exercises": [
+        {
+          "id": "ex-1",
+          "title": "Comprendre une annonce",
+          "type": "multiple_choice",
+          "question_text": "Où va le train ?",
+          "options": ["Paris", "Lyon", "Marseille"],
+          "correct_answer": 1,
+          "points": 1
+        }
+      ],
+      "extra_transcripts": []
+    }
+  }
+}
+```
+
+#### Register DELF Test Paper Metadata
+
+**Request:**
+```http
+POST /api/web/delf/admin/tests
+Authorization: Bearer <jwt>
+Content-Type: application/json
+
+{
+  "test_id": "tp-01",
+  "level": "A2",
+  "variant": "tout-public-a2",
+  "section": "CO",
+  "exercise_count": 6,
+  "audio_filename": "DELF_TP_A2_Piste05.mp3",
+  "status": "active"
+}
+```
+
+**Response (201):**
+```json
+{
+  "status": "success",
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "message": "Test paper registered.",
+    "github_path": "delf/a2/tout-public-a2/CO/tp/tp-01.json"
   }
 }
 ```
