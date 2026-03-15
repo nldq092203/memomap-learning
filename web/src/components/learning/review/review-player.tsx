@@ -1,13 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import type { LearningVocabCard, ReviewGrade } from "@/lib/types/learning-vocab"
-import { ReviewProgress } from "@/components/learning/review/review-progress"
 import { Flashcard } from "@/components/learning/review/flashcard"
 import { CardEditDrawer } from "@/components/learning/vocabulary/card-edit-drawer"
 import { ReviewControls } from "@/components/learning/review/review-controls"
 import { SubmitDialog } from "@/components/learning/review/submit-dialog"
-import { FloatingWindow } from "@/components/ui/floating-windows"
 import { REVIEW_CHALLENGES, type ReviewChallengeId } from "@/components/learning/review/challenges"
 
 interface ReviewPlayerProps {
@@ -33,6 +31,8 @@ export function ReviewPlayer({
   const [isFlipped, setIsFlipped] = useState(false)
   const [showInfo, setShowInfo] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [slideDirection, setSlideDirection] = useState<"forward" | "backward">("forward")
+  const [cardRenderKey, setCardRenderKey] = useState(0)
   type GradeMap = Record<string, ReviewGrade>
   const [reviewedMarks, setReviewedMarks] = useState<GradeMap>({})
   const reviewed = Object.keys(reviewedMarks).length
@@ -46,30 +46,34 @@ export function ReviewPlayer({
     enabledChallenges.includes(ch.id)
   )
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (currentIndex < totalCards - 1) {
+      setSlideDirection("forward")
       setCurrentIndex(currentIndex + 1)
       setIsFlipped(false)
+      setCardRenderKey((prev) => prev + 1)
     } else {
       // At last card: open submit confirmation instead of exiting implicitly
       setShowConfirm(true)
     }
-  }
+  }, [currentIndex, totalCards])
 
-  const handlePrev = () => {
+  const handlePrev = useCallback(() => {
     if (currentIndex > 0) {
+      setSlideDirection("backward")
       setCurrentIndex(currentIndex - 1)
       setIsFlipped(false)
+      setCardRenderKey((prev) => prev + 1)
     }
-  }
+  }, [currentIndex])
 
-  const handleMark = (quality: "again" | "hard" | "good" | "easy") => {
+  const handleMark = useCallback((quality: "again" | "hard" | "good" | "easy") => {
     const id = currentCard?.id
     if (id) {
       setReviewedMarks(prev => ({ ...prev, [id]: quality }))
     }
     handleNext()
-  }
+  }, [currentCard?.id, handleNext])
 
   // Keyboard Shortcuts
   useEffect(() => {
@@ -95,7 +99,7 @@ export function ReviewPlayer({
     }
     window.addEventListener("keydown", handleKey)
     return () => window.removeEventListener("keydown", handleKey)
-  }, [isFlipped, currentCard]) // Re-bind when flip state or card changes
+  }, [isFlipped, currentCard, handleMark]) // Re-bind when flip state or card changes
 
   if (!currentCard) {
     return (
@@ -105,41 +109,42 @@ export function ReviewPlayer({
     )
   }
 
-  // Calculate segments for progress bar
-  const segments = Array.from({ length: totalCards }).map((_, i) => {
-    if (i < currentIndex) return "completed"
-    if (i === currentIndex) return "current"
-    return "upcoming"
-  })
+  const progressPercent = totalCards > 0 ? ((currentIndex + 1) / totalCards) * 100 : 0
 
-  // Zen Mode Layout
   return (
     <div className="fixed inset-0 z-[100] bg-background flex flex-col">
-       {/* Top Bar: Progress & Exit */}
-       <div className="h-14 flex items-center justify-between px-4 border-b">
-          <div className="flex-1 flex gap-1 h-1.5 mx-4 max-w-md">
-             {segments.map((status, i) => (
-               <div 
-                 key={i} 
-                 className={`flex-1 rounded-full transition-all duration-300 ${
-                   status === "completed" ? "bg-primary" :
-                   status === "current" ? "bg-primary/40" :
-                   "bg-muted"
-                 }`}
-               />
-             ))}
-          </div>
-          <button 
-            onClick={onExit}
-            className="text-sm font-medium text-muted-foreground hover:text-foreground px-3 py-1 rounded-md hover:bg-muted transition-colors"
-          >
-            Exit
-          </button>
-       </div>
+      <div className="absolute inset-x-0 top-0 z-20 h-px bg-slate-200/70">
+        <div
+          className="h-full bg-primary transition-[width] duration-300 ease-out"
+          style={{ width: `${progressPercent}%` }}
+        />
+      </div>
 
-       {/* Main Content: Flashcard & Challenges */}
-       <div className="flex-1 flex flex-col items-center justify-start p-4 min-h-0 overflow-y-auto">
-          <div className="flex-1 flex flex-col items-center justify-center w-full">
+      <div className="flex h-14 items-center justify-between px-4 md:px-6">
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+            Session
+          </span>
+          <span className="text-sm font-medium text-slate-700">
+            {currentIndex + 1} / {totalCards}
+          </span>
+        </div>
+        <button
+          onClick={onExit}
+          className="rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          Quitter
+        </button>
+      </div>
+
+      <div className="flex-1 flex flex-col items-center justify-start p-4 min-h-0 overflow-y-auto md:px-6">
+        <div className="flex flex-1 flex-col items-center justify-center w-full">
+          <div
+            key={`${currentCard.id}-${cardRenderKey}`}
+            className={`w-full animate-in duration-300 ${
+              slideDirection === "forward" ? "slide-in-from-right-6" : "slide-in-from-left-6"
+            } fade-in`}
+          >
             <Flashcard
               card={currentCard}
               language={language}
@@ -150,35 +155,34 @@ export function ReviewPlayer({
               maxWidthClass={maxWidthClass}
             />
           </div>
+        </div>
 
-          {/* Integrated Challenges */}
-          {activeChallenges.length > 0 && (
-            <div className={`w-full ${maxWidthClass} mb-8 animate-in fade-in slide-in-from-bottom-4 duration-500`}>
-               {activeChallenges.map(challenge => (
-                 <challenge.Component
-                    key={challenge.id}
-                    card={currentCard}
-                    language={language}
-                 />
-               ))}
-            </div>
-          )}
-       </div>
+        {activeChallenges.length > 0 && (
+          <div className={`w-full ${maxWidthClass} mb-8 animate-in fade-in slide-in-from-bottom-4 duration-500`}>
+            {activeChallenges.map(challenge => (
+              <challenge.Component
+                key={challenge.id}
+                card={currentCard}
+                language={language}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
-       {/* Bottom Controls */}
-       <div className="p-4 safe-area-bottom pt-0">
-          <ReviewControls
-            currentIndex={currentIndex}
-            total={totalCards}
-            isFlipped={isFlipped}
-            onPrev={handlePrev}
-            onNext={handleNext}
-            onMark={handleMark}
-            onSubmitClick={() => setShowConfirm(true)}
-            onExit={onExit}
-            onFlip={() => setIsFlipped(true)}
-          />
-       </div>
+      <div className="safe-area-bottom p-4 pt-0 md:px-6">
+        <ReviewControls
+          currentIndex={currentIndex}
+          total={totalCards}
+          isFlipped={isFlipped}
+          onPrev={handlePrev}
+          onNext={handleNext}
+          onMark={handleMark}
+          onSubmitClick={() => setShowConfirm(true)}
+          onExit={onExit}
+          onFlip={() => setIsFlipped(true)}
+        />
+      </div>
 
       <CardEditDrawer
         open={showInfo}

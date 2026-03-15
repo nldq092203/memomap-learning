@@ -103,8 +103,8 @@ export function AudioControls({ audioUrl, autoPlay = false, onEnded, className }
   }
 
   return (
-    <Card className={cn("border-border/60 bg-card/50 backdrop-blur-sm", className)}>
-      <CardContent className="p-6 space-y-4">
+    <Card className={cn("rounded-[28px] border-slate-200 bg-white shadow-sm", className)}>
+      <CardContent className="space-y-4 p-6">
         <audio
           ref={audioRef}
           src={audioUrl}
@@ -119,7 +119,6 @@ export function AudioControls({ audioUrl, autoPlay = false, onEnded, className }
           onCanPlay={() => setIsLoading(false)}
         />
 
-        {/* Progress Bar */}
         <div className="space-y-2">
           <Slider
             value={[currentTime]}
@@ -129,25 +128,23 @@ export function AudioControls({ audioUrl, autoPlay = false, onEnded, className }
             disabled={isLoading}
             className="cursor-pointer"
           />
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex items-center justify-between text-xs text-slate-500">
             <span>{formatTime(currentTime)}</span>
             <span>{formatTime(duration)}</span>
           </div>
         </div>
 
-        {/* Controls */}
         <div className="flex items-center justify-between gap-4">
-          {/* Play/Pause Button */}
           <Button
             size="lg"
             onClick={togglePlayPause}
             disabled={isLoading}
-            className="gap-2 flex-1 sm:flex-initial"
+            className="flex-1 gap-2 rounded-full bg-emerald-100 text-emerald-700 hover:bg-emerald-200 sm:flex-initial"
           >
             {isLoading ? (
               <>
                 <Loader2 className="h-5 w-5 animate-spin" />
-                <span className="hidden sm:inline">Loading...</span>
+                <span className="hidden sm:inline">Chargement...</span>
               </>
             ) : isPlaying ? (
               <>
@@ -157,18 +154,17 @@ export function AudioControls({ audioUrl, autoPlay = false, onEnded, className }
             ) : (
               <>
                 <Play className="h-5 w-5" />
-                <span className="hidden sm:inline">Play</span>
+                <span className="hidden sm:inline">Lecture</span>
               </>
             )}
           </Button>
 
-          {/* Volume Control */}
-          <div className="hidden sm:flex items-center gap-3 flex-1 max-w-xs">
+          <div className="hidden max-w-xs flex-1 items-center gap-3 sm:flex">
             <Button
               variant="ghost"
               size="icon"
               onClick={toggleMute}
-              className="shrink-0"
+              className="shrink-0 rounded-full text-slate-600 hover:bg-slate-100"
             >
               {isMuted || volume === 0 ? (
                 <VolumeX className="h-4 w-4" />

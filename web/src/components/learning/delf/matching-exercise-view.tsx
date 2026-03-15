@@ -77,7 +77,7 @@ export function MatchingExerciseView({
 
         {/* Documents Grid — stylized magazine-like cards */}
         <div>
-          <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
+          <h4 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             <FileText className="h-4 w-4" />
             Documents
           </h4>
@@ -98,8 +98,8 @@ export function MatchingExerciseView({
 
         {/* Matching Grid — one radio group per document */}
         <div>
-          <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
-            Match each document to a person
+          <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            Associez chaque document à une personne
           </h4>
 
           <div className="space-y-5">
@@ -124,10 +124,9 @@ export function MatchingExerciseView({
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-xs font-bold text-primary-foreground shadow-sm">
-                      {doc.title.replace('Document ', '')}
+                    <span className="rounded-full bg-slate-950 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-white shadow-sm">
+                      {doc.title.toUpperCase()}
                     </span>
-                    <span className="text-sm font-medium text-foreground">{doc.title}</span>
                     
                     {showResults && (
                       <span className="ml-auto">

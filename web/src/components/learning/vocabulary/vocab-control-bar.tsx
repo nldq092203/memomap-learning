@@ -50,24 +50,24 @@ export function VocabControlBar({
   
   if (selectedCount > 0) {
     return (
-      <div className="flex items-center justify-between p-2 bg-primary/5 border border-primary/20 rounded-xl animate-in fade-in slide-in-from-top-2 duration-200">
+      <div className="animate-in slide-in-from-top-2 duration-200 flex items-center justify-between rounded-[20px] border border-primary/20 bg-primary/5 p-2">
         <div className="flex items-center gap-4 px-2">
            <Button variant="ghost" size="icon" onClick={onClearSelection} className="h-8 w-8">
              <X className="h-4 w-4" />
            </Button>
            <span className="text-sm font-medium text-primary">
-             {selectedCount} selected
+             {selectedCount} sélectionné{selectedCount > 1 ? "s" : ""}
            </span>
            <Separator orientation="vertical" className="h-4" />
            <div className="flex items-center gap-2">
               <Button size="sm" variant="secondary" onClick={() => onBulkAction("review")} className="h-8 text-xs">
-                 Add to Review
+                 Ajouter à la révision
               </Button>
               <Button size="sm" variant="outline" onClick={() => onBulkAction("suspend")} className="h-8 text-xs">
-                 Suspend
+                 Suspendre
               </Button>
               <Button size="sm" variant="ghost" onClick={() => onBulkAction("delete")} className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10">
-                 Delete
+                 Supprimer
               </Button>
            </div>
         </div>
@@ -76,44 +76,45 @@ export function VocabControlBar({
   }
 
   return (
-    <div className="flex flex-col md:flex-row md:items-center gap-4 p-1">
+    <div className="flex flex-col gap-4 p-1 md:flex-row md:items-center">
       {/* Search - Wide on left */}
       <div className="relative flex-1 min-w-[240px]">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input 
-          placeholder={`Search ${totalCount} words...`} 
+          placeholder={`Rechercher parmi ${totalCount} mots...`} 
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-9 bg-background border-border/60 focus-visible:ring-primary/20 transition-shadow"
+          className="h-11 rounded-2xl border border-white/60 bg-white/70 pl-9 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-sm focus-visible:ring-primary/15"
         />
       </div>
 
       {/* Actions Group - Desktop */}
-      <div className="flex items-center gap-3 overflow-x-auto pb-1 md:pb-0 no-scrollbar">
+      <div className="no-scrollbar flex items-center gap-3 overflow-x-auto pb-1 md:pb-0">
         {/* Filters */}
         <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-          <SelectTrigger className="w-[130px] h-10 border-dashed bg-transparent">
+          <SelectTrigger className="h-11 w-[170px] rounded-2xl border border-white/60 bg-white/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
              <div className="flex items-center gap-2 text-muted-foreground">
                <SlidersHorizontal className="h-3.5 w-3.5" />
                <span className="text-sm truncate">
-                 {statusFilter === "all" ? "All Status" : 
-                  statusFilter === "review" ? "Mastered" : 
-                  statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)}
+                 {statusFilter === "all" ? "Tous les statuts" : 
+                  statusFilter === "review" ? "Maîtrisé" : 
+                  statusFilter === "learning" ? "En apprentissage" :
+                  "Nouveau"}
                </span>
              </div>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="new">New</SelectItem>
-            <SelectItem value="learning">Learning</SelectItem>
-            <SelectItem value="review">Mastered</SelectItem>
+            <SelectItem value="all">Tous les statuts</SelectItem>
+            <SelectItem value="new">Nouveau</SelectItem>
+            <SelectItem value="learning">En apprentissage</SelectItem>
+            <SelectItem value="review">Maîtrisé</SelectItem>
           </SelectContent>
         </Select>
 
         <Separator orientation="vertical" className="h-6 hidden md:block" />
 
         {/* View Toggle */}
-        <div className="flex items-center bg-muted/40 rounded-lg p-1 border border-border/40">
+        <div className="flex items-center rounded-2xl border border-white/60 bg-white/70 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
            <Button
              variant="ghost"
              size="sm"
@@ -122,7 +123,7 @@ export function VocabControlBar({
                "h-7 w-7 p-0 rounded-md transition-all",
                viewMode === "list" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
              )}
-             title="List View"
+             title="Vue liste"
            >
              <ListIcon className="h-4 w-4" />
            </Button>
@@ -134,16 +135,16 @@ export function VocabControlBar({
                "h-7 w-7 p-0 rounded-md transition-all",
                viewMode === "grid" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
              )}
-             title="Grid View"
+             title="Vue grille"
            >
              <LayoutGrid className="h-4 w-4" />
            </Button>
         </div>
 
         {/* Add Button */}
-        <Button onClick={onAddWord} className="h-10 px-5 gap-2 shadow-sm font-medium ml-2 shrink-0">
+        <Button onClick={onAddWord} className="ml-2 h-11 shrink-0 gap-2 rounded-2xl px-5 font-medium shadow-sm">
           <Plus className="h-4 w-4" />
-          Add Word
+          Ajouter un mot
         </Button>
       </div>
     </div>

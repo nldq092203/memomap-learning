@@ -18,6 +18,20 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+def _parse_csv_env(name: str) -> list[str]:
+    """Parse comma-separated env values and trim quotes/whitespace."""
+    raw = os.getenv(name, "")
+    if not raw:
+        return []
+
+    values: list[str] = []
+    for part in raw.split(","):
+        cleaned = part.strip().strip("\"'")
+        if cleaned:
+            values.append(cleaned)
+    return values
+
+
 class LearningConfig:
     """Learning app configuration."""
 
@@ -28,16 +42,12 @@ class LearningConfig:
     GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
     GOOGLE_WEB_CLIENT_ID = os.getenv("GOOGLE_WEB_CLIENT_ID")
     GOOGLE_EXTENSION_CLIENT_ID = os.getenv("GOOGLE_EXTENSION_CLIENT_ID")
-    ALLOWED_REDIRECT_URIS = set((os.getenv("ALLOWED_REDIRECT_URIS") or "").split(","))
+    ALLOWED_REDIRECT_URIS = set(_parse_csv_env("ALLOWED_REDIRECT_URIS"))
 
     # CORS
     WEB_ORIGIN = os.getenv("WEB_ORIGIN", "http://localhost:3000")
     EXTENSION_ORIGIN = os.getenv("EXTENSION_ORIGIN")
-    ALLOWED_ORIGINS = (
-        os.getenv("ALLOWED_ORIGINS", "").split(",")
-        if os.getenv("ALLOWED_ORIGINS")
-        else []
-    )
+    ALLOWED_ORIGINS = _parse_csv_env("ALLOWED_ORIGINS")
     SECURE_COOKIE = os.getenv("SECURE_COOKIE", "false").lower() == "true"
     GOOGLE_REDIRECT_URI = os.getenv(
         "GOOGLE_REDIRECT_URI",

@@ -29,32 +29,30 @@ export function AiAssistHeader({
   mode,
 }: AiAssistHeaderProps) {
   const primaryLabel = mode === "chat"
-    ? (isChatting ? "Sending..." : "Ask")
-    : (isExplaining ? "Explaining..." : "Explain")
+    ? (isChatting ? "Envoi..." : "Demander")
+    : (isExplaining ? "Analyse..." : "Expliquer")
 
   return (
-    <div className="rounded-2xl border bg-background/60 backdrop-blur-md shadow-sm p-3">
+    <div className="rounded-[22px] border border-slate-200 bg-white/90 p-3 shadow-sm backdrop-blur">
       <div className="flex flex-wrap items-center gap-3">
-        {/* Logo and Title */}
-        <div className="inline-flex items-center gap-2 text-sm font-semibold flex-shrink-0">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-primary/15 text-primary">
+        <div className="inline-flex min-w-0 items-center gap-2 text-sm font-semibold text-slate-800">
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-primary/10 text-primary">
             <Sparkles className="h-4 w-4" />
           </span>
-          <span>AI Assistant</span>
+          <span className="truncate">Assistant IA</span>
         </div>
 
-        {/* Controls */}
-        <div className="flex flex-wrap items-center gap-2 ml-auto">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
           <Select value={level} onValueChange={(v: CEFRLevel) => onLevelChange(v)}>
-            <SelectTrigger className="h-8 w-24 bg-background border">
-              <SelectValue placeholder="Select level" />
+            <SelectTrigger className="h-9 w-24 rounded-full border-slate-200 bg-slate-50 text-slate-700">
+              <SelectValue placeholder="Niveau" />
             </SelectTrigger>
             <SelectContent
-              className="min-w-[6rem] z-[9999] bg-white border border-border shadow-xl"
+              className="z-[9999] min-w-[6rem] border border-border bg-white shadow-xl"
               position="popper"
               sideOffset={4}
             >
-              {(["A2", "B1", "B2", "C1"] as const).map((l) => (
+              {(["A2", "B1", "B2"] as const).map((l) => (
                 <SelectItem key={l} value={l}>
                   {l}
                 </SelectItem>
@@ -66,7 +64,7 @@ export function AiAssistHeader({
             size="sm"
             onClick={onExplain}
             disabled={isExplaining || isChatting}
-            className="gap-1"
+            className="h-9 rounded-full px-4 gap-1.5"
           >
             <Sparkles className="h-3.5 w-3.5" />
             {primaryLabel}

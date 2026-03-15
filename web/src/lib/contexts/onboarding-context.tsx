@@ -1,6 +1,12 @@
 "use client"
 
-import React, { createContext, useContext, useState, useEffect } from "react"
+import React, { createContext, useContext } from "react"
+
+/**
+ * Simplified onboarding context — no longer auto-redirects.
+ * The feature guide is now a modal accessible from the learning dashboard.
+ * This context is kept for API compatibility but does nothing.
+ */
 
 type UserLevel = "beginner" | "intermediate" | "advanced"
 type DailyGoal = 15 | 30 | 60
@@ -20,68 +26,18 @@ interface OnboardingContextType {
 
 const OnboardingContext = createContext<OnboardingContextType | null>(null)
 
-const STORAGE_KEY_COMPLETED = "onboarding_completed"
-const STORAGE_KEY_PREFERENCES = "user_preferences"
-
 export function OnboardingProvider({ children }: { children: React.ReactNode }) {
-  const [isCompleted, setIsCompleted] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false
-    try {
-      return localStorage.getItem(STORAGE_KEY_COMPLETED) === "true"
-    } catch {
-      return false
-    }
-  })
-
-  const [preferences, setPreferencesState] = useState<UserPreferences | null>(() => {
-    if (typeof window === "undefined") return null
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY_PREFERENCES)
-      return stored ? JSON.parse(stored) : null
-    } catch {
-      return null
-    }
-  })
-
-  const setPreferences = (prefs: UserPreferences) => {
-    setPreferencesState(prefs)
-    try {
-      localStorage.setItem(STORAGE_KEY_PREFERENCES, JSON.stringify(prefs))
-    } catch {
-      // Ignore storage errors
-    }
-  }
-
-  const completeOnboarding = () => {
-    setIsCompleted(true)
-    try {
-      localStorage.setItem(STORAGE_KEY_COMPLETED, "true")
-    } catch {
-      // Ignore storage errors
-    }
-  }
-
-  const resetOnboarding = () => {
-    setIsCompleted(false)
-    setPreferencesState(null)
-    try {
-      localStorage.removeItem(STORAGE_KEY_COMPLETED)
-      localStorage.removeItem(STORAGE_KEY_PREFERENCES)
-    } catch {
-      // Ignore storage errors
-    }
+  // Always considered "completed" — no auto-redirect
+  const value: OnboardingContextType = {
+    isCompleted: true,
+    preferences: { level: "beginner", dailyGoal: 30 },
+    setPreferences: () => {},
+    completeOnboarding: () => {},
+    resetOnboarding: () => {},
   }
 
   return (
-    <OnboardingContext.Provider
-      value={{
-        isCompleted,
-        preferences,
-        setPreferences,
-        completeOnboarding,
-        resetOnboarding,
-      }}
-    >
+    <OnboardingContext.Provider value={value}>
       {children}
     </OnboardingContext.Provider>
   )

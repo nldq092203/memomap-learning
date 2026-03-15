@@ -145,7 +145,7 @@ export function SessionTabProvider({
   // Vocabulary handlers
   const onVocabFormSubmit = useCallback(async () => {
     if (!vocabForm.word.trim()) {
-      notificationService.error("Word is required")
+      notificationService.error("Le mot est obligatoire")
       return
     }
 
@@ -157,7 +157,7 @@ export function SessionTabProvider({
         tags: vocabForm.tags,
       })
       
-      notificationService.success("Vocabulary card added! ✨")
+      notificationService.success("Carte de vocabulaire ajoutee")
       
       // Reset form
       setVocabForm({
@@ -171,7 +171,7 @@ export function SessionTabProvider({
       setShowVocabForm(false)
     } catch (error) {
       console.error('Failed to add vocabulary card:', error)
-      notificationService.error("Failed to add vocabulary card")
+      notificationService.error("Echec de l'ajout de la carte")
     }
   }, [vocabForm, addVocabCard])
 
@@ -214,9 +214,9 @@ export function SessionTabProvider({
     const selectedText = selection?.toString().trim() || ""
     if (selectedText) {
       // This will be handled by the parent component
-      notificationService.info("Please use the 'From Selection' button in the vocab tab")
+      notificationService.info("Utilisez le bouton dedie dans l'onglet vocabulaire.")
     } else {
-      notificationService.info("Please select text in the transcript first")
+      notificationService.info("Selectionnez d'abord du texte dans la transcription.")
     }
   }, [])
 

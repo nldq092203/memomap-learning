@@ -21,26 +21,24 @@ export function MultipleChoiceSetView({
   getAssetUrl,
 }: MultipleChoiceSetViewProps) {
   return (
-    <Card className="overflow-hidden border shadow-sm">
+    <Card className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
       <CardContent className="p-0">
-        
-        {/* Header & Instruction */}
-        <div className="bg-muted/30 border-b p-5 sm:p-6 space-y-4">
-          <h3 className="font-semibold text-lg flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary shrink-0">
+        <div className="space-y-4 border-b bg-slate-50 p-5 sm:p-6">
+          <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-950">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-100 text-xs font-bold text-teal-700">
               {index + 1}
             </span>
             {exercise.title}
           </h3>
           
           {exercise.instruction && (
-            <p className="text-base font-medium text-foreground/80 border-l-4 border-primary/40 pl-4 py-1.5 bg-background">
+            <p className="border-l-4 border-teal-300 bg-white py-1.5 pl-4 text-base font-medium text-slate-700">
               {exercise.instruction}
             </p>
           )}
 
           {exercise.question_text && (
-            <p className="text-muted-foreground text-sm font-medium mt-2">
+            <p className="mt-2 text-sm font-medium text-slate-600">
               {exercise.question_text}
             </p>
           )}
@@ -49,11 +47,11 @@ export function MultipleChoiceSetView({
         {/* Sub-Questions Loop */}
         <div className="p-5 sm:p-8 space-y-6">
           <div className="flex items-center gap-3">
-             <HelpCircle className="h-4 w-4 text-muted-foreground shrink-0" />
-            <span className="text-sm font-semibold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
+             <HelpCircle className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <span className="whitespace-nowrap text-sm font-semibold uppercase tracking-widest text-muted-foreground">
               Questions
             </span>
-            <div className="h-px bg-border flex-1"></div>
+            <div className="h-px flex-1 bg-border"></div>
           </div>
 
           <div className="space-y-6">

@@ -55,12 +55,9 @@ export interface AudioLessonListItem {
   id: string
   name: string
   language: string
-  duration_seconds?: number | null
-  created_at?: string
-  updated_at?: string
   durationSeconds?: number | null
-  audioFileName?: string
-  audioFileSizeBytes?: number | null
+  updatedAt?: string
+  transcriptFile?: { id: string; name: string } | null
 }
 
 export interface AudioLessonsListResponse {
@@ -228,12 +225,12 @@ export const learningApi = {
 
     const response = await apiClient.get<{
       items: AudioLessonListItem[]
-      next_page_token?: string | null
+      nextPageToken?: string | null
     }>(`/web/audio-lessons`, params)
 
     return {
       lessons: response.items || [],
-      nextPageToken: response.next_page_token ?? undefined,
+      nextPageToken: response.nextPageToken ?? undefined,
     }
   },
   async getAudioLessonDetail(lessonId: string): Promise<AudioLessonDetail> {
@@ -249,6 +246,30 @@ export const learningApi = {
     // hyphens and the occasional colon), so we can embed them directly
     // without encoding to avoid introducing "%3A" into the path.
     return `${apiClient.getBaseUrl()}/web/audio-lessons/${lessonId}/audio`
+  },
+  async getAudioLessonAudioBlob(lessonId: string): Promise<Blob> {
+    const token =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem("auth_token")
+        : null
+
+    const response = await fetch(this.getAudioLessonAudioUrl(lessonId), {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    })
+
+    if (!response.ok) {
+      try {
+        const payload = (await response.clone().json()) as {
+          message?: string
+          error?: string
+        }
+        throw new Error(payload.message || payload.error || `HTTP ${response.status}`)
+      } catch {
+        throw new Error(`HTTP ${response.status}`)
+      }
+    }
+
+    return response.blob()
   },
   // Standalone transcript CRUD
   async createTranscript(payload: LearningTranscriptPayload): Promise<LearningTranscript> {

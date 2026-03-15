@@ -1,20 +1,19 @@
 """
 Authentication endpoints (Auth API).
 
-These routes are used by both the Web App (`/api/web/*`) and the Chrome
-Extension (`/api/ext/*`) to:
-- Exchange a Google OAuth token for an application JWT
+These routes are used by the Web App to:
+- Exchange a Google OAuth authorization code for an application JWT
 - Verify JWT validity
 - Fetch the current authenticated user
 - Perform any one-off per-user initialization
 
 High-level frontend flow:
 
-1. Client completes Google OAuth (Web or Extension) and obtains an
-   `id_token` or an `access_token`.
-2. Client calls `POST /api/auth/token` with that Google token.
-3. Backend verifies the Google token with Google, finds/creates the user,
-   and returns an application JWT.
+1. Client completes Google OAuth authorization code flow and obtains a
+   short-lived `code`.
+2. Client calls `POST /api/auth/token` with that code.
+3. Backend exchanges the code with Google, stores Google OAuth tokens,
+   finds/creates the user, and returns an application JWT.
 4. Client stores the JWT and sends it in all subsequent API calls:
    `Authorization: Bearer <jwt>`.
 """
@@ -23,8 +22,10 @@ from flask import Blueprint, request
 
 from src.api.decorators import require_auth
 from src.infra.auth.google_oauth import (
-    verify_google_access_token,
-    verify_google_id_token,
+    build_google_auth_record,
+    exchange_google_auth_code,
+    get_google_user_from_token_response,
+    GoogleOAuthExchangeError,
 )
 from src.infra.auth.jwt import create_jwt, decode_jwt
 from src.infra.db import db_session
@@ -40,49 +41,30 @@ def create_token():
     """
     POST /auth/token
 
-    Exchange a **Google OAuth token** for an application **JWT**.
-    This is the entry point for both Web App and Chrome Extension after
-    they complete Google sign-in.
+    Exchange a **Google OAuth authorization code** for an application **JWT**.
+    The backend also stores the Google access + refresh token pair for
+    later Drive refreshes.
 
     Authentication:
     - This endpoint is **public** (no JWT required).
-    - It expects a valid Google `id_token` or `access_token` in the body.
+    - It expects a valid Google `code` in the body.
 
-    Request JSON (one of the two must be provided):
+    Request JSON:
     ```json
     {
-      "id_token": "google_id_token",          // preferred for Web
-      "access_token": "google_access_token"   // optional alternative
+      "code": "google_authorization_code"
     }
     ```
 
-    Frontend guidelines:
-    - Web App:
-      - Use Google Identity Services / OAuth 2.0 to get an **ID token**.
-      - Call `/api/auth/token` with `{"id_token": "<id_token>"}`.
-    - Chrome Extension:
-      - Use `chrome.identity.getAuthToken()` or extension OAuth flow to
-        get an **access token** (with `email` scope).
-      - Call `/api/auth/token` with `{"access_token": "<access_token>"}`.
-
     Behavior:
-    - The backend verifies the Google token via Google's `tokeninfo` API:
-      - Signature + expiry
-      - Audience (`aud`) matches configured client IDs
-      - Extracts `email` and `sub` from the token.
-    - If verification fails:
-      - Returns `401` with `message="Invalid Google ID token"` or
-        `"Invalid Google access token"`.
-    - If no token is provided:
-      - Returns `400` with
-        `message="id_token or access_token required"`.
+    - Exchanges the code with Google token endpoint.
+    - Verifies the returned Google identity.
+    - Stores Google OAuth tokens under the user record.
+    - If no code is provided:
+      - Returns `400` with `message="code required"`.
     - On success:
       - Looks up the user by email; if not found, creates one and stores
-        Google metadata in `user.extra`:
-        - `google_sub`
-        - `google_email_verified`
-        - `google_iss`
-        - `google_aud`
+        Google metadata in `user.extra`.
       - Issues a JWT with:
         - `sub`: internal user_id
         - `email`: user email
@@ -109,45 +91,43 @@ def create_token():
     """
     body = request.get_json(silent=True) or {}
 
-    id_token = body.get("id_token")
-    access_token = body.get("access_token")
+    code = (body.get("code") or "").strip()
+    redirect_uri = (body.get("redirect_uri") or "").strip() or None
 
-    google_user = None
-
-    if id_token:
-        google_user = verify_google_id_token(id_token)
-        if not google_user:
-            return (
-                ResponseBuilder()
-                .error(
-                    message="Invalid Google ID token",
-                    status_code=401,
-                )
-                .build()
-            )
-    elif access_token:
-        google_user = verify_google_access_token(access_token)
-        if not google_user:
-            return (
-                ResponseBuilder()
-                .error(
-                    message="Invalid Google access token",
-                    status_code=401,
-                )
-                .build()
-            )
-    else:
+    if not code:
         return (
             ResponseBuilder()
             .error(
-                message="id_token or access_token required",
+                message="code required",
                 status_code=400,
             )
             .build()
         )
 
+    try:
+        google_tokens = exchange_google_auth_code(code, redirect_uri=redirect_uri)
+    except GoogleOAuthExchangeError as exc:
+        return (
+            ResponseBuilder()
+            .error(
+                message=str(exc) or "Failed to exchange Google authorization code",
+                status_code=401,
+            )
+            .build()
+        )
+
+    google_user = get_google_user_from_token_response(google_tokens)
+    if not google_user:
+        return (
+            ResponseBuilder()
+            .error(
+                message="Invalid Google authorization code",
+                status_code=401,
+            )
+            .build()
+        )
+
     email = google_user.get("email")
-    sub = google_user.get("sub")
 
     # Ensure user exists in DB
     with db_session() as db:
@@ -161,8 +141,29 @@ def create_token():
             }
 
             user = UserQueries.create(db, email=email, extra=extra)
-            db.commit()
             logger.info(f"[AUTH] Created new user: {email}")
+
+        existing_refresh_token = UserQueries.get_google_auth(user).get("refresh_token")
+        google_auth = build_google_auth_record(
+            google_tokens,
+            existing_refresh_token=existing_refresh_token,
+        )
+        if not google_auth.get("refresh_token"):
+            return (
+                ResponseBuilder()
+                .error(
+                    message="Google offline access was not granted. Please sign in with Google again.",
+                    status_code=401,
+                )
+                .build()
+            )
+        UserQueries.update_google_oauth(
+            db,
+            user,
+            google_user=google_user,
+            google_auth=google_auth,
+        )
+        db.commit()
 
         user_id = user.id
         user_email = user.email

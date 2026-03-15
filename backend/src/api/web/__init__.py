@@ -23,7 +23,15 @@ from src.api.web.vocab import (
     vocab_stats,
 )
 from src.api.web.analytics import analytics_summary
-from src.api.web.ai import ai_chat, web_ai_assist
+from src.api.web.ai import (
+    ai_chat,
+    web_ai_assist,
+    ai_quick_explain,
+    ai_deep_breakdown,
+    ai_generate_examples,
+    ai_grammar_check,
+    ai_create_mnemonic,
+)
 from src.api.web.numbers import (
     numbers_create_session,
     numbers_get_next_exercise,
@@ -156,6 +164,31 @@ web_bp.add_url_rule(
 web_bp.add_url_rule(
     "/ai/assist",
     view_func=web_ai_assist,
+    methods=["POST"],
+)
+web_bp.add_url_rule(
+    "/ai/quick-explain",
+    view_func=ai_quick_explain,
+    methods=["POST"],
+)
+web_bp.add_url_rule(
+    "/ai/deep-breakdown",
+    view_func=ai_deep_breakdown,
+    methods=["POST"],
+)
+web_bp.add_url_rule(
+    "/ai/examples",
+    view_func=ai_generate_examples,
+    methods=["POST"],
+)
+web_bp.add_url_rule(
+    "/ai/grammar-check",
+    view_func=ai_grammar_check,
+    methods=["POST"],
+)
+web_bp.add_url_rule(
+    "/ai/mnemonic",
+    view_func=ai_create_mnemonic,
     methods=["POST"],
 )
 

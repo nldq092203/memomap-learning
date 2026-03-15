@@ -37,7 +37,7 @@ export interface AuthState {
 }
 
 export interface AuthContextType extends AuthState {
-  login: (googleToken: string, isAccessToken?: boolean) => Promise<void>;
+  login: (googleCode: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshAuth: () => Promise<void>;
   clearError: () => void;

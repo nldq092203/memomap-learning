@@ -44,15 +44,15 @@ export function ChatInputSection({
           className="h-3.5 w-3.5 rounded"
         />
         <span className="text-xs text-muted-foreground select-none font-medium">
-          Use text as context for better answers
+          Utiliser le contexte pour des réponses plus précises
         </span>
       </label>
 
       <Textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Ask a question…"
-        className="min-h-20 resize-none"
+        placeholder="Posez votre question…"
+        className="min-h-24 resize-none rounded-2xl border-slate-200 bg-white"
         disabled={isLoading}
         onKeyDown={(e) => {
           if (e.key === "Enter" && !e.shiftKey) {

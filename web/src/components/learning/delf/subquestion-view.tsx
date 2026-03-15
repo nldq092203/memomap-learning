@@ -37,7 +37,7 @@ export function SubQuestionView({
   }
 
   return (
-    <div className={`rounded-xl border bg-card p-5 transition-colors ${
+    <div className={`rounded-[24px] border bg-card p-5 transition-colors ${
       showResults
         ? isCorrect
           ? 'border-green-500/40 bg-green-50/30 dark:border-green-800/40 dark:bg-green-950/20'
@@ -50,11 +50,11 @@ export function SubQuestionView({
         <div className="flex items-start justify-between gap-4">
           <div className="flex gap-3">
             {question.number !== undefined && (
-              <span className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-xs font-bold text-primary shrink-0">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-teal-100 text-xs font-bold text-teal-700">
                 {question.number}
               </span>
             )}
-            <p className="font-medium">{question.question_text}</p>
+            <p className="text-base font-semibold leading-7 text-slate-900">{question.question_text}</p>
           </div>
           
           {showResults && isCorrect !== null && (
@@ -74,13 +74,16 @@ export function SubQuestionView({
             value={answer?.toString() || ""}
             onValueChange={(val) => onAnswer(parseInt(val, 10))}
             disabled={showResults}
-            className="grid gap-2"
+            className={question.type === "multiple_choice_image" ? "grid gap-3 md:grid-cols-3" : "grid gap-2"}
           >
             {question.options.map((option, optIdx) => {
               const strVal = optIdx.toString()
               const isSelected = answer === optIdx
               
-              let optionClass = "flex cursor-pointer items-start space-x-3 rounded-lg border p-3 transition-colors hover:bg-muted/50"
+              let optionClass =
+                question.type === "multiple_choice_image"
+                  ? "flex cursor-pointer flex-col overflow-hidden rounded-[22px] border p-3 transition-all hover:border-emerald-200 hover:bg-emerald-50/40"
+                  : "flex cursor-pointer items-start space-x-3 rounded-lg border p-3 transition-colors hover:bg-muted/50"
               if (showResults) {
                 const isThisCorrect = optIdx === question.correct_answer
                 if (isThisCorrect) {
@@ -96,18 +99,27 @@ export function SubQuestionView({
 
               return (
                 <Label key={optIdx} htmlFor={`sq-${question.id}-opt-${optIdx}`} className={optionClass}>
-                  <RadioGroupItem value={strVal} id={`sq-${question.id}-opt-${optIdx}`} className="mt-1" />
-                  <div className="flex flex-col gap-1 flex-1">
+                  <RadioGroupItem
+                    value={strVal}
+                    id={`sq-${question.id}-opt-${optIdx}`}
+                    className={question.type === "multiple_choice_image" ? "sr-only" : "mt-1"}
+                  />
+                  <div className="flex flex-1 flex-col gap-1">
                     {isImageOption(option) ? (
-                      <div className="space-y-1 mt-[-2px]">
+                      <div className="mt-[-2px] space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                            {option.label}
+                          </span>
+                        </div>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img 
                           src={getAssetUrl ? getAssetUrl(option.img_url) : option.img_url} 
                           alt={option.label}
-                          className="rounded-md object-contain max-h-[140px] border bg-white"
+                          className="h-[140px] w-full rounded-xl border border-slate-200 bg-white object-contain p-2"
                           loading="lazy"
                         />
-                        {option.desc && <span className="text-xs text-muted-foreground">{option.desc}</span>}
+                        {option.desc && <span className="text-sm font-medium leading-5 text-slate-700">{option.desc}</span>}
                       </div>
                     ) : (
                       <span className="font-medium text-sm leading-relaxed">{option}</span>
@@ -130,7 +142,7 @@ export function SubQuestionView({
               const correctArr = showResults ? (question.correct_answers as string[] || []) : []
               const isCorrectTarget = correctArr.includes(option.label)
 
-              let boxClass = "relative flex cursor-pointer flex-col overflow-hidden rounded-lg border-2 transition-all hover:border-primary/50"
+              let boxClass = "relative flex cursor-pointer flex-col overflow-hidden rounded-[22px] border-2 transition-all hover:border-emerald-300"
               if (showResults) {
                 if (isCorrectTarget) {
                   boxClass += " border-green-500 bg-green-50 dark:bg-green-900/20 ring-2 ring-green-500/30"

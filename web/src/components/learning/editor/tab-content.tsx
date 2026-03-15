@@ -44,17 +44,17 @@ export function TabContent() {
             value={newNote}
             onChange={(e) => setNewNote(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onAddNote() } }}
-            placeholder="Add a note"
+            placeholder="Ajouter une note"
             className="h-8"
-            aria-label="New note"
+            aria-label="Nouvelle note"
           />
-          <Button size="sm" onClick={onAddNote} className="gap-1" aria-label="Add note">
-            <Plus className="h-3.5 w-3.5"/>Add
+          <Button size="sm" onClick={onAddNote} className="gap-1" aria-label="Ajouter une note">
+            <Plus className="h-3.5 w-3.5"/>Ajouter
           </Button>
         </div>
-        <div className="max-h-64 overflow-auto divide-y rounded-md border">
+        <div className="max-h-64 overflow-auto divide-y rounded-2xl border border-slate-200 bg-white">
           {(sessionDraft.notes || []).length === 0 ? (
-            <div className="p-3 text-xs text-muted-foreground">No notes yet.</div>
+            <div className="p-3 text-xs text-muted-foreground">Aucune note pour le moment.</div>
           ) : (
             (sessionDraft.notes || []).map((note: string, index: number) => (
               <div key={`note-${index}-${note?.slice(0, 10) || 'empty'}`} className="flex items-start justify-between gap-2 p-3">
@@ -63,7 +63,7 @@ export function TabContent() {
                   variant="ghost" 
                   size="icon" 
                   onClick={() => onRemoveNote(note)} 
-                  aria-label="Delete note" 
+                  aria-label="Supprimer la note" 
                   className="h-7 w-7 text-muted-foreground hover:text-destructive"
                 >
                   <X className="h-4 w-4" />
@@ -82,7 +82,7 @@ export function TabContent() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <BookOpen className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium">Vocabulary Cards</span>
+            <span className="text-sm font-medium">Cartes de vocabulaire</span>
                     {entryVocabCards.length > 0 && (
               <Badge variant="outline" className="text-xs">
                 {entryVocabCards.length}
@@ -97,17 +97,17 @@ export function TabContent() {
               className="gap-1"
             >
               <Plus className="h-3 w-3" />
-              Add Card
+              Ajouter
             </Button>
           </div>
         </div>
 
         {/* Inline Add Form */}
         {showVocabForm && (
-          <Card className="p-4 border-dashed">
+          <Card className="border-dashed p-4">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-medium">Add New Vocabulary Card</h4>
+                <h4 className="text-sm font-medium">Ajouter une carte</h4>
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -117,23 +117,23 @@ export function TabContent() {
                 </Button>
               </div>
               
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-medium">Word *</label>
+                  <label className="text-xs font-medium">Mot *</label>
                   <Input
                     value={vocabForm.word}
                     onChange={(e) => setVocabForm((prev) => ({ ...prev, word: e.target.value }))}
-                    placeholder="Enter word"
-                    className="h-8"
+                    placeholder="Saisir le mot"
+                    className="h-10"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-medium">Translation</label>
+                  <label className="text-xs font-medium">Traduction</label>
                   <Input
                     value={vocabForm.translation}
                     onChange={(e) => setVocabForm((prev) => ({ ...prev, translation: e.target.value }))}
-                    placeholder="Enter translation"
-                    className="h-8"
+                    placeholder="Saisir la traduction"
+                    className="h-10"
                   />
                 </div>
               </div>
@@ -144,8 +144,8 @@ export function TabContent() {
                   <Input
                     value={vocabForm.newNote}
                     onChange={(e) => setVocabForm((prev) => ({ ...prev, newNote: e.target.value }))}
-                    placeholder="Add note..."
-                    className="h-8"
+                    placeholder="Ajouter une note..."
+                    className="h-10"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault()
@@ -153,7 +153,13 @@ export function TabContent() {
                       }
                     }}
                   />
-                  <Button type="button" onClick={onVocabAddNote} size="sm" variant="outline" className="h-8">
+                  <Button
+                    type="button"
+                    onClick={onVocabAddNote}
+                    size="sm"
+                    variant="outline"
+                    className="h-10 w-10 shrink-0"
+                  >
                     <Plus className="h-3 w-3" />
                   </Button>
                 </div>
@@ -182,8 +188,8 @@ export function TabContent() {
                   <Input
                     value={vocabForm.newTag}
                     onChange={(e) => setVocabForm((prev) => ({ ...prev, newTag: e.target.value }))}
-                    placeholder="Add tag..."
-                    className="h-8"
+                    placeholder="Ajouter un tag..."
+                    className="h-10"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault()
@@ -191,7 +197,13 @@ export function TabContent() {
                       }
                     }}
                   />
-                  <Button type="button" onClick={onVocabAddTag} size="sm" variant="outline" className="h-8">
+                  <Button
+                    type="button"
+                    onClick={onVocabAddTag}
+                    size="sm"
+                    variant="outline"
+                    className="h-10 w-10 shrink-0"
+                  >
                     <Plus className="h-3 w-3" />
                   </Button>
                 </div>
@@ -214,12 +226,22 @@ export function TabContent() {
                 )}
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" size="sm" onClick={() => setShowVocabForm(false)}>
-                  Cancel
+              <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-10 w-full sm:w-auto"
+                  onClick={() => setShowVocabForm(false)}
+                >
+                  Annuler
                 </Button>
-                <Button size="sm" onClick={onVocabFormSubmit} disabled={!vocabForm.word.trim()}>
-                  Add Card
+                <Button
+                  size="sm"
+                  className="h-10 w-full sm:w-auto"
+                  onClick={onVocabFormSubmit}
+                  disabled={!vocabForm.word.trim()}
+                >
+                  Enregistrer
                 </Button>
               </div>
             </div>
@@ -229,8 +251,8 @@ export function TabContent() {
         {entryVocabCards.length === 0 && !showVocabForm ? (
           <div className="text-center py-8 text-muted-foreground">
             <BookOpen className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">No vocabulary cards yet</p>
-            <p className="text-xs">Click &quot;Add Card&quot; to create one or select text and press Cmd+Shift+A</p>
+            <p className="text-sm">Aucune carte pour le moment</p>
+            <p className="text-xs">Cliquez sur « Ajouter » pour en creer une.</p>
           </div>
         ) : (
           <div className="space-y-2 max-h-64 overflow-auto">
@@ -282,7 +304,7 @@ export function TabContent() {
           <Input
             value={newTag}
             onChange={(e) => setNewTag(e.target.value)}
-            placeholder="Add a tag..."
+            placeholder="Ajouter un tag..."
             className="h-8"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
@@ -293,7 +315,7 @@ export function TabContent() {
           />
           <Button onClick={onAddTag} size="sm" className="gap-1">
             <Plus className="h-3 w-3" />
-            Add
+            Ajouter
           </Button>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -322,7 +344,7 @@ export function TabContent() {
           <Input
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
-            placeholder="Add a comment..."
+            placeholder="Ajouter un commentaire..."
             className="h-8"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
@@ -333,7 +355,7 @@ export function TabContent() {
           />
           <Button onClick={onAddComment} size="sm" className="gap-1">
             <Plus className="h-3 w-3" />
-            Add
+            Ajouter
           </Button>
         </div>
         <div className="space-y-2 max-h-64 overflow-auto">

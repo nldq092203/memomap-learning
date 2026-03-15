@@ -1,11 +1,24 @@
 "use client"
 
-import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Badge } from "@/components/ui/badge"
-import { ChevronLeft, Play, FileText } from "lucide-react"
+import { cn } from "@/lib/utils"
 import type { SpeakingTopicManifest } from "@/lib/types/api/speaking-practice"
+import { TrainingChoiceCard, TrainingSectionHeader, TrainingSurface } from "@/components/learning/ui"
+import {
+  Apple,
+  ArrowLeft,
+  BookOpen,
+  Clock3,
+  Globe2,
+  Leaf,
+  MessageSquareQuote,
+  Mic2,
+  Play,
+  Sparkles,
+  TrendingUp,
+} from "lucide-react"
 
 interface SubtopicListProps {
   topic: SpeakingTopicManifest
@@ -14,15 +27,97 @@ interface SubtopicListProps {
   onBack: () => void
 }
 
+const SUBTOPIC_STYLES = [
+  {
+    icon: Apple,
+    accent: "text-emerald-700",
+    iconBg: "bg-emerald-100",
+    orb: "from-emerald-200/80 via-teal-100/70 to-transparent",
+  },
+  {
+    icon: TrendingUp,
+    accent: "text-teal-700",
+    iconBg: "bg-teal-100",
+    orb: "from-teal-200/80 via-cyan-100/70 to-transparent",
+  },
+  {
+    icon: Globe2,
+    accent: "text-sky-700",
+    iconBg: "bg-sky-100",
+    orb: "from-sky-200/80 via-indigo-100/70 to-transparent",
+  },
+  {
+    icon: Leaf,
+    accent: "text-lime-700",
+    iconBg: "bg-lime-100",
+    orb: "from-lime-200/80 via-emerald-100/70 to-transparent",
+  },
+  {
+    icon: BookOpen,
+    accent: "text-indigo-700",
+    iconBg: "bg-indigo-100",
+    orb: "from-indigo-200/80 via-slate-100/70 to-transparent",
+  },
+  {
+    icon: Sparkles,
+    accent: "text-amber-700",
+    iconBg: "bg-amber-100",
+    orb: "from-amber-200/80 via-orange-100/70 to-transparent",
+  },
+]
+
+function getEstimatedTime(title: string, index: number) {
+  const base = 10 + (title.length % 4) * 3 + (index % 3) * 2
+  return `${base} min`
+}
+
+function getTopicTags(title: string) {
+  const normalized = title
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+
+  const keywordMap: Array<{ keywords: string[]; tag: string }> = [
+    { keywords: ["aliment", "sante", "nutrition"], tag: "#Sante" },
+    { keywords: ["bio", "ecolo", "durable"], tag: "#Bio" },
+    { keywords: ["tendance", "trend", "reseaux"], tag: "#Tendances" },
+    { keywords: ["travail", "emploi", "carriere"], tag: "#Travail" },
+    { keywords: ["ecole", "etude", "universite"], tag: "#Etudes" },
+    { keywords: ["culture", "art", "cinema"], tag: "#Culture" },
+    { keywords: ["voyage", "tourisme", "transport"], tag: "#Voyage" },
+    { keywords: ["ville", "quartier", "logement"], tag: "#Ville" },
+    { keywords: ["technologie", "numerique", "internet"], tag: "#Numerique" },
+    { keywords: ["environnement", "climat", "nature"], tag: "#Climat" },
+    { keywords: ["famille", "social", "societe"], tag: "#Societe" },
+    { keywords: ["consommation", "achat", "prix"], tag: "#Conso" },
+  ]
+
+  const tags = keywordMap
+    .filter(({ keywords }) => keywords.some((keyword) => normalized.includes(keyword)))
+    .map(({ tag }) => tag)
+
+  if (tags.length >= 3) {
+    return tags.slice(0, 4)
+  }
+
+  const fallbackWords = normalized
+    .split(/[^a-z0-9]+/)
+    .filter((word) => word.length > 3)
+    .slice(0, 4)
+    .map((word) => `#${word.charAt(0).toUpperCase()}${word.slice(1)}`)
+
+  return [...new Set([...tags, ...fallbackWords, "#Oral", "#B2"])].slice(0, 4)
+}
+
 export function SubtopicList({ topic, loading, onSelectSubtopic, onBack }: SubtopicListProps) {
   if (loading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-10 w-32" />
-        <Skeleton className="h-8 w-64" />
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-24 rounded-xl" />
+        <Skeleton className="h-8 w-56 rounded-full" />
+        <Skeleton className="h-32 rounded-[28px]" />
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((item) => (
+            <Skeleton key={item} className="h-[260px] rounded-[28px]" />
           ))}
         </div>
       </div>
@@ -31,85 +126,118 @@ export function SubtopicList({ topic, loading, onSelectSubtopic, onBack }: Subto
 
   return (
     <div className="space-y-6">
-      {/* Back Button */}
-      <Button variant="ghost" onClick={onBack} className="gap-2 -ml-2">
-        <ChevronLeft className="h-4 w-4" />
-        Back to Topics
-      </Button>
-
-      {/* Header */}
-      <div className="rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 backdrop-blur-sm border border-primary/10">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="font-normal">
-              {topic.subtopics.length} {topic.subtopics.length === 1 ? 'Subtopic' : 'Subtopics'}
-            </Badge>
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            {topic.title}
-          </h1>
-          <p className="text-muted-foreground">
-            Select a subtopic to begin your speaking practice
-          </p>
-        </div>
+      <div className="flex items-center gap-2 text-sm text-slate-500">
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 transition-colors hover:bg-white hover:text-slate-900"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Thèmes
+        </button>
+        <span>/</span>
+        <span className="truncate font-medium text-slate-700">{topic.title}</span>
       </div>
 
-      {/* Subtopics List */}
-      <div className="space-y-3">
-        {topic.subtopics.map((subtopic, index) => (
-          <Card
-            key={subtopic.id}
-            className="group border-border/60 bg-gradient-to-r from-background to-muted/20 transition-all hover:border-primary/40 hover:shadow-md cursor-pointer"
-            onClick={() => onSelectSubtopic(subtopic.contentPath)}
-          >
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-4 flex-1 min-w-0">
-                  {/* Number Badge */}
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary font-semibold">
-                    {index + 1}
-                  </div>
+      <TrainingSectionHeader
+        eyebrow="Bibliothèque de sous-thèmes"
+        title={topic.title}
+        description="Choisissez une carte pour lancer une pratique orale guidée avec audio, questions et réponse modèle."
+        badge={
+          <Badge className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100">
+            {topic.subtopics.length} {topic.subtopics.length === 1 ? "sous-thème" : "sous-thèmes"}
+          </Badge>
+        }
+        aside={
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+            <Mic2 className="h-7 w-7" />
+          </div>
+        }
+      />
 
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-lg leading-tight mb-1">
-                      {subtopic.title}
-                    </h3>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <FileText className="h-3 w-3" />
-                      <span>Practice exercises included</span>
-                    </div>
-                  </div>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {topic.subtopics.map((subtopic, index) => {
+          const style = SUBTOPIC_STYLES[index % SUBTOPIC_STYLES.length]
+          const Icon = style.icon
+          const tags = getTopicTags(subtopic.title)
+          const time = getEstimatedTime(subtopic.title, index)
+
+          return (
+            <TrainingChoiceCard
+              key={subtopic.id}
+              onClick={() => onSelectSubtopic(subtopic.contentPath)}
+              className="hover:-translate-y-1.5 hover:border-teal-200 hover:shadow-xl hover:shadow-teal-100/70"
+              contentClassName="min-h-[270px]"
+              icon={
+                <div className={cn("flex h-14 w-14 items-center justify-center rounded-3xl", style.iconBg)}>
+                  <Icon className={cn("h-7 w-7", style.accent)} />
                 </div>
-
-                {/* Action Button */}
+              }
+              title={subtopic.title}
+              meta={
+                <div className="flex items-center gap-2">
+                  <Badge className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm hover:bg-white/90">
+                    B2 Focus
+                  </Badge>
+                  <Badge className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm hover:bg-white/90">
+                    <Clock3 className="mr-1 h-3.5 w-3.5" />
+                    {time}
+                  </Badge>
+                </div>
+              }
+              footer={
+                <div className="inline-flex items-center gap-2 text-sm font-medium text-slate-500">
+                  <MessageSquareQuote className="h-4 w-4" />
+                  Expression orale guidée
+                </div>
+              }
+              action={
                 <Button
                   size="sm"
-                  className="gap-2 shrink-0"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onSelectSubtopic(subtopic.contentPath)
-                  }}
+                  className="pointer-events-none rounded-full bg-emerald-100 text-emerald-700 transition-all group-hover:bg-teal-500 group-hover:text-white"
                 >
-                  <Play className="h-4 w-4" />
-                  Start
+                  <Play className="mr-1 h-4 w-4" />
+                  Commencer
                 </Button>
+              }
+            >
+              <div
+                className={cn(
+                  "absolute inset-0 bg-gradient-to-br opacity-90 transition-opacity group-hover:opacity-100",
+                  style.orb
+                )}
+              />
+              <div className="relative space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-full border border-white/80 bg-white/80 px-2.5 py-1 text-xs font-medium text-slate-600 backdrop-blur"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+
+                <p className="text-sm leading-6 text-slate-600">
+                  Préparez vos idées, écoutez le support audio puis entrainez-vous à répondre de façon fluide et structurée.
+                </p>
               </div>
-            </CardContent>
-          </Card>
-        ))}
+            </TrainingChoiceCard>
+          )
+        })}
       </div>
 
       {topic.subtopics.length === 0 && (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <FileText className="h-12 w-12 text-muted-foreground/50 mb-4" />
-            <h3 className="font-semibold mb-2">No Subtopics Available</h3>
-            <p className="text-sm text-muted-foreground max-w-md">
-              This topic doesn't have any subtopics yet.
+        <TrainingSurface variant="dashed">
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <Mic2 className="mb-4 h-12 w-12 text-slate-300" />
+            <h3 className="mb-2 font-semibold text-slate-950">Aucun sous-thème disponible</h3>
+            <p className="max-w-md text-sm text-slate-500">
+              Ce thème ne contient pas encore de sous-thèmes.
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </TrainingSurface>
       )}
     </div>
   )

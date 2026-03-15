@@ -6,18 +6,25 @@ We keep Drive-based flows for:
 - Numbers Dictation admin dataset generation (staging)
 
 Auth model:
-- Callers must supply a Google OAuth access token when invoking Drive-backed endpoints.
+- Web clients authenticate with the app JWT only.
+- The backend refreshes Google OAuth access tokens from the user's stored refresh token.
 """
 
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import uuid4
 
-from flask import request
-
+from src.api.errors import ForbiddenError
+from src.domain.db_queries import UserQueries
+from src.infra.auth.google_oauth import (
+    GoogleOAuthRefreshError,
+    build_google_auth_record,
+    refresh_google_access_token,
+)
+from src.infra.db import db_session
 from src.infra.drive import DriveRepository, GoogleDriveClient
 from src.utils.datetime_utils import to_iso_utc
 
@@ -337,16 +344,64 @@ class LearningDriveServices:
         }
 
 
-def get_drive_services_from_request() -> LearningDriveServices:
-    """
-    Create Drive services for the current request.
+def _parse_google_expiry(raw_value: str | None) -> datetime | None:
+    if not raw_value:
+        return None
 
-    Requires:
-    - Header: X-Google-Access-Token
-    """
-    access_token = (request.headers.get("X-Google-Access-Token") or "").strip()
-    if not access_token:
-        raise ValueError("X-Google-Access-Token header is required for Drive operations")
+    normalized = raw_value.replace("Z", "+00:00")
+    try:
+        return datetime.fromisoformat(normalized)
+    except ValueError:
+        return None
+
+
+def _is_google_access_token_stale(google_auth: dict[str, Any]) -> bool:
+    expires_at = _parse_google_expiry(google_auth.get("access_token_expires_at"))
+    if expires_at is None:
+        return True
+    return expires_at <= datetime.now(timezone.utc) + timedelta(seconds=60)
+
+
+def _get_or_refresh_google_access_token(user_id: str) -> str:
+    with db_session() as db:
+        user = UserQueries.get_by_id(db, user_id)
+        if not user:
+            raise ForbiddenError("User not found")
+
+        google_auth = UserQueries.get_google_auth(user)
+        access_token = (google_auth.get("access_token") or "").strip()
+        if access_token and not _is_google_access_token_stale(google_auth):
+            return access_token
+
+        refresh_token = (google_auth.get("refresh_token") or "").strip()
+        if not refresh_token:
+            raise GoogleOAuthRefreshError(
+                "Google Drive session expired or invalid. Please sign in with Google again."
+            )
+
+        refreshed = refresh_google_access_token(refresh_token)
+        refreshed_auth = build_google_auth_record(
+            refreshed,
+            existing_refresh_token=refresh_token,
+        )
+        UserQueries.update_google_oauth(
+            db,
+            user,
+            google_user={
+                "sub": user.extra.get("google_sub"),
+                "email_verified": user.extra.get("google_email_verified"),
+                "iss": user.extra.get("google_iss"),
+                "aud": user.extra.get("google_aud"),
+            },
+            google_auth=refreshed_auth,
+        )
+        db.commit()
+        return refreshed_auth["access_token"]
+
+
+def get_drive_services_for_user(user_id: str) -> LearningDriveServices:
+    """Create Drive services for the authenticated user."""
+    access_token = _get_or_refresh_google_access_token(user_id)
     client = GoogleDriveClient(access_token)
     repo = DriveRepository(client)
     return LearningDriveServices(repo)
@@ -358,4 +413,4 @@ def parse_optional_json(raw: str | None) -> Any | None:
     return json.loads(raw)
 
 
-__all__ = ["LearningDriveServices", "get_drive_services_from_request", "parse_optional_json"]
+__all__ = ["LearningDriveServices", "get_drive_services_for_user", "parse_optional_json"]

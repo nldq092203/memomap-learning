@@ -164,8 +164,8 @@ export function DraggableAiBubble({ storageKey, onClick }: DraggableAiBubbleProp
 
   return (
     <Button
-      aria-label="Open AI Assistant"
-      title="AI Assistant"
+      aria-label="Ouvrir l'assistant IA"
+      title="Assistant IA"
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
       onClick={handleClick}

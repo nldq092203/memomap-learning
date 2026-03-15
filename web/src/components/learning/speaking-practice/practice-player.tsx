@@ -43,64 +43,60 @@ export function PracticePlayer({
 
   return (
     <div className="space-y-6">
-      {/* Back Button */}
-      <Button variant="ghost" onClick={onBack} className="gap-2 -ml-2">
+      <Button variant="ghost" onClick={onBack} className="-ml-2 gap-2 rounded-full text-slate-600 hover:bg-white hover:text-slate-900">
         <ChevronLeft className="h-4 w-4" />
-        Back to Subtopics
+        Retour aux sous-thèmes
       </Button>
 
-      {/* Header */}
-      <div className="rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 backdrop-blur-sm border border-primary/10">
+      <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+                Séance orale
+              </p>
+              <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
                 {content.topic}
               </h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                Practice speaking with structured exercises
+              <p className="mt-1 text-sm text-slate-500">
+                Travaillez votre expression orale avec des étapes guidées.
               </p>
             </div>
-            <Badge variant="secondary" className="shrink-0">
+            <Badge className="shrink-0 rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-50">
               {currentItemIndex + 1} / {totalItems}
             </Badge>
           </div>
 
-          {/* Progress Bar */}
           <div className="space-y-2">
             <Progress value={progress} className="h-2" />
-            <p className="text-xs text-muted-foreground">
-              {Math.round(progress)}% complete
+            <p className="text-xs text-slate-500">
+              {Math.round(progress)}% terminé
             </p>
           </div>
         </div>
       </div>
 
-      {/* Audio Player */}
       <AudioControls
         audioUrl={audioUrl}
         autoPlay={false}
         onEnded={onNext}
       />
 
-      {/* Practice Item */}
       <PracticeItem item={currentItem} itemType={itemType} />
 
-      {/* Navigation Controls */}
-      <Card className="border-border/60 bg-card/50 backdrop-blur-sm">
+      <Card className="rounded-[28px] border-slate-200 bg-white shadow-sm">
         <CardContent className="p-4">
           <div className="flex items-center justify-between gap-4">
             <Button
               variant="outline"
               onClick={onPrevious}
               disabled={currentItemIndex === 0}
-              className="gap-2"
+              className="gap-2 rounded-full border-slate-200 text-slate-700 hover:bg-slate-100"
             >
               <SkipBack className="h-4 w-4" />
-              <span className="hidden sm:inline">Previous</span>
+              <span className="hidden sm:inline">Précédent</span>
             </Button>
 
-            {/* Item Dots */}
             <div className="flex items-center gap-2 overflow-x-auto max-w-md">
               {content.items.map((_, index) => (
                 <button
@@ -108,12 +104,12 @@ export function PracticePlayer({
                   onClick={() => onGoToItem(index)}
                   className={`h-2 rounded-full transition-all ${
                     index === currentItemIndex
-                      ? "w-8 bg-primary"
+                      ? "w-8 bg-emerald-400"
                       : index < currentItemIndex
-                      ? "w-2 bg-primary/50"
-                      : "w-2 bg-muted-foreground/30"
+                      ? "w-2 bg-emerald-300"
+                      : "w-2 bg-slate-300"
                   }`}
-                  title={`Go to item ${index + 1}`}
+                  title={`Aller à l'étape ${index + 1}`}
                 />
               ))}
             </div>
@@ -122,24 +118,23 @@ export function PracticePlayer({
               variant="outline"
               onClick={onNext}
               disabled={currentItemIndex === totalItems - 1}
-              className="gap-2"
+              className="gap-2 rounded-full border-slate-200 text-slate-700 hover:bg-slate-100"
             >
-              <span className="hidden sm:inline">Next</span>
+              <span className="hidden sm:inline">Suivant</span>
               <SkipForward className="h-4 w-4" />
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Tips Card */}
-      <Card className="border-border/60 bg-gradient-to-br from-blue-500/5 to-transparent">
+      <Card className="rounded-[28px] border-emerald-200 bg-emerald-50/50 shadow-sm">
         <CardContent className="p-4">
-          <h3 className="font-semibold text-sm mb-2">💡 Speaking Tips</h3>
-          <ul className="text-sm text-muted-foreground space-y-1">
-            <li>• Listen to each audio carefully before responding</li>
-            <li>• Take your time to formulate your thoughts</li>
-            <li>• Practice speaking out loud for the best results</li>
-            <li>• Compare your answer with the model responses</li>
+          <h3 className="mb-2 text-sm font-semibold text-slate-950">Conseils d'expression orale</h3>
+          <ul className="space-y-1 text-sm text-slate-600">
+            <li>• Écoutez chaque audio attentivement avant de répondre.</li>
+            <li>• Prenez le temps de structurer vos idées.</li>
+            <li>• Répondez à voix haute pour progresser plus vite.</li>
+            <li>• Comparez votre réponse avec les modèles proposés.</li>
           </ul>
         </CardContent>
       </Card>

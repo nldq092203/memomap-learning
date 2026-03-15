@@ -1,9 +1,18 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { FileText, Loader2, Sparkles } from "lucide-react"
+import { cn } from "@/lib/utils"
+import {
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  Loader2,
+  Minimize2,
+  MonitorPlay,
+  Video,
+  Volume2,
+} from "lucide-react"
 import type { CoCeExercise } from "@/lib/types/api/coce"
 
 interface MediaPlayerProps {
@@ -11,6 +20,8 @@ interface MediaPlayerProps {
   showTranscript: boolean
   onTranscriptToggle: () => void
   isLoadingTranscript: boolean
+  isCollapsed?: boolean
+  onCollapseToggle?: () => void
 }
 
 export function MediaPlayer({
@@ -18,16 +29,46 @@ export function MediaPlayer({
   showTranscript,
   onTranscriptToggle,
   isLoadingTranscript,
+  isCollapsed = false,
+  onCollapseToggle,
 }: MediaPlayerProps) {
-  const isVideo = exercise.media_type === 'video'
-  const isAudio = exercise.media_type === 'audio'
+  const isVideo = exercise.media_type === "video"
+  const isAudio = exercise.media_type === "audio"
 
   return (
-    <Card className="overflow-hidden border-2 border-primary/10 bg-gradient-to-br from-card to-card/50 backdrop-blur-sm">
-      <div className="relative">
-        {/* Video Player */}
+    <div className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+            Support
+          </p>
+          <h2 className="text-lg font-semibold text-slate-950">
+            {isVideo ? "Vidéo d'examen" : "Audio d'examen"}
+          </h2>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Badge className="rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700 hover:bg-teal-50">
+            {isVideo ? "Vidéo" : "Audio"}
+          </Badge>
+          {onCollapseToggle && (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={onCollapseToggle}
+              className="rounded-full border-slate-200 text-slate-600 hover:bg-slate-100"
+              aria-label={isCollapsed ? "Ouvrir le panneau média" : "Réduire le panneau média"}
+            >
+              {isCollapsed ? <MonitorPlay className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-4 overflow-hidden rounded-[24px] border border-slate-200 bg-slate-950">
         {isVideo && exercise.video_url && (
-          <div className="relative aspect-video w-full overflow-hidden bg-black">
+          <div className="relative aspect-video w-full">
             <iframe
               src={exercise.video_url}
               title={exercise.name}
@@ -38,77 +79,69 @@ export function MediaPlayer({
           </div>
         )}
 
-        {/* Audio Player */}
         {isAudio && exercise.audio_url && (
-          <div className="flex items-center justify-center bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 p-8 md:p-12">
-            <div className="w-full max-w-2xl space-y-6">
-              {/* Audio Visualization Area */}
-              <div className="flex items-center justify-center">
-                <div className="flex items-center gap-2">
-                  {[...Array(20)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="h-8 w-1 rounded-full bg-primary/30 animate-pulse"
-                      style={{
-                        animationDelay: `${i * 0.1}s`,
-                        animationDuration: '1.5s',
-                      }}
-                    />
-                  ))}
-                </div>
+          <div className="space-y-4 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-5 text-white">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm text-white/75">
+                <Volume2 className="h-4 w-4 text-teal-300" />
+                Lecture interactive
               </div>
-
-              {/* Audio Player Controls */}
-              <audio
-                controls
-                src={exercise.audio_url}
-                className="w-full"
-                preload="metadata"
-              >
-                Your browser does not support the audio element.
-              </audio>
+              <div className="flex items-center gap-1 text-xs text-white/55">
+                <ChevronLeft className="h-3.5 w-3.5" />
+                5 s
+                <ChevronRight className="h-3.5 w-3.5" />
+              </div>
             </div>
+
+            <div className="grid grid-cols-12 items-end gap-1.5">
+              {[28, 46, 36, 54, 40, 62, 30, 52, 38, 58, 42, 66].map((height, index) => (
+                <div
+                  key={index}
+                  className={cn(
+                    "rounded-full",
+                    index % 4 === 0 ? "bg-teal-300" : "bg-white/55"
+                  )}
+                  style={{ height }}
+                />
+              ))}
+            </div>
+
+            <audio controls src={exercise.audio_url} preload="metadata" className="w-full">
+              Votre navigateur ne prend pas en charge l'audio HTML5.
+            </audio>
           </div>
         )}
 
-        {/* Fallback for missing media */}
         {!exercise.video_url && !exercise.audio_url && (
-          <div className="flex items-center justify-center bg-muted p-16">
-            <div className="text-center text-muted-foreground">
-              <p className="text-sm">Media not available</p>
-              <p className="text-xs mt-1">Media type: {exercise.media_type}</p>
-            </div>
+          <div className="flex min-h-[180px] items-center justify-center bg-slate-100 p-6 text-center text-sm text-slate-500">
+            Support indisponible pour cet exercice.
           </div>
         )}
       </div>
 
-      {/* Controls Bar */}
-      <div className="flex items-center justify-between border-t bg-card/95 p-4 backdrop-blur-sm">
-        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-              {isVideo ? "🎥" : "🎧"}
-            </div>
-            <span className="font-medium">
-              {isVideo ? "Video" : "Audio"} Exercise
-            </span>
-          </div>
-        </div>
-
+      <div className="mt-4 flex flex-wrap items-center gap-3">
         <Button
+          type="button"
           variant={showTranscript ? "default" : "outline"}
           size="sm"
           onClick={onTranscriptToggle}
           disabled={isLoadingTranscript}
-          className="gap-2"
-        >
-          {isLoadingTranscript && (
-            <Loader2 className="h-4 w-4 animate-spin" />
+          className={cn(
+            "rounded-full px-4",
+            showTranscript
+              ? "bg-teal-500 text-white hover:bg-teal-500/90"
+              : "border-slate-200 text-slate-700 hover:bg-slate-100"
           )}
-          <FileText className="h-4 w-4" />
-          {showTranscript ? "Hide" : "Show"} Transcript
+        >
+          {isLoadingTranscript ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+          {showTranscript ? "Masquer la transcription" : "Afficher la transcription"}
         </Button>
+
+        <div className="flex items-center gap-2 text-sm text-slate-500">
+          {isVideo ? <Video className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+          Réécoute libre pendant l'exercice
+        </div>
       </div>
-    </Card>
+    </div>
   )
 }

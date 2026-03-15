@@ -16,7 +16,7 @@ export type UserSettings = {
 
 export const DEFAULT_SETTINGS: UserSettings = {
   shortcuts: [
-    { action: "addVocab", label: "Add Vocabulary", keys: "Cmd+Shift+A" },
-    { action: "openAi", label: "Open AI Assistant", keys: "Cmd+Shift+S" },
+    { action: "addVocab", label: "Ajouter du vocabulaire", keys: "Cmd+Shift+A" },
+    { action: "openAi", label: "Ouvrir l'assistant IA", keys: "Cmd+Shift+S" },
   ],
 }

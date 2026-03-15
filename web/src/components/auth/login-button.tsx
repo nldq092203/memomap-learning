@@ -5,7 +5,6 @@ import { useGoogleLogin } from "@react-oauth/google"
 import { Button } from "@/components/ui/button"
 import { LogIn, Loader2, AlertCircle } from "lucide-react"
 import { useState } from "react"
-import { apiClient } from "@/lib/services/api-client"
 
 interface LoginButtonProps {
   variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link"
@@ -26,14 +25,11 @@ function LoginButtonInner({
   const [error, setError] = useState<string | null>(null)
 
   const googleLogin = useGoogleLogin({
-    scope: "email profile https://www.googleapis.com/auth/drive.file",
+    scope: "openid email profile https://www.googleapis.com/auth/drive.file",
     onSuccess: async (response) => {
       try {
         setError(null)
-        // Store Drive access token for Drive-backed endpoints
-        apiClient.setDriveToken(response.access_token)
-        // Exchange the access_token for our app's JWT token
-        await login(response.access_token, true)
+        await login(response.code)
       } catch (error) {
         console.error("Login failed:", error)
         setError("Failed to sign in. Please try again.")
@@ -43,7 +39,7 @@ function LoginButtonInner({
       console.error("Google login failed:", error)
       setError("Google authentication failed. Please try again.")
     },
-    flow: "implicit",
+    flow: "auth-code",
   })
 
   const handleLogin = () => {

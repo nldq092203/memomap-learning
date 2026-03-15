@@ -1,43 +1,84 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Progress } from "@/components/ui/progress"
-import { LearningNav } from "@/components/learning/layout/learning-nav"
 import { useNumbersDictation } from "@/lib/hooks/use-numbers-dictation"
 import type { NumbersType } from "@/lib/services/learning-numbers-api"
-import { apiClient } from "@/lib/services/api-client"
-import { cn } from "@/lib/utils"
-import { Headphones, ListChecks, RefreshCw } from "lucide-react"
 import { learningApi, type LearningLanguage } from "@/lib/services/learning-api"
 import { useLearningLang } from "@/lib/contexts/learning-lang-context"
 import { notificationService } from "@/lib/services/notification-service"
+import { apiClient } from "@/lib/services/api-client"
+import { cn } from "@/lib/utils"
+import {
+  ArrowLeft,
+  CalendarDays,
+  ChartNoAxesColumn,
+  CircleDollarSign,
+  Delete,
+  Headphones,
+  ListChecks,
+  Pause,
+  Percent,
+  Phone,
+  Play,
+  RotateCcw,
+  RotateCw,
+  TimerReset,
+} from "lucide-react"
 
 const TYPE_LABELS: Record<NumbersType, string> = {
-  YEAR: "Years",
-  PHONE: "Phone numbers",
-  PRICE: "Prices",
-  TIME: "Times",
-  ADDRESS: "Addresses",
-  STATISTICS: "Statistics",
-  MEDICAL: "Medical numbers",
-  BANKING: "Banking / finance",
-  WEATHER: "Weather data",
-  TRANSPORT: "Transport info",
-  QUANTITY: "Quantities",
+  YEAR: "Annees",
+  PHONE: "Telephones",
+  PRICE: "Prix",
+  TIME: "Heures",
+  ADDRESS: "Adresses",
+  STATISTICS: "Statistiques",
+  MEDICAL: "Medical",
+  BANKING: "Banque",
+  WEATHER: "Meteo",
+  TRANSPORT: "Transport",
+  QUANTITY: "Quantites",
+}
+
+const TYPE_ICONS: Record<NumbersType, React.ElementType> = {
+  YEAR: CalendarDays,
+  PHONE: Phone,
+  PRICE: CircleDollarSign,
+  TIME: TimerReset,
+  ADDRESS: ListChecks,
+  STATISTICS: ChartNoAxesColumn,
+  MEDICAL: Headphones,
+  BANKING: CircleDollarSign,
+  WEATHER: ChartNoAxesColumn,
+  TRANSPORT: ListChecks,
+  QUANTITY: Percent,
+}
+
+const NUMPAD_BASE = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", ":"]
+
+function formatTime(seconds: number) {
+  const safe = Math.max(0, Math.floor(seconds))
+  const minutes = Math.floor(safe / 60)
+  const secs = safe % 60
+  return `${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
 }
 
 export default function NumbersDictationPage() {
-  const [selectedTypes, setSelectedTypes] = useState<NumbersType[]>(["YEAR"])
-  const [count, setCount] = useState(5)
-  const [showInterimSummary, setShowInterimSummary] = useState(false)
-  const [inspectedExerciseId, setInspectedExerciseId] = useState<string | null>(null)
-  const [isSavingTranscript, setIsSavingTranscript] = useState(false)
-
+  const router = useRouter()
   const { lang } = useLearningLang()
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  const [selectedTypes, setSelectedTypes] = useState<NumbersType[]>(["YEAR", "PRICE", "PHONE"])
+  const [count, setCount] = useState(8)
+  const [isSavingTranscript, setIsSavingTranscript] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [shakeInput, setShakeInput] = useState(false)
 
   const {
     session,
@@ -50,857 +91,744 @@ export default function NumbersDictationPage() {
     startSession,
     updateAnswer,
     submitAnswer,
+    advanceToNextExercise,
     finishSession,
     resetSession,
   } = useNumbersDictation()
 
-  const lastAnswered = history.length ? history[history.length - 1] : null
-  const feedbackExercise = inspectedExerciseId
-    ? history.find(ex => ex.id === inspectedExerciseId) ?? lastAnswered
-    : lastAnswered
+  const answeredCurrent = current?.isCorrect != null
+  const latestExercise = current?.isCorrect != null ? current : history[history.length - 1] ?? null
+  const latestErrors = latestExercise?.errors ?? []
+  const perfectCurrent = !!latestExercise && latestExercise.isCorrect && latestErrors.length === 0
 
   const audioSrc = useMemo(() => {
     const ref = current?.audioRef
     if (!ref) return null
-    if (ref.startsWith("http://") || ref.startsWith("https://")) {
-      return ref
-    }
+    if (ref.startsWith("http://") || ref.startsWith("https://")) return ref
     const base = apiClient.getBaseUrl() || ""
     const separator = ref.startsWith("/") ? "" : "/"
     return `${base}${separator}${ref}`
   }, [current])
 
-  const feedbackAudioSrc = useMemo(() => {
-    const ref = feedbackExercise?.audioRef
-    if (!ref) return null
-    if (ref.startsWith("http://") || ref.startsWith("https://")) {
-      return ref
-    }
-    const base = apiClient.getBaseUrl() || ""
-    const separator = ref.startsWith("/") ? "" : "/"
-    return `${base}${separator}${ref}`
-  }, [feedbackExercise])
+  const allowedSymbols = useMemo(() => {
+    if (!current) return [".", ":"]
+    if (current.numberType === "TIME") return [":"]
+    if (current.numberType === "PRICE" || current.numberType === "STATISTICS") return ["."]
+    return []
+  }, [current])
 
-  const answeredCount = history.length
-  const correctSoFar = history.filter(ex => ex.isCorrect).length
-  const feedbackIndex = feedbackExercise
-    ? history.findIndex(ex => ex.id === feedbackExercise.id)
-    : -1
+  const numpadKeys = useMemo(
+    () => NUMPAD_BASE.filter((key) => /\d/.test(key) || allowedSymbols.includes(key)),
+    [allowedSymbols],
+  )
+
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    const syncTime = () => setCurrentTime(audio.currentTime)
+    const syncDuration = () => setDuration(Number.isFinite(audio.duration) ? audio.duration : 0)
+    const handlePlay = () => setIsPlaying(true)
+    const handlePause = () => setIsPlaying(false)
+    const handleEnded = () => setIsPlaying(false)
+
+    audio.addEventListener("timeupdate", syncTime)
+    audio.addEventListener("loadedmetadata", syncDuration)
+    audio.addEventListener("durationchange", syncDuration)
+    audio.addEventListener("play", handlePlay)
+    audio.addEventListener("pause", handlePause)
+    audio.addEventListener("ended", handleEnded)
+
+    return () => {
+      audio.removeEventListener("timeupdate", syncTime)
+      audio.removeEventListener("loadedmetadata", syncDuration)
+      audio.removeEventListener("durationchange", syncDuration)
+      audio.removeEventListener("play", handlePlay)
+      audio.removeEventListener("pause", handlePause)
+      audio.removeEventListener("ended", handleEnded)
+    }
+  }, [audioSrc])
+
+  useEffect(() => {
+    setCurrentTime(0)
+    setDuration(0)
+    setIsPlaying(false)
+  }, [audioSrc])
+
+  useEffect(() => {
+    if (!answeredCurrent || current?.isCorrect !== false) return
+    setShakeInput(true)
+    const timeout = window.setTimeout(() => setShakeInput(false), 420)
+    return () => window.clearTimeout(timeout)
+  }, [answeredCurrent, current?.isCorrect])
+
+  const handleAudioToggle = async () => {
+    const audio = audioRef.current
+    if (!audio) return
+    if (audio.paused) {
+      try {
+        await audio.play()
+      } catch (error) {
+        console.error("Impossible de lancer l'audio", error)
+      }
+      return
+    }
+    audio.pause()
+  }
+
+  const handleSeek = (value: number) => {
+    const audio = audioRef.current
+    if (!audio) return
+    audio.currentTime = value
+  }
+
+  const handleJump = (delta: number) => {
+    const audio = audioRef.current
+    if (!audio) return
+    audio.currentTime = Math.max(0, Math.min(audio.duration || 0, audio.currentTime + delta))
+  }
+
+  const handleAppendKey = (key: string) => {
+    if (!current || answeredCurrent || pending) return
+    updateAnswer(`${current.answer}${key}`)
+  }
+
+  const handleDelete = () => {
+    if (!current || answeredCurrent || pending) return
+    updateAnswer(current.answer.slice(0, -1))
+  }
+
+  const handleClear = () => {
+    if (!current || answeredCurrent || pending) return
+    updateAnswer("")
+  }
 
   const handleSaveTranscript = async () => {
     if (!history.length) {
-      notificationService.info("There is no answer to save yet")
+      notificationService.info("Aucune reponse a enregistrer.")
       return
     }
 
     setIsSavingTranscript(true)
     try {
-      const lines: string[] = []
-
-      history.forEach((ex, index) => {
-        const errors = ex.errors || []
-        const maxErrorIndex = errors.reduce(
-          (max, err) => (err.index > max ? err.index : max),
-          -1,
-        )
-        const length = Math.max(ex.answer.length, maxErrorIndex + 1)
-
-        const errorMap = new Map<number, (typeof errors)[number]>()
-        for (const err of errors) {
-          errorMap.set(err.index, err)
-        }
-
-        const expectedChars: string[] = []
-        const answerChars: string[] = []
-        for (let i = 0; i < length; i += 1) {
-          const err = errorMap.get(i)
-          const got = i < ex.answer.length ? ex.answer[i] : ""
-          const expected = err?.expected ?? got ?? ""
-          expectedChars.push(expected || "·")
-          answerChars.push(got || "·")
-        }
-
-        const expectedDisplay = expectedChars.join("")
-        const answerDisplay = answerChars.join("")
-        const statusLabel = ex.isCorrect ? "correct" : "incorrect"
-
-        lines.push(
-          [
-            `#${index + 1} [${ex.numberType}] ${statusLabel}`,
-            ...(ex.script ? [`Script:   ${ex.script}`] : []),
-            `Expected: ${expectedDisplay}`,
-            `Answer:   ${answerDisplay}`,
-          ].join("\n"),
-        )
-      })
-
-      const transcriptText = lines.join("\n\n")
-      const notes = `Numbers Dictation session\n${history.length} answered exercises.`
+      const transcriptText = history
+        .map((exercise, index) => {
+          const expected = buildExpectedString(exercise.answer, exercise.errors)
+          return [
+            `#${index + 1} · ${TYPE_LABELS[exercise.numberType]}`,
+            `Attendu: ${expected}`,
+            `Reponse: ${exercise.answer || "·"}`,
+            `Resultat: ${exercise.isCorrect ? "correct" : "incorrect"}`,
+          ].join("\n")
+        })
+        .join("\n\n")
 
       await learningApi.createTranscript({
         language: (lang as LearningLanguage) || "fr",
         source_url: null,
         transcript: transcriptText,
-        notes,
+        notes: "Session de dictee de nombres",
         comments: null,
         tags: ["numbers_dictation"],
       })
 
-      notificationService.success("Numbers Dictation transcript saved for review ✨")
+      notificationService.success("Session enregistree pour revision.")
     } catch (error) {
-      console.error("Failed to save Numbers Dictation transcript", error)
-      notificationService.error("Failed to save transcript. Please try again.")
+      console.error("Failed to save transcript", error)
+      notificationService.error("Impossible d'enregistrer la session.")
     } finally {
       setIsSavingTranscript(false)
     }
   }
 
-  const handleToggleType = (type: NumbersType) => {
-    setSelectedTypes(prev =>
-      prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type],
-    )
-  }
-
-  const handleCountChange = (value: string) => {
-    const parsed = parseInt(value, 10)
-    if (Number.isNaN(parsed)) {
-      setCount(1)
-      return
-    }
-    const clamped = Math.min(Math.max(parsed, 1), 20)
-    setCount(clamped)
-  }
-
   const handleStart = () => {
-    setShowInterimSummary(false)
-    setInspectedExerciseId(null)
-    startSession(selectedTypes, count)
+    void startSession(selectedTypes, count)
   }
 
-  const handleSubmitAnswer = () => {
+  const handleSubmit = () => {
     void submitAnswer()
   }
 
-  const handleFinishSession = () => {
-    setShowInterimSummary(false)
-    setInspectedExerciseId(null)
+  const handleNext = () => {
+    void advanceToNextExercise()
+  }
+
+  const handleFinish = () => {
     void finishSession()
-  }
-
-  const handleRestart = () => {
-    setShowInterimSummary(false)
-    setInspectedExerciseId(null)
-    resetSession()
-  }
-
-  const handleShowInterimSummary = () => {
-    setShowInterimSummary(true)
-  }
-
-  const handleHideInterimSummary = () => {
-    setShowInterimSummary(false)
-  }
-
-  const handleInspectExercise = (exerciseId: string) => {
-    setShowInterimSummary(true)
-    setInspectedExerciseId(exerciseId)
-  }
-
-  const renderDigitFeedback = () => {
-    if (!feedbackExercise) return null
-
-    const { answer, errors } = feedbackExercise
-    const maxErrorIndex = errors.reduce(
-      (max, err) => (err.index > max ? err.index : max),
-      -1,
-    )
-    const length = Math.max(answer.length, maxErrorIndex + 1)
-    if (length <= 0) return null
-
-    const errorMap = new Map<number, (typeof errors)[number]>()
-    for (const err of errors) {
-      errorMap.set(err.index, err)
-    }
-
-    const totalPositions = length
-    const incorrect = errors.length
-    const correct = totalPositions - incorrect
-
-    const expectedChars: string[] = []
-    const answerChars: string[] = []
-    for (let index = 0; index < length; index += 1) {
-      const err = errorMap.get(index)
-      const got = index < answer.length ? answer[index] : ""
-      const expected = err?.expected ?? got ?? ""
-      expectedChars.push(expected || "·")
-      answerChars.push(got || "·")
-    }
-
-    const expectedDisplay = expectedChars.join("")
-    const answerDisplay = answerChars.join("")
-
-    return (
-      <div className="mt-4 space-y-3">
-        {feedbackAudioSrc && (
-          <div className="space-y-1 rounded-md border bg-background px-3 py-2">
-            <p className="text-[11px] font-medium text-muted-foreground">
-              Replay this exercise
-            </p>
-            <audio
-              key={feedbackExercise.id}
-              controls
-              src={feedbackAudioSrc}
-              className="w-full"
-            >
-              Your browser does not support the audio element.
-            </audio>
-          </div>
-        )}
-
-        {feedbackExercise.script && (
-          <div className="space-y-1 rounded-md border bg-background px-3 py-2">
-            <p className="text-[11px] font-medium text-muted-foreground">
-              Script
-            </p>
-            <p className="text-sm leading-relaxed text-foreground">
-              {feedbackExercise.script}
-            </p>
-          </div>
-        )}
-
-        <div className="space-y-1 text-xs font-mono">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] text-muted-foreground">
-              Correct digits
-            </span>
-            <span className="truncate text-foreground">
-              {expectedDisplay}
-            </span>
-          </div>
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] text-muted-foreground">
-              Your answer
-            </span>
-            <span className="truncate">
-              {answerDisplay}
-            </span>
-          </div>
-        </div>
-
-        <p className="text-xs text-muted-foreground">
-          Digit accuracy:{" "}
-          <span className="font-medium text-foreground">
-            {correct} / {totalPositions}
-          </span>{" "}
-          correct
-        </p>
-        <div className="overflow-x-auto">
-          <div className="inline-flex gap-1">
-            {Array.from({ length }).map((_, index) => {
-              const err = errorMap.get(index)
-              const got = index < answer.length ? answer[index] : ""
-              const expected = err?.expected ?? ""
-              const isError = !!err
-
-              return (
-                <div
-                  key={index}
-                  className="flex flex-col items-center justify-start text-xs"
-                >
-                  <div
-                    className={cn(
-                      "flex h-9 w-9 items-center justify-center rounded-md border font-mono text-sm",
-                      isError
-                        ? "border-destructive/60 bg-destructive/10 text-destructive"
-                        : "border-emerald-500/40 bg-emerald-500/10 text-emerald-700",
-                    )}
-                  >
-                    {got || "·"}
-                  </div>
-                  <div className="mt-1 text-[10px] text-muted-foreground">
-                    {isError ? (
-                      <span>
-                        → {expected || "∅"}
-                      </span>
-                    ) : (
-                      <span className="text-emerald-600">✓</span>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </div>
-    )
   }
 
   const showSetup = !hasActiveSession && !summary
 
   return (
     <div className="min-h-screen bg-background">
-      <LearningNav
-        breadcrumbs={[
-          { label: "Learning", href: "/learning" },
-          { label: "Numbers Dictation" },
-        ]}
-        showBackButton
-      />
+      <div className="mx-auto max-w-6xl px-4 py-6 md:py-8">
+        <Button
+          type="button"
+          variant="ghost"
+          className="mb-6 rounded-full px-3 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+          onClick={() => router.push("/learning/workspace")}
+        >
+          <ArrowLeft className="mr-1.5 h-4 w-4" />
+          Retour a l'espace d'entrainement
+        </Button>
 
-      <div className="mx-auto max-w-5xl px-4 py-6 text-sm md:py-8 md:text-base">
-        {/* Intro / hero */}
-        <Card className="mb-6 border-border/60 bg-card/70 backdrop-blur-sm">
-          <CardHeader className="flex flex-row items-start justify-between gap-4">
-            <div className="space-y-1.5">
-              <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
-                <ListChecks className="h-5 w-5 text-primary" />
-                Numbers Dictation
-              </CardTitle>
-              <CardDescription className="text-xs md:text-sm">
-                Practice understanding numbers spoken
-                French. Listen to the audio, then type only the digits you hear.
-              </CardDescription>
-            </div>
-            <div className="hidden rounded-xl bg-primary/10 p-2 text-xs text-primary md:flex md:flex-col md:items-center md:justify-center">
-              <Headphones className="mb-1 h-4 w-4" />
-              <span>Audio-only</span>
-              <span className="text-[10px] text-primary/80">
-                No transcripts or hints
-              </span>
-            </div>
-          </CardHeader>
-        </Card>
-
-        {/* Layout */}
-        <div className="grid gap-4 md:grid-cols-[minmax(0,1.6fr)_minmax(0,1.2fr)]">
-          {/* Left: active exercise or completion/summary prompt */}
-          <div className="space-y-4">
-            {summary && session && (
-              <Card className="border-border/70 bg-card/70">
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between gap-2 text-base md:text-lg">
-                    <span>Session summary</span>
-                    <Badge variant="secondary" className="text-[11px]">
-                      {session.totalExercises} exercises
-                    </Badge>
-                  </CardTitle>
-                  <CardDescription className="text-xs md:text-sm">
-                    Overall performance across all Numbers Dictation exercises in
-                    this session.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-5">
-                  <div className="flex flex-wrap items-end justify-between gap-4">
-                    <div>
-                      <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                        Score
-                      </p>
-                      <p className="text-3xl font-semibold">
-                        {Math.round(summary.score * 100)}%
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {summary.correct} / {session.totalExercises} exercises
-                        correct
-                      </p>
+        {showSetup && (
+          <section className="mx-auto max-w-5xl">
+            <Card className="overflow-hidden border-border/70 bg-card/90">
+              <CardHeader className="border-b border-border/60 pb-5">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2 text-primary">
+                      <ListChecks className="h-5 w-5" />
+                      <span className="text-xs font-semibold uppercase tracking-[0.24em]">
+                        Dictee de nombres
+                      </span>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={handleSaveTranscript}
-                        disabled={isSavingTranscript || !history.length}
-                        className="gap-2"
-                      >
-                        {isSavingTranscript && (
-                          <RefreshCw className="h-4 w-4 animate-spin" />
-                        )}
-                        {isSavingTranscript ? "Saving…" : "Save transcript"}
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={handleRestart}
-                      >
-                        Start new session
-                      </Button>
-                    </div>
+                    <CardTitle className="mt-3 text-3xl tracking-tight">
+                      Preparation de session
+                    </CardTitle>
                   </div>
+                  <Badge className="rounded-full bg-primary/10 px-4 py-2 text-primary hover:bg-primary/10">
+                    <Headphones className="mr-2 h-4 w-4" />
+                    Audio uniquement
+                  </Badge>
+                </div>
+              </CardHeader>
 
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    {(Object.keys(TYPE_LABELS) as NumbersType[]).map(type => {
-                      const stats = summary.perType[type]
-                      if (!stats) return null
-                      const accuracy =
-                        stats.total > 0
-                          ? Math.round((stats.correct / stats.total) * 100)
-                          : 0
-                      return (
-                        <div
-                          key={type}
-                          className="rounded-xl border border-border/70 bg-muted/40 p-3"
-                        >
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <div className="min-w-0">
-                              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                                {TYPE_LABELS[type]}
-                              </p>
-                              <p className="mt-1 text-lg font-semibold">
-                                {accuracy}%
-                              </p>
-                            </div>
-                            <Badge
-                              variant="outline"
-                              className="shrink-0 border-border/60 text-[11px]"
-                            >
-                              {stats.correct} / {stats.total} correct
-                            </Badge>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-
-                  {history.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-[11px] font-medium text-muted-foreground">
-                        Answered exercises
-                      </p>
-                      <div className="space-y-1">
-                        {history.map((ex, index) => {
-                          const active = feedbackExercise?.id === ex.id
-                          return (
-                            <button
-                              key={ex.id}
-                              type="button"
-                              onClick={() => handleInspectExercise(ex.id)}
-                              className={cn(
-                                "flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-xs transition",
-                                active
-                                  ? "border-primary bg-primary/5"
-                                  : "border-border/60 bg-muted/40 hover:border-primary/40",
-                              )}
-                            >
-                              <div className="min-w-0">
-                                <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                                  <span className="font-medium text-foreground">
-                                    Exercise {index + 1}
-                                  </span>
-                                  <span>·</span>
-                                  <span className="capitalize">
-                                    {TYPE_LABELS[ex.numberType]}
-                                  </span>
-                                </p>
-                                <p className="mt-0.5 font-mono text-[11px] text-foreground truncate">
-                                  {ex.answer || "No answer"}
-                                </p>
-                              </div>
-                              <Badge
-                                variant={ex.isCorrect ? "outline" : "destructive"}
-                                className="shrink-0 text-[10px]"
-                              >
-                                {ex.isCorrect ? "Correct" : "Incorrect"}
-                              </Badge>
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {!summary && session && !showInterimSummary && (
-              <Card className="border-border/70 bg-card/70">
-                <CardHeader className="space-y-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <CardTitle className="text-base md:text-lg">
-                        {current
-                          ? `Exercise ${session.completed + 1} of ${session.totalExercises}`
-                          : "Session complete"}
-                      </CardTitle>
-                      <CardDescription className="text-xs md:text-sm">
-                        {current
-                          ? "Listen to the number in French, then type the digits you hear."
-                          : "You’ve answered all exercises in this session. View your summary or start a new session."}
-                      </CardDescription>
-                    </div>
-                    <div className="flex flex-col items-end gap-1 text-right">
-                      <Badge
-                        variant="secondary"
-                        className="text-[11px] capitalize"
-                      >
-                        {current
-                          ? TYPE_LABELS[current.numberType]
-                          : "All types"}
-                      </Badge>
-                      {session && (
-                        <span className="text-[11px] text-muted-foreground">
-                          Completed {session.completed} /{" "}
-                          {session.totalExercises}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  {session && (
-                    <div className="space-y-1">
-                      <Progress value={progress} className="h-2" />
-                      <p className="text-[11px] text-muted-foreground">
-                        Progress: {progress}%
-                      </p>
-                    </div>
-                  )}
-                </CardHeader>
-
-                <CardContent className="space-y-5">
-                  {current ? (
-                    <>
-                      <div className="space-y-2 rounded-lg border bg-muted/40 p-3">
-                        <p className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Headphones className="h-4 w-4 text-primary" />
-                          Listen carefully. You can replay the audio as needed,
-                          but no transcript or digits are shown.
-                        </p>
-                        {audioSrc ? (
-                          <audio
-                            key={current.id}
-                            controls
-                            src={audioSrc}
-                            className="mt-1 w-full"
+              <CardContent className="grid gap-6 p-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+                <div className="space-y-6">
+                  <div>
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                      Types de nombres
+                    </p>
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                      {(Object.keys(TYPE_LABELS) as NumbersType[]).map((type) => {
+                        const active = selectedTypes.includes(type)
+                        const Icon = TYPE_ICONS[type]
+                        return (
+                          <button
+                            key={type}
+                            type="button"
+                            onClick={() => setSelectedTypes((prev) =>
+                              prev.includes(type)
+                                ? prev.filter((item) => item !== type)
+                                : [...prev, type]
+                            )}
+                            className={cn(
+                              "rounded-[22px] border px-4 py-5 text-left transition-all",
+                              active
+                                ? "border-primary/30 bg-primary/10 shadow-[0_12px_30px_rgba(16,185,129,0.08)]"
+                                : "border-border/70 bg-white hover:border-primary/20 hover:bg-primary/5"
+                            )}
                           >
-                            Your browser does not support the audio element.
-                          </audio>
-                        ) : (
-                          <p className="text-xs text-destructive">
-                            Audio not available for this exercise.
-                          </p>
-                        )}
-                      </div>
+                            <Icon className={cn("mb-4 h-6 w-6", active ? "text-primary" : "text-muted-foreground")} />
+                            <p className="font-semibold text-foreground">{TYPE_LABELS[type]}</p>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
 
-                      <div className="space-y-2">
-                        <label className="text-xs font-medium text-muted-foreground">
-                          Your answer (digits only)
+                  <div>
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                        Nombre d'exercices
+                      </p>
+                      <span className="text-sm text-muted-foreground">Min 5 · Max 20</span>
+                    </div>
+                    <Input
+                      type="number"
+                      min={5}
+                      max={20}
+                      value={count}
+                      onChange={(event) => {
+                        const next = Number(event.target.value)
+                        if (Number.isNaN(next)) {
+                          setCount(5)
+                          return
+                        }
+                        setCount(Math.min(20, Math.max(5, next)))
+                      }}
+                      className="h-14 w-full rounded-2xl text-center text-2xl font-semibold"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col justify-between rounded-[28px] border border-border/70 bg-muted/30 p-5">
+                  <div className="space-y-4">
+                    <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                      <Headphones className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                        Mode
+                      </p>
+                      <p className="mt-2 text-xl font-semibold">Ecoute + saisie rapide</p>
+                    </div>
+                    <div className="grid gap-2 text-sm text-muted-foreground">
+                      <div className="rounded-2xl bg-white px-4 py-3">Lecture, pause, replay, retour 5s</div>
+                      <div className="rounded-2xl bg-white px-4 py-3">Pave numerique integre</div>
+                      <div className="rounded-2xl bg-white px-4 py-3">Feedback chiffre par chiffre</div>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    size="lg"
+                    onClick={handleStart}
+                    disabled={!selectedTypes.length || pending}
+                    className="mt-6 h-14 rounded-2xl text-base font-semibold shadow-[0_18px_40px_rgba(16,185,129,0.18)]"
+                  >
+                    Commencer
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+        )}
+
+        {!showSetup && !summary && session && (
+          <section className="mx-auto max-w-4xl">
+            <div className="mb-5 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                  Dictee de nombres
+                </p>
+                <h1 className="mt-2 text-3xl font-semibold tracking-tight">
+                  Exercice {Math.min(session.completed + 1, session.totalExercises)} / {session.totalExercises}
+                </h1>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">Progression</p>
+                <p className="text-2xl font-semibold text-primary">{progress}%</p>
+              </div>
+            </div>
+
+            <Card className="overflow-hidden border-border/70 bg-card/95">
+              <CardContent className="space-y-8 p-6 md:p-8">
+                {current ? (
+                  <>
+                    <div className="flex items-center justify-between gap-4">
+                      <Badge className="rounded-full bg-primary/10 px-4 py-2 text-primary hover:bg-primary/10">
+                        {TYPE_LABELS[current.numberType]}
+                      </Badge>
+                      <Badge variant="secondary" className="rounded-full px-4 py-2">
+                        <Headphones className="mr-2 h-4 w-4" />
+                        Audio
+                      </Badge>
+                    </div>
+
+                    <ExerciseAudioPlayer
+                      audioRef={audioRef}
+                      audioSrc={audioSrc}
+                      currentTime={currentTime}
+                      duration={duration}
+                      isPlaying={isPlaying}
+                      onToggle={handleAudioToggle}
+                      onJump={handleJump}
+                      onSeek={handleSeek}
+                    />
+
+                    <div className="relative space-y-4">
+                      {perfectCurrent && <SparkleBurst />}
+                      <div
+                        className={cn(
+                          "rounded-[28px] border border-border/70 bg-muted/20 p-4 md:p-6",
+                          shakeInput && "animate-[numbers-shake_0.38s_ease-in-out]"
+                        )}
+                      >
+                        <label className="mb-3 block text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                          Votre reponse
                         </label>
                         <Input
                           inputMode="numeric"
                           pattern="[0-9:.]*"
                           autoComplete="off"
                           value={current.answer}
-                          onChange={e => {
-                            const raw = e.target.value
-                            const noSpaces = raw.replace(/\s+/g, "")
-                            const sanitized = noSpaces.replace(/[^\d:.]/g, "")
+                          onChange={(event) => {
+                            const sanitized = event.target.value.replace(/\s+/g, "").replace(/[^\d:.]/g, "")
                             updateAnswer(sanitized)
                           }}
-                          placeholder={
-                            current.numberType === "TIME"
-                              ? "Type the time you hear, e.g. 14:35"
-                              : "Type the digits you hear, e.g. 0632487091"
-                          }
-                          disabled={pending}
-                          className="h-9 font-mono"
+                          placeholder="Saisir"
+                          disabled={pending || answeredCurrent}
+                          className="h-24 rounded-[24px] border-border bg-white px-6 text-center font-mono text-4xl font-semibold tracking-[0.18em] shadow-sm placeholder:tracking-normal"
                         />
-                        <p className="text-[11px] text-muted-foreground">
-                          Spaces are ignored. Digits, <code>:</code> and{" "}
-                          <code>.</code> are supported.
+
+                        {answeredCurrent && latestExercise && (
+                          <InlineDigitFeedback exercise={latestExercise} />
+                        )}
+                      </div>
+
+                      <VirtualNumpad
+                        keys={numpadKeys}
+                        onPress={handleAppendKey}
+                        onDelete={handleDelete}
+                        onClear={handleClear}
+                        disabled={pending || answeredCurrent}
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap justify-center gap-3">
+                      {!answeredCurrent ? (
+                        <Button
+                          type="button"
+                          size="lg"
+                          onClick={handleSubmit}
+                          disabled={pending || !current.answer.trim()}
+                          className="h-14 rounded-2xl px-8 text-base font-semibold"
+                        >
+                          {pending ? "Verification..." : "Valider"}
+                        </Button>
+                      ) : session.completed < session.totalExercises ? (
+                        <Button
+                          type="button"
+                          size="lg"
+                          onClick={handleNext}
+                          className="h-14 rounded-2xl px-8 text-base font-semibold"
+                        >
+                          Exercice suivant
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          size="lg"
+                          onClick={handleFinish}
+                          className="h-14 rounded-2xl px-8 text-base font-semibold"
+                        >
+                          Voir le bilan
+                        </Button>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center gap-4 py-10 text-center">
+                    <p className="text-xl font-semibold">Session terminee</p>
+                    <Button type="button" size="lg" onClick={handleFinish} className="h-14 rounded-2xl px-8">
+                      Voir le bilan
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </section>
+        )}
+
+        {summary && session && (
+          <section className="mx-auto max-w-4xl">
+            <Card className="border-border/70 bg-card/95">
+              <CardHeader className="pb-2">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                      Bilan
+                    </p>
+                    <CardTitle className="mt-2 text-3xl tracking-tight">
+                      {Math.round(summary.score * 100)}% de reussite
+                    </CardTitle>
+                  </div>
+                  <Badge className="rounded-full bg-primary/10 px-4 py-2 text-primary hover:bg-primary/10">
+                    {summary.correct} / {session.totalExercises} corrects
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {(Object.keys(TYPE_LABELS) as NumbersType[]).map((type) => {
+                    const stats = summary.perType[type]
+                    if (!stats) return null
+                    const accuracy = Math.round((stats.correct / stats.total) * 100)
+                    const Icon = TYPE_ICONS[type]
+                    return (
+                      <div key={type} className="rounded-[22px] border border-border/70 bg-muted/30 p-4">
+                        <div className="mb-3 flex items-center gap-2 text-primary">
+                          <Icon className="h-4 w-4" />
+                          <span className="text-sm font-semibold">{TYPE_LABELS[type]}</span>
+                        </div>
+                        <p className="text-2xl font-semibold">{accuracy}%</p>
+                        <p className="text-xs text-muted-foreground">
+                          {stats.correct} / {stats.total}
                         </p>
                       </div>
-
-                      <div className="flex flex-wrap items-center gap-3">
-                        <Button
-                          type="button"
-                          onClick={handleSubmitAnswer}
-                          disabled={pending || !current.answer.trim()}
-                          className="gap-2"
-                        >
-                          {pending && (
-                            <RefreshCw className="h-4 w-4 animate-spin" />
-                          )}
-                          {pending ? "Checking..." : "Submit answer"}
-                        </Button>
-                        {session.completed > 0 && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={handleShowInterimSummary}
-                            disabled={pending}
-                          >
-                            View summary so far
-                          </Button>
-                        )}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="flex flex-col items-start gap-3 text-xs md:text-sm">
-                      <p className="text-muted-foreground">
-                        All exercises in this session are answered.
-                      </p>
-                      <div className="flex flex-wrap gap-3">
-                        <Button
-                          type="button"
-                          onClick={handleFinishSession}
-                          disabled={pending || !session?.completed}
-                          className="gap-2"
-                        >
-                          {pending && (
-                            <RefreshCw className="h-4 w-4 animate-spin" />
-                          )}
-                          View session summary
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={handleRestart}
-                          disabled={pending}
-                        >
-                          Start new session
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {!summary && session && showInterimSummary && (
-              <Card className="border-border/70 bg-card/70">
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between gap-2 text-base md:text-lg">
-                    <span>Summary so far</span>
-                    <Badge variant="secondary" className="text-[11px]">
-                      {answeredCount} / {session.totalExercises} answered
-                    </Badge>
-                  </CardTitle>
-                  <CardDescription className="text-xs md:text-sm">
-                    Based on the exercises you&apos;ve answered in this
-                    session so far.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-5">
-                  <div className="flex flex-wrap items-end justify-between gap-4">
-                    <div>
-                      <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                        Score so far
-                      </p>
-                      <p className="text-3xl font-semibold">
-                        {answeredCount > 0
-                          ? Math.round((correctSoFar / answeredCount) * 100)
-                          : 0}
-                        %
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {correctSoFar} / {answeredCount} answers correct so far
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={handleHideInterimSummary}
-                      >
-                        Back to exercise
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={handleFinishSession}
-                        disabled={pending || !session.completed}
-                        className="gap-2"
-                      >
-                        {pending && (
-                          <RefreshCw className="h-4 w-4 animate-spin" />
-                        )}
-                        End session &amp; view full summary
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    {(Object.keys(TYPE_LABELS) as NumbersType[]).map(type => {
-                      const stats = history.reduce(
-                        (acc, ex) => {
-                          if (ex.numberType !== type) return acc
-                          acc.total += 1
-                          if (ex.isCorrect) {
-                            acc.correct += 1
-                          } else {
-                            acc.incorrect += 1
-                          }
-                          return acc
-                        },
-                        { total: 0, correct: 0, incorrect: 0 },
-                      )
-
-                      if (!stats.total) return null
-
-                      const accuracy =
-                        stats.total > 0
-                          ? Math.round((stats.correct / stats.total) * 100)
-                          : 0
-
-                      return (
-                        <div
-                          key={type}
-                          className="rounded-xl border border-border/70 bg-muted/40 p-3"
-                        >
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <div className="min-w-0">
-                              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                                {TYPE_LABELS[type]}
-                              </p>
-                              <p className="mt-1 text-lg font-semibold">
-                                {accuracy}%
-                              </p>
-                            </div>
-                            <Badge
-                              variant="outline"
-                              className="shrink-0 border-border/60 text-[11px]"
-                            >
-                              {stats.correct} / {stats.total} correct
-                            </Badge>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {!session && !summary && (
-              <Card className="border-dashed border-border/70 bg-muted/40">
-                <CardHeader>
-                  <CardTitle className="text-base md:text-lg">
-                    Start a Numbers Dictation session
-                  </CardTitle>
-                  <CardDescription className="text-xs md:text-sm">
-                    Choose which types of numbers you want to practice and how
-                    many exercises to include.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-xs text-muted-foreground">
-                    Once you start, you&apos;ll only hear audio. Digits, spoken
-                    chunks, and sentences are never shown before you answer.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          {/* Right: configuration + last answer feedback */}
-          <div className="space-y-4">
-            <Card className="border-border/70 bg-card/70">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm md:text-base">
-                  Session setup
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Select number types and how many exercises you want in this
-                  practice set.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <p className="text-[11px] font-medium text-muted-foreground">
-                    Number types
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {(Object.keys(TYPE_LABELS) as NumbersType[]).map(type => {
-                      const active = selectedTypes.includes(type)
-                      return (
-                        <button
-                          key={type}
-                          type="button"
-                          onClick={() => handleToggleType(type)}
-                          className={cn(
-                            "inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition",
-                            active
-                              ? "border-primary bg-primary/10 text-primary"
-                              : "border-border bg-muted/40 text-muted-foreground hover:border-primary/40",
-                          )}
-                          aria-pressed={active}
-                        >
-                          {TYPE_LABELS[type]}
-                        </button>
-                      )
-                    })}
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">
-                    You can combine different number types (years, phone
-                    numbers, prices, times, etc.) in a single session.
-                  </p>
+                    )
+                  })}
                 </div>
 
-                <div className="space-y-2">
-                  <p className="text-[11px] font-medium text-muted-foreground">
-                    Number of exercises
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      min={1}
-                      max={20}
-                      value={count}
-                      onChange={e => handleCountChange(e.target.value)}
-                      className="h-8 w-20"
-                    />
-                    <span className="text-[11px] text-muted-foreground">
-                      Min 1, max 20 exercises
-                    </span>
-                  </div>
-                </div>
-
-                <div className="pt-1">
+                <div className="flex flex-wrap gap-3">
+                  <Button type="button" onClick={handleSaveTranscript} disabled={isSavingTranscript} className="rounded-2xl">
+                    {isSavingTranscript ? "Sauvegarde..." : "Enregistrer la session"}
+                  </Button>
                   <Button
                     type="button"
-                    onClick={handleStart}
-                    disabled={!selectedTypes.length || pending}
-                    className="w-full gap-2"
+                    variant="outline"
+                    onClick={() => {
+                      resetSession()
+                      router.refresh()
+                    }}
+                    className="rounded-2xl"
                   >
-                    {pending && (
-                      <RefreshCw className="h-4 w-4 animate-spin" />
-                    )}
-                    {showSetup
-                      ? "Start Numbers Dictation"
-                      : "Restart with new session"}
+                    Nouvelle session
                   </Button>
                 </div>
               </CardContent>
             </Card>
+          </section>
+        )}
+      </div>
 
-            {feedbackExercise && !summary && (
-              <Card className="border-border/70 bg-muted/40">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center justify-between gap-2 text-sm">
-                    <span>
-                      {feedbackIndex >= 0
-                        ? `Exercise ${feedbackIndex + 1} feedback`
-                        : "Exercise feedback"}
-                    </span>
-                    <Badge
-                      variant={feedbackExercise.isCorrect ? "default" : "destructive"}
-                      className="text-[11px]"
-                    >
-                      {feedbackExercise.isCorrect ? "Correct" : "Incorrect"}
-                    </Badge>
-                  </CardTitle>
-                  <CardDescription className="text-xs">
-                    Digit-level feedback for this exercise. Use the summary on
-                    the left to review any earlier answers.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>{renderDigitFeedback()}</CardContent>
-              </Card>
-            )}
+      <style jsx global>{`
+        @keyframes numbers-shake {
+          0%, 100% { transform: translateX(0); }
+          20% { transform: translateX(-6px); }
+          40% { transform: translateX(6px); }
+          60% { transform: translateX(-4px); }
+          80% { transform: translateX(4px); }
+        }
+      `}</style>
+    </div>
+  )
+}
+
+function ExerciseAudioPlayer({
+  audioRef,
+  audioSrc,
+  currentTime,
+  duration,
+  isPlaying,
+  onToggle,
+  onJump,
+  onSeek,
+}: {
+  audioRef: React.RefObject<HTMLAudioElement | null>
+  audioSrc: string | null
+  currentTime: number
+  duration: number
+  isPlaying: boolean
+  onToggle: () => void
+  onJump: (delta: number) => void
+  onSeek: (value: number) => void
+}) {
+  const progress = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0
+  const radius = 58
+  const circumference = 2 * Math.PI * radius
+  const strokeDashoffset = circumference - (progress / 100) * circumference
+
+  return (
+    <div className="rounded-[30px] border border-border/70 bg-muted/20 p-6">
+      <audio ref={audioRef} src={audioSrc ?? undefined} preload="metadata" className="hidden" />
+
+      <div className="flex flex-col items-center gap-6">
+        <div className="flex items-center gap-4">
+          <Button type="button" size="icon" variant="ghost" className="h-12 w-12 rounded-full" onClick={() => onJump(-5)} disabled={!audioSrc}>
+            <RotateCcw className="h-5 w-5" />
+          </Button>
+
+          <button
+            type="button"
+            onClick={onToggle}
+            disabled={!audioSrc}
+            className="relative flex h-36 w-36 items-center justify-center rounded-full disabled:opacity-50"
+            aria-label={isPlaying ? "Pause audio" : "Lire audio"}
+          >
+            <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 140 140">
+              <circle cx="70" cy="70" r={radius} className="fill-none stroke-emerald-100" strokeWidth="8" />
+              <circle
+                cx="70"
+                cy="70"
+                r={radius}
+                className="fill-none stroke-[hsl(var(--primary))] transition-all"
+                strokeWidth="8"
+                strokeLinecap="round"
+                strokeDasharray={circumference}
+                strokeDashoffset={strokeDashoffset}
+              />
+            </svg>
+            <span className="flex h-24 w-24 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_18px_40px_rgba(16,185,129,0.18)]">
+              {isPlaying ? <Pause className="h-10 w-10 fill-current" /> : <Play className="ml-1 h-10 w-10 fill-current" />}
+            </span>
+          </button>
+
+          <Button type="button" size="icon" variant="ghost" className="h-12 w-12 rounded-full" onClick={() => onJump(5)} disabled={!audioSrc}>
+            <RotateCw className="h-5 w-5" />
+          </Button>
+        </div>
+
+        <div className="w-full max-w-2xl space-y-3">
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>{formatTime(currentTime)}</span>
+            <span>{formatTime(duration)}</span>
           </div>
+          <input
+            type="range"
+            min={0}
+            max={duration || 0}
+            step={0.1}
+            value={Math.min(currentTime, duration || 0)}
+            onChange={(event) => onSeek(Number(event.target.value))}
+            className="h-2 w-full cursor-pointer appearance-none rounded-full bg-emerald-100 accent-primary"
+            disabled={!audioSrc}
+          />
         </div>
       </div>
     </div>
   )
+}
+
+function VirtualNumpad({
+  keys,
+  onPress,
+  onDelete,
+  onClear,
+  disabled,
+}: {
+  keys: string[]
+  onPress: (key: string) => void
+  onDelete: () => void
+  onClear: () => void
+  disabled: boolean
+}) {
+  return (
+    <div className="rounded-[28px] border border-border/70 bg-white p-4">
+      <div className="grid grid-cols-3 gap-3">
+        {keys.map((key) => (
+          <button
+            key={key}
+            type="button"
+            disabled={disabled}
+            onClick={() => onPress(key)}
+            className="h-16 rounded-2xl border border-border/70 bg-muted/20 text-2xl font-semibold transition hover:border-primary/30 hover:bg-primary/5 disabled:opacity-50"
+          >
+            {key}
+          </button>
+        ))}
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={onClear}
+          className="h-16 rounded-2xl border border-border/70 bg-muted/20 text-sm font-semibold transition hover:border-primary/30 hover:bg-primary/5 disabled:opacity-50"
+        >
+          Effacer
+        </button>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={onDelete}
+          className="col-span-2 flex h-16 items-center justify-center gap-2 rounded-2xl border border-border/70 bg-muted/20 text-sm font-semibold transition hover:border-primary/30 hover:bg-primary/5 disabled:opacity-50"
+        >
+          <Delete className="h-4 w-4" />
+          Supprimer
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function InlineDigitFeedback({
+  exercise,
+}: {
+  exercise: {
+    answer: string
+    errors: Array<{ index: number; expected: string }>
+    isCorrect: boolean | null
+    script?: string | null
+  }
+}) {
+  const errorMap = new Map(exercise.errors.map((error) => [error.index, error]))
+  const length = Math.max(
+    exercise.answer.length,
+    exercise.errors.reduce((max, error) => Math.max(max, error.index + 1), 0)
+  )
+
+  return (
+    <div className="mt-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <Badge
+          className={cn(
+            "rounded-full px-3 py-1.5",
+            exercise.isCorrect
+              ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
+              : "bg-rose-100 text-rose-700 hover:bg-rose-100"
+          )}
+        >
+          {exercise.isCorrect ? "Correct" : "A corriger"}
+        </Badge>
+        <span className="text-xs text-muted-foreground">Feedback chiffre par chiffre</span>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {Array.from({ length }).map((_, index) => {
+          const error = errorMap.get(index)
+          const got = exercise.answer[index] || "·"
+          return (
+            <div key={index} className="flex min-w-[54px] flex-col items-center gap-1">
+              <div
+                className={cn(
+                  "flex h-12 w-12 items-center justify-center rounded-full border-2 font-mono text-lg font-semibold",
+                  error
+                    ? "border-rose-300 bg-rose-50 text-rose-600"
+                    : "border-emerald-300 bg-emerald-50 text-emerald-600"
+                )}
+              >
+                {got}
+              </div>
+              <div className="text-[11px] text-muted-foreground">
+                {error ? `→ ${error.expected || "∅"}` : "OK"}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {exercise.script && (
+        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/60 px-4 py-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
+            Transcription
+          </p>
+          <p className="mt-2 text-sm leading-relaxed text-slate-700">
+            {exercise.script}
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function SparkleBurst() {
+  const dots = [
+    "left-[10%] top-4",
+    "left-[22%] top-1",
+    "left-[40%] top-5",
+    "left-[58%] top-2",
+    "left-[72%] top-6",
+    "left-[86%] top-3",
+  ]
+
+  return (
+    <div className="pointer-events-none absolute inset-x-10 -top-2 h-10">
+      {dots.map((position, index) => (
+        <span
+          key={position}
+          className={cn(
+            "absolute h-2.5 w-2.5 rounded-full bg-emerald-300 animate-ping",
+            position
+          )}
+          style={{ animationDelay: `${index * 90}ms` }}
+        />
+      ))}
+    </div>
+  )
+}
+
+function buildExpectedString(
+  answer: string,
+  errors: Array<{ index: number; expected: string }>
+) {
+  const errorMap = new Map(errors.map((error) => [error.index, error.expected]))
+  const length = Math.max(
+    answer.length,
+    errors.reduce((max, error) => Math.max(max, error.index + 1), 0)
+  )
+
+  return Array.from({ length })
+    .map((_, index) => errorMap.get(index) ?? answer[index] ?? "·")
+    .join("")
 }

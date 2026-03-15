@@ -1,14 +1,17 @@
 "use client"
 
-import { LearningNav } from "@/components/learning/layout/learning-nav"
+import { useRouter } from "next/navigation"
+import { ArrowLeft } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { useDelfPractice } from "@/lib/hooks/use-delf-practice"
 import {
   LevelSectionSelector,
   TestList,
-  TestPlayer
+  TestPlayer,
 } from "@/components/learning/delf"
 
 export default function DelfPracticePage() {
+  const router = useRouter()
   const {
     level,
     section,
@@ -28,43 +31,46 @@ export default function DelfPracticePage() {
     submitTest,
     resetTest,
     resetAll,
-    setMode,
   } = useDelfPractice()
 
-  // --- Step 1: Level & Section Selection ---
+  const shellClassName = currentTest
+    ? "min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef8f3_100%)]"
+    : "min-h-screen bg-slate-50"
+
   if (!level || !section) {
     return (
-      <div className="min-h-screen bg-background">
-        <LearningNav
-          breadcrumbs={[
-            { label: "Training", href: "/learning/workspace" },
-            { label: "DELF Practice" },
-          ]}
-          showBackButton
-        />
-        <div className="mx-auto max-w-6xl px-4 py-8 md:py-12">
-          <LevelSectionSelector 
-            loading={loading}
-            onSelect={(lvl, sec) => loadTests(lvl, sec)} 
-          />
+      <div className={shellClassName}>
+        <div className="mx-auto max-w-6xl px-4 py-6 md:py-8">
+          <Button
+            type="button"
+            variant="ghost"
+            className="mb-6 rounded-full px-3 text-slate-600 hover:bg-white hover:text-slate-900"
+            onClick={() => router.push("/learning/workspace")}
+          >
+            <ArrowLeft className="mr-1.5 h-4 w-4" />
+            Retour à l'espace d'entrainement
+          </Button>
+
+          <LevelSectionSelector loading={loading} onSelect={(lvl, sec) => loadTests(lvl, sec)} />
         </div>
       </div>
     )
   }
 
-  // --- Step 2: Test List ---
   if (!currentTest) {
     return (
-      <div className="min-h-screen bg-background">
-        <LearningNav
-          breadcrumbs={[
-            { label: "Training", href: "/learning/workspace" },
-            { label: "DELF Practice", onClick: resetAll },
-            { label: `${level} ${section}` },
-          ]}
-          showBackButton
-        />
+      <div className={shellClassName}>
         <div className="mx-auto max-w-6xl px-4 py-6 md:py-8">
+          <Button
+            type="button"
+            variant="ghost"
+            className="mb-6 rounded-full px-3 text-slate-600 hover:bg-white hover:text-slate-900"
+            onClick={() => router.push("/learning/workspace")}
+          >
+            <ArrowLeft className="mr-1.5 h-4 w-4" />
+            Retour à l'espace d'entrainement
+          </Button>
+
           <TestList
             level={level}
             section={section}
@@ -78,19 +84,19 @@ export default function DelfPracticePage() {
     )
   }
 
-  // --- Step 3: Test Player ---
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-      <LearningNav
-        breadcrumbs={[
-          { label: "Training", href: "/learning/workspace" },
-          { label: "DELF Practice", onClick: resetAll },
-          { label: `${level} ${section}`, onClick: resetTest },
-          { label: currentTest.test_id },
-        ]}
-        showBackButton
-      />
-      <div className="mx-auto max-w-4xl px-4 py-6 md:py-8">
+    <div className={shellClassName}>
+      <div className="mx-auto max-w-5xl px-4 py-6 md:px-6 md:py-8">
+        <Button
+          type="button"
+          variant="ghost"
+          className="mb-6 rounded-full px-3 text-slate-600 hover:bg-white hover:text-slate-900"
+          onClick={() => router.push("/learning/workspace")}
+        >
+          <ArrowLeft className="mr-1.5 h-4 w-4" />
+          Retour à l'espace d'entrainement
+        </Button>
+
         <TestPlayer
           test={currentTest}
           userAnswers={userAnswers}
@@ -103,7 +109,8 @@ export default function DelfPracticePage() {
           onAnswerSubQuestion={updateSubQuestionAnswer}
           onSubmit={submitTest}
           onRestartTest={resetTest}
-          onBack={resetAll}
+          onBackToList={resetTest}
+          onBackToRoot={resetAll}
         />
       </div>
     </div>

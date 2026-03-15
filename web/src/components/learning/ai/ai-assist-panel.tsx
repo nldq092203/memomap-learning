@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { motion } from "framer-motion"
+import { Loader2 } from "lucide-react"
 import { useAiAssist } from "@/lib/hooks/use-ai-assist"
 
 import { AiAssistHeader } from "./ai-assist-header"
@@ -14,6 +14,20 @@ import { ChatInputSection } from "@/components/learning/ai/chat-input-section"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { TargetLangsSelector } from "./target-langs-selector"
 
+import { QuickExplainResult } from "./quick-explain-result"
+import { DeepBreakdownResult } from "./deep-breakdown-result"
+import { ExamplesResult } from "./examples-result"
+import { GrammarCheckResult } from "./grammar-check-result"
+import { MnemonicResult } from "./mnemonic-result"
+
+import type {
+  QuickExplainData,
+  DeepBreakdownData,
+  ExampleGeneratorData,
+  GrammarCheckData,
+  MnemonicData,
+} from "@/lib/types/api/ai"
+
 type ExplainPayload = {
   translations?: Record<string, string>
   register?: string
@@ -23,6 +37,18 @@ type ExplainPayload = {
   synonyms?: Array<{ fr: string }>
   examples?: Array<{ fr: string; translations?: Record<string, string> }>
   notes?: string[]
+}
+
+type AIMode = "explain" | "chat" | "quick" | "deep" | "examples" | "grammar" | "mnemonic"
+
+const MODE_LABELS: Record<AIMode, string> = {
+  explain: "Expliquer",
+  chat: "Chat",
+  quick: "Rapide",
+  deep: "Approfondi",
+  examples: "Exemples",
+  grammar: "Grammaire",
+  mnemonic: "Mnémonique",
 }
 
 function currentSentence(text: string): string {
@@ -43,16 +69,27 @@ export function AiAssistPanel({
   contextText?: string
   onOpenVocabModal?: (word: string, translation?: string | null, note?: string | null) => void
 }) {
-  const [mode, setMode] = useState<"explain" | "chat">("explain")
+  const [mode, setMode] = useState<AIMode>("explain")
   const {
     settings,
     updateSettings,
     isExplaining,
     isChatting,
+    isTaskLoading,
     explain,
     chat,
     explainText,
     askMore,
+    quickExplain,
+    quickExplainResult,
+    deepBreakdown,
+    deepBreakdownResult,
+    generateExamples,
+    examplesResult,
+    grammarCheck,
+    grammarCheckResult,
+    createMnemonic,
+    mnemonicResult,
   } = useAiAssist({ learning_lang: learningLang, native_lang: nativeLang })
 
   const [manualWord, setManualWord] = useState("")
@@ -63,6 +100,20 @@ export function AiAssistPanel({
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [pendingExplain, setPendingExplain] = useState<string | null>(null)
   const [lastExplainSource, setLastExplainSource] = useState<string>("")
+
+  // Grammar-specific input
+  const [grammarText, setGrammarText] = useState("")
+
+  const isLoading = isExplaining || isChatting || isTaskLoading
+
+  const handleExplainWord = async (text: string) => {
+    const normalized = (text || "").trim()
+    if (!normalized) return
+    setManualWord(normalized)
+    setLastExplainSource(normalized)
+    await explainText(normalized)
+    setMode("explain")
+  }
 
   // Track selection live
   useEffect(() => {
@@ -90,23 +141,43 @@ export function AiAssistPanel({
     return (selected || ctx || "").trim()
   }, [manualWord, selected, useContext, contextText])
 
-  const handleExplain = async () => {
+  const handleExplain = useCallback(async () => {
     const base = willSendExplain
     if (!base) return
     setPendingExplain(base)
     setConfirmOpen(true)
-  }
+  }, [willSendExplain])
 
-  const handlePrimaryAction = async () => {
+  const handlePrimaryAction = useCallback(async () => {
     if (mode === "chat") {
       const q = (ask || "").trim()
       if (!q) return
       await askMore(q, contextText, useContext)
       setAsk("")
+    } else if (mode === "quick") {
+      const word = willSendExplain
+      if (!word) return
+      await quickExplain(word)
+    } else if (mode === "deep") {
+      const word = willSendExplain
+      if (!word) return
+      await deepBreakdown(word)
+    } else if (mode === "examples") {
+      const word = willSendExplain
+      if (!word) return
+      await generateExamples(word)
+    } else if (mode === "grammar") {
+      const text = grammarText.trim() || willSendExplain
+      if (!text) return
+      await grammarCheck(text)
+    } else if (mode === "mnemonic") {
+      const word = willSendExplain
+      if (!word) return
+      await createMnemonic(word)
     } else {
       await handleExplain()
     }
-  }
+  }, [ask, askMore, contextText, createMnemonic, deepBreakdown, generateExamples, grammarCheck, grammarText, handleExplain, mode, quickExplain, useContext, willSendExplain])
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -120,7 +191,7 @@ export function AiAssistPanel({
         e.preventDefault()
         handleExplain()
       } else if (e.key === "Enter" && !e.shiftKey) {
-        if (mode === "explain") {
+        if (mode !== "chat") {
           e.preventDefault()
           handlePrimaryAction()
         }
@@ -163,10 +234,33 @@ export function AiAssistPanel({
     setMode("explain")
   }
 
-  // Handle adding vocab - notify parent to show modal
   const handleAddVocab = (word: string, translation?: string | null, note?: string | null) => {
     onOpenVocabModal?.(word, translation, note)
   }
+
+  // Cross-mode navigation handlers
+  const handleSwitchToDeep = (word: string) => {
+    setManualWord(word)
+    setMode("deep")
+    deepBreakdown(word)
+  }
+
+  const handleSwitchToExamples = (word: string) => {
+    setManualWord(word)
+    setMode("examples")
+    generateExamples(word)
+  }
+
+  const handleSwitchToMnemonic = (word: string) => {
+    setManualWord(word)
+    setMode("mnemonic")
+    createMnemonic(word)
+  }
+
+  // Primary modes (always visible)
+  const primaryModes: AIMode[] = ["explain", "chat"]
+  // Tool modes (collapsible row)
+  const toolModes: AIMode[] = ["quick", "deep", "examples", "grammar", "mnemonic"]
 
   return (
     <motion.div
@@ -182,84 +276,190 @@ export function AiAssistPanel({
         onExplain={handlePrimaryAction}
         isExplaining={isExplaining}
         isChatting={isChatting}
-        mode={mode}
+        mode={mode === "chat" ? "chat" : "explain"}
       />
 
-      <Card className="border bg-background/60 backdrop-blur-md rounded-xl shadow-sm">
+      <Card className="rounded-[24px] border border-slate-200 bg-background/70 shadow-sm backdrop-blur-md">
         <CardContent className="px-4 py-4">
-          <Tabs
-            value={mode}
-            onValueChange={(v: "explain" | "chat") => setMode(v)}
-            className="space-y-4"
-          >
-            <TabsList className="grid w-full grid-cols-2 bg-muted/50">
-              <TabsTrigger value="explain" className="text-xs font-medium">
-                Explain
-              </TabsTrigger>
-              <TabsTrigger value="chat" className="text-xs font-medium">
-                Ask More
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Explain Tab */}
-            <TabsContent value="explain" className="space-y-4">
-              <ExplainInputSection
-                manualWord={manualWord}
-                onManualWordChange={setManualWord}
-                selectedText={selected}
-                useContext={useContext}
-                contextText={contextText}
-                onExplain={handleExplain}
-                isExplaining={isExplaining}
+          <div className="space-y-4">
+            {/* Primary mode toggle */}
+            <div className="relative grid w-full grid-cols-2 rounded-full bg-slate-100 p-1">
+              <div
+                className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                  primaryModes.indexOf(mode as "explain" | "chat") === 1 || !primaryModes.includes(mode)
+                    ? "translate-x-full"
+                    : "translate-x-0"
+                }`}
               />
+              {primaryModes.map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setMode(m)}
+                  className={`relative z-10 rounded-full px-4 py-2 text-sm font-medium transition ${
+                    mode === m ? "text-slate-900" : "text-slate-500"
+                  }`}
+                >
+                  {MODE_LABELS[m]}
+                </button>
+              ))}
+            </div>
 
-              {/* Results */}
-              {explain && (
-                <ExplainResults
-                  data={explainJson}
-                  rawContent={String(explain.content ?? "")}
+            {/* Tool modes */}
+            <div className="flex flex-wrap gap-1.5">
+              {toolModes.map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setMode(m)}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                    mode === m
+                      ? "border-primary/30 bg-primary/10 text-primary"
+                      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                  }`}
+                >
+                  {MODE_LABELS[m]}
+                </button>
+              ))}
+            </div>
+
+            {/* Mode content */}
+            {mode === "chat" ? (
+              <div className="space-y-4">
+                <ChatMessages
+                  messages={chat}
                   onAddVocab={handleAddVocab}
-                  sourceText={lastExplainSource || willSendExplain}
-                  primaryTranslationLang={nativeLang}
+                  onExplainWord={handleExplainWord}
                 />
-              )}
-            </TabsContent>
+                <ChatInputSection
+                  value={ask}
+                  onChange={setAsk}
+                  useContext={useContext}
+                  onUseContextChange={setUseContext}
+                  onSubmit={async (q) => {
+                    await askMore(q, contextText, useContext)
+                    setAsk("")
+                  }}
+                  isLoading={isChatting}
+                />
+              </div>
+            ) : mode === "grammar" ? (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-foreground">
+                    Texte à vérifier
+                  </label>
+                  <textarea
+                    value={grammarText}
+                    onChange={(e) => setGrammarText(e.target.value)}
+                    placeholder="Collez ou saisissez votre texte ici pour vérifier la grammaire..."
+                    className="w-full rounded-2xl border border-slate-200 bg-white p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    rows={4}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                        e.preventDefault()
+                        handlePrimaryAction()
+                      }
+                    }}
+                    disabled={isTaskLoading}
+                  />
+                  <p className="text-[11px] text-slate-400">Cmd/Ctrl+Entrée pour analyser</p>
+                </div>
 
-            {/* Chat Tab */}
-            <TabsContent value="chat" className="space-y-4">
-              <ChatMessages
-                messages={chat}
-                onAddVocab={handleAddVocab}
+                {isTaskLoading && (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  </div>
+                )}
+
+                {grammarCheckResult?.meta?.isJson && grammarCheckResult.content && (
+                  <GrammarCheckResult data={grammarCheckResult.content as GrammarCheckData} />
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Shared input for explain/quick/deep/examples/mnemonic */}
+                <ExplainInputSection
+                  manualWord={manualWord}
+                  onManualWordChange={setManualWord}
+                  selectedText={selected}
+                  useContext={useContext}
+                  contextText={contextText}
+                  onExplain={handlePrimaryAction}
+                  isExplaining={isLoading}
+                />
+
+                {isTaskLoading && (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  </div>
+                )}
+
+                {/* Explain results */}
+                {mode === "explain" && explain && !isExplaining && (
+                  <ExplainResults
+                    data={explainJson}
+                    rawContent={String(explain.content ?? "")}
+                    onAddVocab={handleAddVocab}
+                    sourceText={lastExplainSource || willSendExplain}
+                    primaryTranslationLang={nativeLang}
+                    onExplainWord={handleExplainWord}
+                  />
+                )}
+
+                {/* Quick explain results */}
+                {mode === "quick" && quickExplainResult?.meta?.isJson && quickExplainResult.content && !isTaskLoading && (
+                  <QuickExplainResult
+                    data={quickExplainResult.content as QuickExplainData}
+                    onAddVocab={handleAddVocab}
+                    onDeepBreakdown={handleSwitchToDeep}
+                  />
+                )}
+
+                {/* Deep breakdown results */}
+                {mode === "deep" && deepBreakdownResult?.meta?.isJson && deepBreakdownResult.content && !isTaskLoading && (
+                  <DeepBreakdownResult
+                    data={deepBreakdownResult.content as DeepBreakdownData}
+                    onAddVocab={handleAddVocab}
+                    onExplainWord={handleExplainWord}
+                    onGenerateExamples={handleSwitchToExamples}
+                    onCreateMnemonic={handleSwitchToMnemonic}
+                  />
+                )}
+
+                {/* Examples results */}
+                {mode === "examples" && examplesResult?.meta?.isJson && examplesResult.content && !isTaskLoading && (
+                  <ExamplesResult
+                    data={examplesResult.content as ExampleGeneratorData}
+                    onExplainWord={handleExplainWord}
+                  />
+                )}
+
+                {/* Mnemonic results */}
+                {mode === "mnemonic" && mnemonicResult?.meta?.isJson && mnemonicResult.content && !isTaskLoading && (
+                  <MnemonicResult data={mnemonicResult.content as MnemonicData} />
+                )}
+              </div>
+            )}
+
+            {/* Target langs selector - only for explain mode */}
+            {mode === "explain" && (
+              <TargetLangsSelector
+                targetLangs={settings.target_langs || []}
+                onChange={(langs) => updateSettings({ target_langs: langs })}
               />
-
-              <ChatInputSection
-                value={ask}
-                onChange={setAsk}
-                useContext={useContext}
-                onUseContextChange={setUseContext}
-                onSubmit={async (q) => {
-                  await askMore(q, contextText, useContext)
-                  setAsk("")
-                }}
-                isLoading={isChatting}
-              />
-            </TabsContent>
-          </Tabs>
-
-          <TargetLangsSelector
-            targetLangs={settings.target_langs || []}
-            onChange={(langs) => updateSettings({ target_langs: langs })}
-          />
+            )}
+          </div>
         </CardContent>
       </Card>
 
-      {/* Confirm Dialog */}
+      {/* Confirm Dialog - only for explain mode */}
       <ConfirmationDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
-        title="Send to AI?"
-        description={`Explain this text with AI?\n\n"${pendingExplain && pendingExplain.length > 100 ? pendingExplain.slice(0, 100) + "..." : pendingExplain || ""}"`}
-        confirmText="Send"
+        title="Envoyer à l'IA ?"
+        description={`Analyser ce texte avec l'IA ?\n\n"${pendingExplain && pendingExplain.length > 100 ? pendingExplain.slice(0, 100) + "..." : pendingExplain || ""}"`}
+        confirmText="Envoyer"
         onConfirm={handleConfirm}
         isLoading={false}
       />

@@ -12,9 +12,10 @@ interface Message {
 interface ChatMessagesProps {
   messages: Message[]
   onAddVocab?: (word: string, translation?: string | null, note?: string | null) => void
+  onExplainWord?: (word: string) => void
 }
 
-export function ChatMessages({ messages, onAddVocab }: ChatMessagesProps) {
+export function ChatMessages({ messages, onAddVocab, onExplainWord }: ChatMessagesProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -29,7 +30,7 @@ export function ChatMessages({ messages, onAddVocab }: ChatMessagesProps) {
         <div className="flex flex-col items-center justify-center py-8 text-center">
           <MessageCircle className="h-8 w-8 text-muted-foreground/30 mb-2" />
           <p className="text-xs text-muted-foreground">
-            Ask anything about the text, grammar, or vocabulary
+            Posez une question sur le texte, la grammaire ou le vocabulaire.
           </p>
         </div>
       )}
@@ -52,7 +53,7 @@ export function ChatMessages({ messages, onAddVocab }: ChatMessagesProps) {
             }`}
           >
             {m.role === "assistant" ? (
-              <FormattedAiText text={m.content} onAdd={(w) => onAddVocab?.(w)} />
+              <FormattedAiText text={m.content} onAdd={(w) => onAddVocab?.(w)} onExplainWord={onExplainWord} />
             ) : (
               <p className="whitespace-pre-wrap">{m.content}</p>
             )}

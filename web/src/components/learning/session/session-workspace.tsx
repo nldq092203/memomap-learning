@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import type { MouseEvent as ReactMouseEvent } from "react"
 import { useRouter } from "next/navigation"
 import {
   learningApi,
@@ -13,14 +12,12 @@ import { notificationService } from "@/lib/services/notification-service"
 import { useConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { SessionTabProvider } from "@/lib/contexts/session-tab-context"
 import { AudioLessonPreviewWindow } from "@/components/learning/audio/audio-lesson-preview-window"
-import { WorkspaceHeader } from "@/components/learning/workspace/workspace-header"
 import {
   SourceSelector,
   type WorkspaceSourceMode,
 } from "@/components/learning/workspace/source-selector"
 import { DictationPanel } from "@/components/learning/workspace/dictation-panel"
 import { SidebarTabs } from "@/components/learning/workspace/sidebar-tabs"
-import { ResizeHandle } from "@/components/learning/workspace/resize-handle"
 import type { TranscriptEditorHandle } from "@/components/learning/editor/transcript-editor"
 import { useLearningLang } from "@/lib/contexts/learning-lang-context"
 import {
@@ -30,6 +27,17 @@ import {
 } from "@/lib/db/transcript-drafts"
 import type { LearningSession, LocalVocabCard } from "@/lib/types/learning-session"
 import { learningVocabApi } from "@/lib/services/learning-vocab-api"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import {
+  ArrowLeft,
+  BookOpenText,
+  CheckCircle2,
+  Focus,
+  Headphones,
+  Library,
+  Save,
+} from "lucide-react"
 
 interface SessionWorkspaceProps {
   initialDraftId?: string | null
@@ -58,7 +66,7 @@ export function SessionWorkspace({ initialDraftId }: SessionWorkspaceProps) {
     updatedAt: string | null
   }>({
     id: draftId,
-    title: "Dictation practice",
+    title: "Dictee",
     comments: [],
     tags: [],
     createdAt: null,
@@ -72,8 +80,6 @@ export function SessionWorkspace({ initialDraftId }: SessionWorkspaceProps) {
   // Local UI state
   const [sourceUrl, setSourceUrl] = useState("")
   const [isSavingToCloud, setIsSavingToCloud] = useState(false)
-  const [splitRatio, setSplitRatio] = useState(0.65)
-  const [isResizing, setIsResizing] = useState(false)
   const [sourceMode, setSourceMode] = useState<WorkspaceSourceMode>("dictation")
   const [audioLessons, setAudioLessons] = useState<AudioLessonListItem[]>([])
   const [audioLessonsLoading, setAudioLessonsLoading] = useState(false)
@@ -84,8 +90,6 @@ export function SessionWorkspace({ initialDraftId }: SessionWorkspaceProps) {
   const [isFocusMode, setIsFocusMode] = useState(false)
 
   const editorRef = useRef<TranscriptEditorHandle | null>(null)
-  const layoutRef = useRef<HTMLDivElement | null>(null)
-
   // Hydrate draft from IndexedDB for current language
   useEffect(() => {
     let cancelled = false
@@ -97,7 +101,7 @@ export function SessionWorkspace({ initialDraftId }: SessionWorkspaceProps) {
       if (existing) {
         setSessionMeta({
           id: existing.id,
-          title: existing.title || "Dictation practice",
+          title: existing.title || "Dictee",
           comments: existing.comments || [],
           tags: existing.tags || [],
           createdAt: existing.createdAt,
@@ -112,7 +116,7 @@ export function SessionWorkspace({ initialDraftId }: SessionWorkspaceProps) {
       } else {
         setSessionMeta({
           id: draftId,
-          title: "Dictation practice",
+          title: "Dictee",
           comments: [],
           tags: [],
           createdAt: null,
@@ -148,7 +152,7 @@ export function SessionWorkspace({ initialDraftId }: SessionWorkspaceProps) {
         const saved = await saveTranscriptDraft({
           id: sessionMeta.id || draftId,
           language: lang as LearningLanguage,
-          title: sessionMeta.title || "Dictation practice",
+          title: sessionMeta.title || "Dictee",
           sourceUrl: sourceUrl || null,
           transcript: sessionDraft.transcript,
           notes: sessionDraft.notes,
@@ -261,80 +265,44 @@ export function SessionWorkspace({ initialDraftId }: SessionWorkspaceProps) {
     [lang, sessionMeta.id, draftId],
   )
 
-  // Handle drag-to-resize between editor and sidebar (desktop only)
-  const handleResizeMouseDown = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
-    event.preventDefault()
-    setIsResizing(true)
-  }, [])
-
-  useEffect(() => {
-    if (!isResizing) return
-
-    const handleMouseMove = (event: MouseEvent) => {
-      const container = layoutRef.current
-      if (!container) return
-
-      const rect = container.getBoundingClientRect()
-      const relativeX = event.clientX - rect.left
-      if (relativeX <= 0 || relativeX >= rect.width) return
-
-      // Clamp ratio so both panes stay readable
-      const minRatio = 0.4 // left min 40%
-      const maxRatio = 0.8 // left max 80%
-      const ratio = Math.min(Math.max(relativeX / rect.width, minRatio), maxRatio)
-      setSplitRatio(ratio)
+  const loadAudioLessons = useCallback(async () => {
+    if (!lang) {
+      return []
     }
 
-    const stopResizing = () => {
-      setIsResizing(false)
-    }
+    setAudioLessonsLoading(true)
+    setAudioLessonsError(null)
 
-    window.addEventListener("mousemove", handleMouseMove)
-    window.addEventListener("mouseup", stopResizing)
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove)
-      window.removeEventListener("mouseup", stopResizing)
+    try {
+      const response = await learningApi.getAudioLessons(
+        lang as LearningLanguage,
+        50,
+      )
+      const lessons = response.lessons ?? []
+      setAudioLessons(lessons)
+      return lessons
+    } catch (error) {
+      console.error("Failed to load audio lessons", error)
+      setAudioLessons([])
+      setAudioLessonsError("Impossible de charger les audios enregistres.")
+      throw error
+    } finally {
+      setAudioLessonsLoading(false)
     }
-  }, [isResizing])
+  }, [lang])
 
   // Load saved audio lessons when switching to audio-backed modes
   useEffect(() => {
-    // Audio-backed flows will be reintroduced later; keep loader ready.
-    if (!lang) {
-      return
-    }
-
-    let isCancelled = false
     const loadLessons = async () => {
-      setAudioLessonsLoading(true)
-      setAudioLessonsError(null)
       try {
-        const response = await learningApi.getAudioLessons(
-          lang as LearningLanguage,
-          50,
-        )
-        if (!isCancelled) {
-          setAudioLessons(response.lessons ?? [])
-        }
-      } catch (error) {
-        console.error("Failed to load audio lessons", error)
-        if (!isCancelled) {
-          setAudioLessonsError("Failed to load saved audio lessons")
-        }
-      } finally {
-        if (!isCancelled) {
-          setAudioLessonsLoading(false)
-        }
+        await loadAudioLessons()
+      } catch {
+        // Error state is handled inside loadAudioLessons.
       }
     }
 
     void loadLessons()
-
-    return () => {
-      isCancelled = true
-    }
-  }, [lang])
+  }, [loadAudioLessons])
 
   const handleOpenSelectedLesson = useCallback(() => {
     console.log("[Workspace] Open selected lesson clicked", {
@@ -343,13 +311,13 @@ export function SessionWorkspace({ initialDraftId }: SessionWorkspaceProps) {
     })
 
     if (!selectedLessonId) {
-      notificationService.info("Please choose a saved audio lesson first")
+      notificationService.info("Choisissez d'abord un audio enregistre.")
       return
     }
 
     const meta = audioLessons.find((lesson) => lesson.id === selectedLessonId)
     if (!meta) {
-      notificationService.error("Selected audio lesson metadata not found")
+      notificationService.error("Impossible de trouver les informations de cet audio.")
       return
     }
 
@@ -360,18 +328,16 @@ export function SessionWorkspace({ initialDraftId }: SessionWorkspaceProps) {
       name: meta.name,
       language: meta.language ?? null,
       durationSeconds: meta.durationSeconds ?? null,
-      created_at: meta.created_at,
-      updated_at: meta.updated_at,
+      updatedAt: meta.updatedAt,
+      transcriptFile: meta.transcriptFile,
       transcript: undefined,
       timestamps: undefined,
-      audioFileName: undefined,
-      audioFileSizeBytes: undefined,
-    })
+    } as AudioLessonDetail)
     setShowLessonWindow(true)
   }, [selectedLessonId, audioLessons])
 
   const handleBack = useCallback(() => {
-    router.push("/learning")
+    router.push("/learning/workspace")
   }, [router])
 
   const handleSourceModeChange = useCallback(
@@ -410,16 +376,11 @@ export function SessionWorkspace({ initialDraftId }: SessionWorkspaceProps) {
     setShowLessonWindow(prev => !prev)
   }, [lessonDetail, handleOpenSelectedLesson, showLessonWindow, selectedLessonId])
 
-  const editorBasis = isFocusMode
-    ? "100%"
-    : `${Math.round(splitRatio * 100)}%`
-  const sidebarBasis = isFocusMode ? "0%" : `${Math.round((1 - splitRatio) * 100)}%`
-
   const session: LearningSession = useMemo(
     () => ({
       id: sessionMeta.id || draftId,
       language: lang,
-      title: sessionMeta.title || "Dictation practice",
+      title: sessionMeta.title || "Dictee",
       duration: 0,
       status: "draft",
       startedAt: sessionMeta.createdAt || new Date().toISOString(),
@@ -443,7 +404,7 @@ export function SessionWorkspace({ initialDraftId }: SessionWorkspaceProps) {
       activeSerialized?.text ?? sessionDraft.transcript ?? ""
 
     if (!transcriptText.trim()) {
-      notificationService.info("Nothing to save yet. Type some text first.")
+      notificationService.info("Rien a enregistrer pour le moment. Saisissez d'abord du texte.")
       return
     }
 
@@ -465,13 +426,13 @@ export function SessionWorkspace({ initialDraftId }: SessionWorkspaceProps) {
             : null,
         tags: sessionMeta.tags || [],
       })
-      notificationService.success("Transcript saved to cloud ✨")
+      notificationService.success("Transcription enregistree dans le cloud")
 
       // Mark local draft as "saved" for short-term recovery (1 day TTL)
       await saveTranscriptDraft({
         id: sessionMeta.id || draftId,
         language: lang as LearningLanguage,
-        title: sessionMeta.title || "Dictation practice",
+        title: sessionMeta.title || "Dictee",
         sourceUrl: sourceUrl || null,
         transcript: transcriptText,
         notes: sessionDraft.notes,
@@ -479,10 +440,10 @@ export function SessionWorkspace({ initialDraftId }: SessionWorkspaceProps) {
         tags: sessionMeta.tags,
         status: "saved",
       })
-      router.push("/learning")
+      router.push("/learning/workspace")
     } catch (error) {
       console.error("Failed to save transcript", error)
-      notificationService.error("Failed to save transcript. Please try again.")
+      notificationService.error("Echec de l'enregistrement. Reessayez.")
     } finally {
       setIsSavingToCloud(false)
       setLoading(false)
@@ -491,11 +452,11 @@ export function SessionWorkspace({ initialDraftId }: SessionWorkspaceProps) {
 
   const handleDiscardDraft = useCallback(() => {
     confirm({
-      title: "Delete draft?",
+      title: "Supprimer le brouillon ?",
       description:
-        "This will delete your current dictation draft from this device. It will not affect any transcripts already saved to the cloud.",
-      confirmText: "Delete draft",
-      cancelText: "Cancel",
+        "Cette action supprime le brouillon actuel sur cet appareil. Les transcriptions deja enregistrees dans le cloud ne seront pas affectees.",
+      confirmText: "Supprimer",
+      cancelText: "Annuler",
       variant: "destructive",
       onConfirm: () => {
         void (async () => {
@@ -512,8 +473,8 @@ export function SessionWorkspace({ initialDraftId }: SessionWorkspaceProps) {
             }))
             setSourceUrl("")
             setLastSavedAt(null)
-            notificationService.success("Draft deleted")
-            router.push("/learning")
+            notificationService.success("Brouillon supprime")
+            router.push("/learning/workspace")
           } finally {
             setLoading(false)
           }
@@ -521,6 +482,24 @@ export function SessionWorkspace({ initialDraftId }: SessionWorkspaceProps) {
       },
     })
   }, [confirm, draftId, router, setLoading])
+
+  const lessonName = lessonDetail?.name || sessionMeta.title || "Dictee"
+  const lessonMeta = selectedLessonId
+    ? audioLessons.find((lesson) => lesson.id === selectedLessonId)
+    : null
+  const topBarDuration =
+    lessonDetail?.durationSeconds != null
+      ? formatDuration(lessonDetail.durationSeconds)
+      : lessonMeta?.durationSeconds != null
+        ? formatDuration(lessonMeta.durationSeconds)
+        : "Aucun audio ouvert"
+  const transcriptLength = sessionDraft.transcript.trim().length
+  const notesCount = sessionDraft.notes.length
+  const statusLabel = isSavingDraft
+    ? "Sauvegarde auto"
+    : lastSavedAt
+      ? "Sauvegarde locale"
+      : "Brouillon"
 
   return (
     <SessionTabProvider
@@ -531,83 +510,208 @@ export function SessionWorkspace({ initialDraftId }: SessionWorkspaceProps) {
       updateSession={updateSession}
       addVocabCard={addVocabCard}
     >
-      <div className="h-[calc(100vh-56px)] flex flex-col text-sm md:text-base">
-        {/* Header */}
-        <WorkspaceHeader
-          languageCode={lang}
-          lessonTitle={sessionMeta.title}
-          isSavingEntry={isSavingDraft}
-          lastSavedAt={lastSavedAt}
-          onBack={handleBack}
-          onTitleChange={handleTitleChange}
-          onSave={handleSaveTranscript}
-          onDiscardDraft={handleDiscardDraft}
-          isSavingToCloud={isSavingToCloud}
-        />
+      <div className="min-h-[calc(100vh-4rem)] -mt-16 bg-slate-50 text-sm md:min-h-screen md:mt-0 md:text-base">
+        <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-[1600px] flex-col md:min-h-screen md:flex-row">
+          {!isFocusMode && (
+            <aside className="w-full border-b border-slate-200 bg-[#f8fbfd] p-4 md:w-[340px] md:border-b-0 md:border-r md:p-5">
+              <div className="flex h-full flex-col gap-4">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-fit rounded-full px-3 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  onClick={handleBack}
+                >
+                  <ArrowLeft className="mr-1.5 h-4 w-4" />
+                  Retour a l'espace d'entrainement
+                </Button>
 
-        {/* Source selector: URL or saved transcription */}
-        <SourceSelector
-          mode={sourceMode}
-          sourceUrl={sourceUrl}
-          onModeChange={handleSourceModeChange}
-          onSourceUrlChange={handleSourceUrlChange}
-          audioLessons={audioLessons}
-          audioLessonsLoading={audioLessonsLoading}
-          audioLessonsError={audioLessonsError}
-          selectedLessonId={selectedLessonId}
-          onSelectLesson={handleSelectLesson}
-          onOpenLesson={handleOpenSelectedLesson}
-          isOpeningLesson={false}
-        />
+                <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+                  <div className="relative border-b border-slate-200 bg-emerald-50/70 p-5">
+                    <div className="absolute right-5 top-5 flex h-16 w-16 items-center justify-center rounded-[22px] bg-white">
+                      <BookOpenText className="h-8 w-8 text-emerald-500" />
+                    </div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+                      Infos session
+                    </p>
+                    <input
+                      value={sessionMeta.title}
+                      onChange={(event) => handleTitleChange(event.target.value)}
+                      className="mt-3 w-full bg-transparent pr-20 text-2xl font-semibold tracking-tight text-slate-900 outline-none placeholder:text-slate-400"
+                      placeholder="Nom de la dictee"
+                      aria-label="Nom de la lecon"
+                    />
+                    <p className="mt-2 max-w-[220px] text-sm leading-relaxed text-slate-600">
+                      Travaillez l'ecoute avec un audio authentique et gardez brouillon, notes et vocabulaire dans un seul espace.
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Badge className="rounded-full bg-slate-800 px-3 py-1 text-[11px] font-medium text-white hover:bg-slate-800">
+                        {lang.toUpperCase()}
+                      </Badge>
+                      <Badge
+                        variant="secondary"
+                        className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-medium text-emerald-700"
+                      >
+                        {transcriptLength} caracteres
+                      </Badge>
+                      <Badge
+                        variant="secondary"
+                        className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-medium text-emerald-700"
+                      >
+                        {notesCount} notes
+                      </Badge>
+                    </div>
+                  </div>
 
-        {/* Content */}
-        <div className="flex-1 p-3 md:p-6">
-          <div
-            ref={layoutRef}
-            className="flex flex-col md:flex-row gap-3 md:gap-6 h-full"
-          >
-            <div
-              className="h-[calc(100vh-56px-72px-32px)] md:h-[calc(100vh-56px-64px-48px)] md:min-w-0"
-              style={{ flexBasis: editorBasis }}
-            >
-              <DictationPanel
-                editorKey={session.id}
-                value={sessionDraft.transcript}
-                onChange={handleTranscriptChange}
-                editorRef={editorRef}
-                isFocusMode={isFocusMode}
-                isAudioWindowOpen={showLessonWindow}
-                lessonDetail={lessonDetail}
-                onToggleFocusMode={handleToggleFocusMode}
-                onToggleAudioWindow={handleToggleAudioWindow}
-              />
+                  <div className="space-y-4 p-4">
+                    <SourceSelector
+                      mode={sourceMode}
+                      sourceUrl={sourceUrl}
+                      onModeChange={handleSourceModeChange}
+                      onSourceUrlChange={handleSourceUrlChange}
+                      audioLessons={audioLessons}
+                      audioLessonsLoading={audioLessonsLoading}
+                      audioLessonsError={audioLessonsError}
+                      selectedLessonId={selectedLessonId}
+                      onSelectLesson={handleSelectLesson}
+                      onOpenLesson={handleOpenSelectedLesson}
+                      isOpeningLesson={false}
+                      compact
+                    />
+
+                    <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <Library className="h-4 w-4 text-emerald-500" />
+                          <p className="text-sm font-semibold text-slate-900">Outils de travail</p>
+                        </div>
+                        <Badge variant="secondary" className="rounded-full text-[10px] uppercase tracking-[0.18em] text-slate-500">
+                          {statusLabel}
+                        </Badge>
+                      </div>
+                      <SidebarTabs
+                        isDimmed={false}
+                        flexBasis="100%"
+                        compact
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-auto flex flex-col gap-2">
+                  <Button
+                    type="button"
+                    className="h-12 rounded-2xl border border-emerald-200 bg-emerald-400 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(52,211,153,0.16)] hover:bg-emerald-400/90"
+                    onClick={handleSaveTranscript}
+                    disabled={isSavingToCloud}
+                  >
+                    <Save className="mr-2 h-4 w-4" />
+                    {isSavingToCloud ? "Sauvegarde..." : "Enregistrer la transcription"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="rounded-2xl border border-rose-100 bg-rose-50/80 text-sm font-medium text-rose-500 hover:bg-rose-100 hover:text-rose-600"
+                    onClick={handleDiscardDraft}
+                  >
+                    Supprimer le brouillon
+                  </Button>
+                </div>
+              </div>
+            </aside>
+          )}
+
+          <section className="flex min-w-0 flex-1 flex-col p-3 md:p-5">
+            <div className="rounded-[28px] border border-slate-200 bg-white shadow-sm">
+              <div className="border-b border-slate-200 px-4 py-4 md:px-6">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
+                      Session d'ecoute
+                    </p>
+                    <h1 className="mt-1 truncate text-2xl font-semibold tracking-tight text-slate-900">
+                      {lessonName}
+                    </h1>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {topBarDuration}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="secondary" className="rounded-full px-3 py-1.5 text-xs font-medium">
+                      <CheckCircle2 className="mr-1.5 h-3.5 w-3.5 text-emerald-500" />
+                      {statusLabel}
+                    </Badge>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+                      onClick={handleToggleAudioWindow}
+                    >
+                      <Headphones className="mr-2 h-4 w-4" />
+                      {lessonDetail ? (showLessonWindow ? "Masquer l'audio" : "Afficher l'audio") : "Ouvrir l'audio"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="rounded-full border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                      onClick={handleToggleFocusMode}
+                    >
+                      <Focus className="mr-2 h-4 w-4" />
+                      {isFocusMode ? "Quitter le mode focus" : "Mode focus"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {lessonDetail && showLessonWindow && (
+                <div className="border-b border-slate-200 bg-slate-50/70 px-3 py-4 md:px-5">
+                  <AudioLessonPreviewWindow
+                    lesson={lessonDetail}
+                    onClose={() => setShowLessonWindow(false)}
+                  />
+                </div>
+              )}
+
+              <div className="p-3 md:p-5">
+                <div className="flex flex-col gap-4">
+                  <div
+                    className="min-w-0"
+                    style={{ flexBasis: "100%" }}
+                  >
+                    <DictationPanel
+                      editorKey={session.id}
+                      value={sessionDraft.transcript}
+                      onChange={handleTranscriptChange}
+                      editorRef={editorRef}
+                      isFocusMode={isFocusMode}
+                      isAudioWindowOpen={showLessonWindow}
+                      lessonDetail={lessonDetail}
+                      selectedLessonId={selectedLessonId}
+                      audioLessons={audioLessons}
+                      audioLessonsLoading={audioLessonsLoading}
+                      audioLessonsError={audioLessonsError}
+                      hasAudioOptions={audioLessons.length > 0}
+                      onSelectLesson={handleSelectLesson}
+                      onToggleFocusMode={handleToggleFocusMode}
+                      onToggleAudioWindow={handleToggleAudioWindow}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
-
-            {!isFocusMode && (
-              <ResizeHandle
-                isResizing={isResizing}
-                onMouseDown={handleResizeMouseDown}
-              />
-            )}
-
-            <SidebarTabs
-              isDimmed={isFocusMode}
-              flexBasis={sidebarBasis}
-            />
-          </div>
+          </section>
         </div>
 
         {/* AI Assistant is globally mounted in learning layout */}
-
-        {lessonDetail && showLessonWindow && (
-          <AudioLessonPreviewWindow
-            lesson={lessonDetail}
-            onClose={() => setShowLessonWindow(false)}
-          />
-        )}
 
         {dialog}
       </div>
     </SessionTabProvider>
   )
+}
+
+function formatDuration(totalSeconds: number) {
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${minutes}:${String(seconds).padStart(2, "0")}`
 }

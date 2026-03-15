@@ -3,7 +3,7 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { X, GripVertical, Minus } from "lucide-react";
+import { X, GripVertical, Minus, Maximize2, Minimize2 } from "lucide-react";
 import { getNextFloatingWindowZIndex } from "@/lib/utils/z-index-manager";
 
 type ResizeDirection = "right" | "bottom" | "bottom-right";
@@ -200,6 +200,7 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
     forceZIndex ?? getNextFloatingWindowZIndex()
   );
   const [isDocked, setIsDocked] = React.useState(false);
+  const [isExpanded, setIsExpanded] = React.useState(false);
   const [activePointerId, setActivePointerId] = React.useState<number | null>(
     null
   );
@@ -210,6 +211,7 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
   const dockedSizeRef = React.useRef<{ width: number; height: number } | null>(
     null
   );
+  const expandedLayoutRef = React.useRef<LayoutState | null>(null);
   const dragStateRef = React.useRef<{
     startClientX: number;
     startClientY: number;
@@ -475,6 +477,42 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
     setIsDocked(true);
   }, [minWidth, minHeight]);
 
+  const handleToggleExpand = React.useCallback(() => {
+    const { width: vw, height: vh } = getViewportSize();
+    if (!vw || !vh) return;
+
+    if (isExpanded && expandedLayoutRef.current) {
+      const constrained = constrainLayout(
+        expandedLayoutRef.current,
+        minWidth,
+        minHeight
+      );
+      setPosition({ x: constrained.x, y: constrained.y });
+      setSize({ width: constrained.width, height: constrained.height });
+      expandedLayoutRef.current = null;
+      setIsExpanded(false);
+      return;
+    }
+
+    expandedLayoutRef.current = {
+      x: positionRef.current.x,
+      y: positionRef.current.y,
+      width: sizeRef.current.width,
+      height: sizeRef.current.height,
+    };
+
+    const margin = 20;
+    setPosition({ x: margin, y: margin });
+    setSize({
+      width: Math.max(vw - margin * 2, minWidth),
+      height: Math.max(vh - margin * 2, minHeight),
+    });
+    setIsExpanded(true);
+    setIsDocked(false);
+    dockedPositionRef.current = null;
+    dockedSizeRef.current = null;
+  }, [isExpanded, minWidth, minHeight]);
+
   const handleResizePointerDown = (
     event: React.PointerEvent,
     direction: ResizeDirection
@@ -521,39 +559,58 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
       onPointerDown={handleActivate}
       className={`pointer-events-auto ${className ?? ""}`}
     >
-      <Card className="relative flex h-full flex-col overflow-hidden rounded-2xl md:rounded-3xl border border-white/30 bg-white/15 shadow-[0_16px_40px_rgba(15,23,42,0.5)] md:shadow-[0_22px_60px_rgba(15,23,42,0.55)] backdrop-blur-2xl backdrop-saturate-150 text-sm md:text-base">
+      <Card className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(248,250,252,0.92))] text-sm shadow-[0_18px_48px_-24px_rgba(15,23,42,0.45)] backdrop-blur-2xl backdrop-saturate-150 animate-in fade-in zoom-in-95 duration-200 md:rounded-[28px] md:text-base">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top,rgba(52,211,153,0.12),transparent_70%)]" />
         <CardHeader
-          className={`flex cursor-grab select-none items-center justify-between gap-2 border-b border-white/20 bg-white/5 px-2.5 md:px-3 py-1.5 ${
+          className={`relative flex cursor-grab select-none items-center justify-between gap-2 border-b border-white/50 bg-white/45 px-3 py-2 ${
             isDocked ? "h-10" : ""
           }`}
           style={{ touchAction: "none" }}
           onPointerDown={handleHeaderPointerDown}
         >
           <div className="flex min-w-0 items-center gap-2">
-            <span className="inline-flex h-5 w-5 md:h-6 md:w-6 flex-none items-center justify-center rounded-full bg-primary/10 text-primary shadow-sm">
-              <GripVertical className="h-3 w-3 md:h-3.5 md:w-3.5" />
+            <span className="inline-flex h-8 w-8 flex-none items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm">
+              <GripVertical className="h-4 w-4" />
             </span>
             {isDocked ? (
-              <CardTitle className="flex min-w-0 items-center truncate text-[11px] md:text-[12px] font-semibold tracking-wide text-primary leading-none">
+              <CardTitle className="flex min-w-0 items-center truncate text-[12px] font-semibold tracking-wide text-primary leading-none">
                 <span className="truncate">{title}</span>
               </CardTitle>
             ) : (
-              <CardTitle className="truncate text-[10px] md:text-[11px] font-semibold uppercase tracking-wide text-primary/90">
-                <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-primary/15 px-2.5 md:px-3 py-0.5 md:py-1 text-[11px] md:text-[13px] font-semibold uppercase tracking-wide text-primary shadow-sm">
+              <CardTitle className="truncate text-[11px] font-semibold uppercase tracking-[0.18em] text-primary/90">
+                <span className="inline-flex max-w-full items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[12px] font-semibold tracking-[0.16em] text-primary shadow-sm">
+                  <span className="inline-flex h-2 w-2 rounded-full bg-primary/70" />
                   <span className="truncate">{title}</span>
                 </span>
               </CardTitle>
             )}
           </div>
           <div className="flex items-center gap-1">
+            {!isDocked && (
+              <>
+                <button
+                  type="button"
+                  aria-label={isExpanded ? "Restore window" : "Expand window"}
+                  onClick={handleToggleExpand}
+                  onPointerDown={(event) => event.stopPropagation()}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full text-xs text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
+                >
+                  {isExpanded ? (
+                    <Minimize2 className="h-3.5 w-3.5" />
+                  ) : (
+                    <Maximize2 className="h-3.5 w-3.5" />
+                  )}
+                </button>
+              </>
+            )}
             <button
               type="button"
               aria-label="Dock window"
               onClick={handleToggleDock}
               onPointerDown={(event) => event.stopPropagation()}
-              className="inline-flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-xs text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-xs text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
             >
-              <Minus className="h-3 w-3 md:h-3.5 md:w-3.5" />
+              <Minus className="h-3.5 w-3.5" />
             </button>
             {onClose && (
               <button
@@ -561,15 +618,17 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
                 aria-label="Close window"
                 onClick={onClose}
                 onPointerDown={(event) => event.stopPropagation()}
-                className="inline-flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-xs text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-xs text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
               >
-                <X className="h-3 w-3 md:h-3.5 md:w-3.5" />
+                <X className="h-3.5 w-3.5" />
               </button>
             )}
           </div>
         </CardHeader>
-        <CardContent className="relative flex-1 overflow-auto p-2.5 md:p-3 text-foreground">
-          {children}
+        <CardContent className="relative flex-1 overflow-auto p-0 text-foreground">
+          <div className="min-h-full p-3 md:p-4">
+            {children}
+          </div>
         </CardContent>
 
         <div

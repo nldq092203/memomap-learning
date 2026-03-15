@@ -22,7 +22,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setState(prev => ({ ...prev, error: null }));
   }, []);
 
-  const login = useCallback(async (googleToken: string, isAccessToken = false) => {
+  const login = useCallback(async (googleCode: string) => {
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       setState({
@@ -32,7 +32,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         error: null,
       });
 
-      const { user } = await authService.exchangeGoogleToken(googleToken, isAccessToken);
+      const { user } = await authService.exchangeGoogleCode(googleCode);
       setState({
         user,
         isAuthenticated: true,

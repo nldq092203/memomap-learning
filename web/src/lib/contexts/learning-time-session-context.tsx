@@ -37,35 +37,36 @@ const LearningTimeSessionContext =
 
 let bellAudio: HTMLAudioElement | null = null
 
-/**
- * Play a short alert sound when a planned session is about to finish
- * or has completed. The audio file should be placed at:
- *   public/sounds/learning-session-bell.mp3
- * with a duration of ~7 seconds (any CC0/open-source sound).
- */
 function playSessionBell() {
   if (typeof window === "undefined") return
-
   try {
     if (!bellAudio) {
       bellAudio = new Audio("/sounds/learning-session-bell.mp3")
       bellAudio.volume = 0.8
     }
     bellAudio.currentTime = 0
-    void bellAudio.play().catch(() => {
-    })
+    void bellAudio.play().catch(() => {})
   } catch {
     // ignore
   }
 }
 
-function formatDefaultName(language: LearningLanguage): string {
+function formatDefaultName(): string {
   const now = new Date()
   const datePart = now.toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
   })
-  return `Learning session (${language.toUpperCase()} · ${datePart})`
+  return `Session (${datePart})`
+}
+
+const defaultState: TimeSessionState = {
+  isActive: false,
+  isPaused: false,
+  name: "",
+  startedAtMs: null,
+  elapsedSeconds: 0,
+  plannedSeconds: null,
 }
 
 export function LearningTimeSessionProvider({
@@ -74,70 +75,63 @@ export function LearningTimeSessionProvider({
   children: React.ReactNode
 }) {
   const { lang } = useLearningLang()
+
   const [state, setState] = useState<TimeSessionState>(() => {
-    if (typeof window === "undefined") {
-      return {
-        isActive: false,
-        isPaused: false,
-        name: "",
-        startedAtMs: null,
-        elapsedSeconds: 0,
-        plannedSeconds: null,
-      }
-    }
+    if (typeof window === "undefined") return defaultState
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY)
-      if (!raw) {
-        return {
-          isActive: false,
-          isPaused: false,
-          name: "",
-          startedAtMs: null,
-          elapsedSeconds: 0,
-          plannedSeconds: null,
-        }
-      }
+      if (!raw) return defaultState
       const parsed = JSON.parse(raw) as Partial<TimeSessionState> | null
-      if (!parsed || !parsed.startedAtMs || !parsed.isActive) {
-        return {
-          isActive: false,
-          isPaused: false,
-          name: "",
-          startedAtMs: null,
-          elapsedSeconds: 0,
-          plannedSeconds: null,
-        }
-      }
+      if (!parsed || !parsed.isActive) return defaultState
+
       const now = Date.now()
       const baseElapsed = parsed.elapsedSeconds ?? 0
-      const additional = Math.max(0, Math.floor((now - parsed.startedAtMs) / 1000))
+
+      // If paused, don't add extra time
+      if (parsed.isPaused) {
+        return {
+          isActive: true,
+          isPaused: true,
+          name: parsed.name || formatDefaultName(),
+          startedAtMs: null,
+          elapsedSeconds: baseElapsed,
+          plannedSeconds:
+            typeof parsed.plannedSeconds === "number" && parsed.plannedSeconds > 0
+              ? parsed.plannedSeconds
+              : null,
+        }
+      }
+
+      // If running, calculate additional elapsed time since last save
+      const additional = parsed.startedAtMs
+        ? Math.max(0, Math.floor((now - parsed.startedAtMs) / 1000))
+        : 0
+
       return {
         isActive: true,
-        isPaused: parsed.isPaused ?? false,
-        name: parsed.name || formatDefaultName(lang),
-        startedAtMs: parsed.startedAtMs,
-        elapsedSeconds: baseElapsed + additional,
+        isPaused: false,
+        name: parsed.name || formatDefaultName(),
+        startedAtMs: now, // Reset start to now
+        elapsedSeconds: baseElapsed + additional, // Accumulate
         plannedSeconds:
           typeof parsed.plannedSeconds === "number" && parsed.plannedSeconds > 0
             ? parsed.plannedSeconds
             : null,
       }
     } catch {
-      return {
-        isActive: false,
-        isPaused: false,
-        name: "",
-        startedAtMs: null,
-        elapsedSeconds: 0,
-        plannedSeconds: null,
-      }
+      return defaultState
     }
   })
 
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  // Use a ref to track accumulated elapsed seconds to avoid stale closure issues
+  const elapsedRef = useRef(state.elapsedSeconds)
+  elapsedRef.current = state.elapsedSeconds
+  const stateRef = useRef(state)
+  stateRef.current = state
+  const autoPausedRef = useRef(false)
 
-  // Persist state in localStorage so reloads keep the active timer.
-  // Optimized to not update on every elapsedSeconds change (which happens every second)
+  // Persist state in localStorage (not on every second tick)
   useEffect(() => {
     if (typeof window === "undefined") return
     try {
@@ -157,10 +151,9 @@ export function LearningTimeSessionProvider({
         }),
       )
     } catch {
-      // ignore errors
+      // ignore
     }
-  }, [state.isActive, state.isPaused, state.name, state.startedAtMs, state.plannedSeconds])
-  // Note: elapsedSeconds intentionally excluded to avoid updates every second
+  }, [state.isActive, state.isPaused, state.name, state.startedAtMs, state.plannedSeconds, state.elapsedSeconds])
 
   // 1s ticker while active and not paused
   useEffect(() => {
@@ -176,21 +169,20 @@ export function LearningTimeSessionProvider({
       clearInterval(tickRef.current)
     }
 
-    const startSnapshot = state.startedAtMs
-    const baseElapsed = state.elapsedSeconds
+    const tickStartMs = state.startedAtMs
+    // Capture the baseline elapsed at the moment the tick starts
+    const baseElapsed = elapsedRef.current
     const plannedSeconds = state.plannedSeconds
     let hasWarnedPlanned = false
     let hasNotifiedPlanned = false
 
     tickRef.current = setInterval(() => {
       const now = Date.now()
-      const additional = Math.max(0, Math.floor((now - startSnapshot) / 1000))
+      const additional = Math.max(0, Math.floor((now - tickStartMs) / 1000))
       const nextElapsed = baseElapsed + additional
 
       setState(prev => ({
         ...prev,
-        // For planned sessions, clamp the elapsed time so the
-        // countdown stops at 0 instead of running into negatives.
         elapsedSeconds:
           typeof plannedSeconds === "number" && plannedSeconds > 0
             ? Math.min(nextElapsed, plannedSeconds)
@@ -202,16 +194,14 @@ export function LearningTimeSessionProvider({
 
         if (!hasWarnedPlanned && remaining <= 15 && remaining > 0) {
           hasWarnedPlanned = true
-          notificationService.info("15 seconds left in this session ⏰")
+          notificationService.info("Encore 15 secondes ⏰")
           playSessionBell()
         }
 
         if (!hasNotifiedPlanned && nextElapsed >= plannedSeconds) {
           hasNotifiedPlanned = true
-          notificationService.info("Planned session duration reached ⏰")
+          notificationService.info("Durée prévue atteinte ⏰")
           playSessionBell()
-
-          // Stop ticking once the planned duration has been reached.
           if (tickRef.current) {
             clearInterval(tickRef.current)
             tickRef.current = null
@@ -226,7 +216,7 @@ export function LearningTimeSessionProvider({
         tickRef.current = null
       }
     }
-  }, [state.isActive, state.isPaused, state.startedAtMs])
+  }, [state.isActive, state.isPaused, state.startedAtMs, state.plannedSeconds])
 
   const startSession = useCallback(
     (name?: string, plannedSeconds?: number | null) => {
@@ -235,7 +225,7 @@ export function LearningTimeSessionProvider({
       setState({
         isActive: true,
         isPaused: false,
-        name: name && name.trim().length > 0 ? name : formatDefaultName(lang),
+        name: name && name.trim().length > 0 ? name : formatDefaultName(),
         startedAtMs: now,
         elapsedSeconds: 0,
         plannedSeconds:
@@ -244,7 +234,7 @@ export function LearningTimeSessionProvider({
             : null,
       })
     },
-    [lang, state.isActive],
+    [state.isActive],
   )
 
   const pauseSession = useCallback(() => {
@@ -263,6 +253,7 @@ export function LearningTimeSessionProvider({
 
   const resumeSession = useCallback(() => {
     if (!state.isActive || !state.isPaused) return
+    autoPausedRef.current = false
     const now = Date.now()
     setState(prev => ({
       ...prev,
@@ -270,6 +261,77 @@ export function LearningTimeSessionProvider({
       startedAtMs: now,
     }))
   }, [state.isActive, state.isPaused])
+
+  // Auto-pause when the tab/window is inactive and resume when it becomes active again.
+  // Resume only if the pause was triggered automatically, not manually by the user.
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof document === "undefined") return
+
+    const autoPause = () => {
+      const current = stateRef.current
+      if (!current.isActive || current.isPaused || !current.startedAtMs) return
+
+      const now = Date.now()
+      const additional = Math.max(
+        0,
+        Math.floor((now - current.startedAtMs) / 1000),
+      )
+
+      autoPausedRef.current = true
+      setState(prev => ({
+        ...prev,
+        isPaused: true,
+        startedAtMs: null,
+        elapsedSeconds: prev.elapsedSeconds + additional,
+      }))
+    }
+
+    const autoResume = () => {
+      const current = stateRef.current
+      if (
+        !autoPausedRef.current ||
+        !current.isActive ||
+        !current.isPaused
+      ) {
+        return
+      }
+
+      autoPausedRef.current = false
+      setState(prev => ({
+        ...prev,
+        isPaused: false,
+        startedAtMs: Date.now(),
+      }))
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        autoPause()
+      } else {
+        autoResume()
+      }
+    }
+
+    const handleWindowBlur = () => {
+      autoPause()
+    }
+
+    const handleWindowFocus = () => {
+      if (!document.hidden) {
+        autoResume()
+      }
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+    window.addEventListener("blur", handleWindowBlur)
+    window.addEventListener("focus", handleWindowFocus)
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+      window.removeEventListener("blur", handleWindowBlur)
+      window.removeEventListener("focus", handleWindowFocus)
+    }
+  }, [])
 
   const stopSession = useCallback(async () => {
     if (!state.isActive) return
@@ -281,8 +343,6 @@ export function LearningTimeSessionProvider({
         : 0
     const rawElapsed = state.elapsedSeconds + extra
 
-    // For planned sessions, clamp duration to plannedSeconds so
-    // finishing late still records only the planned time.
     const elapsed =
       typeof state.plannedSeconds === "number" && state.plannedSeconds > 0
         ? Math.min(rawElapsed, state.plannedSeconds)
@@ -291,36 +351,23 @@ export function LearningTimeSessionProvider({
     try {
       await learningApi.createTimeSession({
         language: lang as LearningLanguage,
-        name: state.name || formatDefaultName(lang),
+        name: state.name || formatDefaultName(),
         duration_seconds: elapsed,
       })
-      notificationService.success("Learning session saved to analytics ✨")
+      notificationService.success("Session enregistrée ✨")
     } catch (error) {
       console.error("Failed to save learning session", error)
-      notificationService.error("Failed to save learning session")
+      notificationService.error("Échec de l'enregistrement de la session")
     } finally {
-      setState({
-        isActive: false,
-        isPaused: false,
-        name: "",
-        startedAtMs: null,
-        elapsedSeconds: 0,
-        plannedSeconds: null,
-      })
+      setState(defaultState)
     }
-  }, [lang, state.isActive, state.startedAtMs, state.elapsedSeconds, state.name])
+  }, [lang, state.isActive, state.startedAtMs, state.elapsedSeconds, state.name, state.isPaused, state.plannedSeconds])
 
   const cancelSession = useCallback(() => {
     if (!state.isActive) return
-    setState({
-      isActive: false,
-      isPaused: false,
-      name: "",
-      startedAtMs: null,
-      elapsedSeconds: 0,
-      plannedSeconds: null,
-    })
-    notificationService.info("Learning session cancelled")
+    autoPausedRef.current = false
+    setState(defaultState)
+    notificationService.info("Session annulée")
   }, [state.isActive])
 
   const value = useMemo<LearningTimeSessionContextValue>(

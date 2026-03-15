@@ -23,8 +23,10 @@ export function ExerciseView({
   onAnswer,
   getAssetUrl,
 }: ExerciseViewProps) {
+  const hasImageOptions = exercise.options?.some((option) => isImageOption(option))
+
   return (
-    <Card className={`overflow-hidden transition-colors ${
+    <Card className={`overflow-hidden rounded-[28px] transition-colors ${
       showResults
         ? isCorrect
           ? 'border-green-500/50 bg-green-50/50 dark:bg-green-950/20'
@@ -42,7 +44,7 @@ export function ExerciseView({
                 </span>
                 {exercise.title}
               </h3>
-              <p className="text-muted-foreground text-sm font-medium">
+              <p className="text-base font-semibold leading-7 text-slate-800">
                 {exercise.question_text}
               </p>
             </div>
@@ -70,14 +72,15 @@ export function ExerciseView({
             value={selectedOption?.toString() || ""}
             onValueChange={(val) => onAnswer(parseInt(val, 10))}
             disabled={showResults}
-            className="grid gap-3"
+            className={hasImageOptions ? "grid gap-3 md:grid-cols-3" : "grid gap-3"}
           >
             {exercise.options.map((option, optIdx) => {
               const strVal = optIdx.toString()
               const isSelected = selectedOption === optIdx
               
-              // Only highlight correct/incorrect if results are shown
-              let optionClass = "flex cursor-pointer items-start space-x-3 rounded-lg border p-4 transition-all hover:bg-muted/50"
+              let optionClass = hasImageOptions
+                ? "flex cursor-pointer flex-col overflow-hidden rounded-[22px] border p-3 transition-all"
+                : "flex cursor-pointer items-start space-x-3 rounded-lg border p-4 transition-all hover:bg-muted/50"
               
               if (showResults) {
                 const isThisOptionCorrect = optIdx === exercise.correct_answer
@@ -102,18 +105,24 @@ export function ExerciseView({
                   <RadioGroupItem 
                     value={strVal} 
                     id={`ex-${exercise.id}-opt-${optIdx}`}
-                    className="mt-1"
+                    className={hasImageOptions ? "sr-only" : "mt-1"}
                   />
-                  <div className="flex flex-col gap-1 flex-1">
+                  <div className="flex flex-1 flex-col gap-1">
                     {isImageOption(option) ? (
-                      <div className="space-y-2">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                            {option.label}
+                          </span>
+                        </div>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img 
                           src={getAssetUrl ? getAssetUrl(option.img_url) : option.img_url} 
                           alt={option.label}
-                          className="rounded-md object-contain bg-white max-h-[150px] border"
+                          className="h-[150px] w-full rounded-xl border border-slate-200 bg-white object-contain p-2"
                           loading="lazy"
                         />
+                        {option.desc && <span className="line-clamp-2 text-sm font-medium leading-5 text-slate-700">{option.desc}</span>}
                       </div>
                     ) : (
                       <span className="font-medium text-sm leading-relaxed">{option}</span>
@@ -129,12 +138,12 @@ export function ExerciseView({
             <div className="mt-6 rounded-lg bg-muted/50 p-4 border space-y-3">
               <div className="flex items-center gap-2 font-medium text-primary">
                 <Info className="h-4 w-4" />
-                Explanation
+                Explication
               </div>
               
               {exercise.transcript && (
                 <div className="space-y-1">
-                  <span className="text-xs font-semibold uppercase text-muted-foreground">Transcript Snippet:</span>
+                  <span className="text-xs font-semibold uppercase text-muted-foreground">Extrait :</span>
                   <p className="text-sm italic border-l-2 border-primary/30 pl-3">
                     "{exercise.transcript}"
                   </p>
@@ -143,7 +152,7 @@ export function ExerciseView({
               
               {exercise.explanation && (
                 <div className="space-y-1">
-                  <span className="text-xs font-semibold uppercase text-muted-foreground">Note:</span>
+                  <span className="text-xs font-semibold uppercase text-muted-foreground">Note :</span>
                   <p className="text-sm">{exercise.explanation}</p>
                 </div>
               )}

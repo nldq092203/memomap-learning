@@ -38,12 +38,11 @@ export function TranscribeManualSection({
     <section className="space-y-3">
       <div className="flex items-center justify-between gap-3">
         <div className="space-y-1">
-          <h3 className="text-sm font-semibold tracking-wide text-muted-foreground">
-            Manual transcription
+          <h3 className="text-sm font-semibold tracking-wide text-slate-700">
+            3. Transcrivez manuellement
           </h3>
-          <p className="text-xs text-muted-foreground">
-            Listen to the audio and type what you hear. You can edit freely at
-            any time.
+          <p className="text-xs text-slate-500">
+            Écoutez l’audio et tapez ce que vous entendez. Vous pouvez modifier librement à tout moment.
           </p>
         </div>
 
@@ -57,7 +56,7 @@ export function TranscribeManualSection({
             className="h-8 gap-1.5 text-xs"
           >
             <Copy className="h-3.5 w-3.5" />
-            {copied ? "Copied!" : "Copy"}
+              {copied ? "Copié" : "Copier"}
           </Button>
           <Button
             type="button"
@@ -68,21 +67,20 @@ export function TranscribeManualSection({
             className="h-8 gap-1.5 text-xs"
           >
             <Download className="h-3.5 w-3.5" />
-            Download
+            Télécharger
           </Button>
         </div>
       </div>
 
-      <div className="rounded-lg border bg-card px-3 py-2">
+      <div className="rounded-[24px] border border-slate-200 bg-white px-3 py-2">
         <Textarea
           value={value}
           onChange={(event) => onChange(event.target.value)}
           disabled={disabled}
-          placeholder="Type your own transcript here while listening to the audio..."
+          placeholder="Saisissez votre transcription ici pendant l'écoute…"
           className="min-h-[220px] resize-vertical border-none bg-transparent text-sm leading-relaxed tracking-[0.02em] focus-visible:ring-0"
         />
       </div>
     </section>
   )
 }
-

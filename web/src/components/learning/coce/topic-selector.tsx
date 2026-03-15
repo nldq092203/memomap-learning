@@ -11,32 +11,32 @@ interface TopicSelectorProps {
 }
 
 export const TOPICS: { id: ExerciseTopic; label: string; icon: string }[] = [
-  { id: "politics", label: "Politics", icon: "🗳️" },
-  { id: "health", label: "Health", icon: "🏥" },
-  { id: "environment", label: "Environment", icon: "🌱" },
+  { id: "politics", label: "Politique", icon: "🗳️" },
+  { id: "health", label: "Sante", icon: "🏥" },
+  { id: "environment", label: "Environnement", icon: "🌱" },
   { id: "culture", label: "Culture", icon: "🎭" },
-  { id: "technology", label: "Technology", icon: "💻" },
-  { id: "society", label: "Society", icon: "👥" },
-  { id: "economy", label: "Economy", icon: "💰" },
-  { id: "science", label: "Science", icon: "🔬" },
+  { id: "technology", label: "Technologie", icon: "💻" },
+  { id: "society", label: "Societe", icon: "👥" },
+  { id: "economy", label: "Economie", icon: "💰" },
+  { id: "science", label: "Sciences", icon: "🔬" },
   { id: "education", label: "Education", icon: "🎓" },
-  { id: "sports", label: "Sports", icon: "⚽" },
-  { id: "food", label: "Food", icon: "🍔" },
+  { id: "sports", label: "Sport", icon: "⚽" },
+  { id: "food", label: "Alimentation", icon: "🍔" },
   { id: "transport", label: "Transport", icon: "🚗" },
-  { id: "housing", label: "Housing", icon: "🏠" },
+  { id: "housing", label: "Logement", icon: "🏠" },
   { id: "agriculture", label: "Agriculture", icon: "🚜" },
-  { id: "music", label: "Music", icon: "🎵" },
+  { id: "music", label: "Musique", icon: "🎵" },
   { id: "art", label: "Art", icon: "🎨" },
-  { id: "history", label: "History", icon: "📜" },
-  { id: "geography", label: "Geography", icon: "🌍" },
-  { id: "other", label: "Other", icon: "📦" },
+  { id: "history", label: "Histoire", icon: "📜" },
+  { id: "geography", label: "Geographie", icon: "🌍" },
+  { id: "other", label: "Autre", icon: "📦" },
 ]
 
 export function TopicSelector({ currentTopic, onSelectTopic }: TopicSelectorProps) {
   return (
     <div className="w-full space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-muted-foreground">Filter by Topic</h3>
+        <h3 className="text-sm font-medium text-muted-foreground">Filtrer par theme</h3>
       </div>
       <ScrollArea className="w-full whitespace-nowrap">
         <div className="flex w-max space-x-2 pb-4">
@@ -46,7 +46,7 @@ export function TopicSelector({ currentTopic, onSelectTopic }: TopicSelectorProp
             onClick={() => onSelectTopic(null)}
             className="rounded-full"
           >
-            All Topics
+            Tous les themes
           </Button>
           {TOPICS.map((topic) => (
             <Button

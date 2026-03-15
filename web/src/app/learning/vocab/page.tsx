@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ProtectedRoute } from "@/components/auth/protected-route"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -76,7 +76,7 @@ export default function VocabPage() {
     pageValue: number,
   ) => `${lang}|${qValue}|${statusValue}|${tagValue}|${dueValue}|${pageValue}`
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const id = ++reqIdRef.current
     const cacheKey = makePageKey(language, q, status, tag, dueBefore, page)
 
@@ -111,11 +111,11 @@ export default function VocabPage() {
       setLoading(false)
       setRefreshing(false)
     }
-  }
+  }, [dueBefore, language, list.length, page, q, status, tag])
 
   useEffect(() => {
     load()
-  }, [language, page, q, status, tag, dueBefore]) // Added q and status to dependency to auto-reload on filter change
+  }, [load]) // Added q and status to dependency to auto-reload on filter change
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / limit)), [total])
 
@@ -148,11 +148,6 @@ export default function VocabPage() {
     setPage(0)
   }
 
-  useEffect(() => {
-    console.log("Loading with:", { language, q, status, tag, dueBefore, page })
-    load()
-  }, [language, page, q, status, tag, dueBefore])
-
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-muted/20">
@@ -166,10 +161,10 @@ export default function VocabPage() {
                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
                       <BookOpen className="h-6 w-6" />
                    </div>
-                   <h1 className="text-3xl font-bold tracking-tight">Vocabulary Lab</h1>
+                   <h1 className="text-3xl font-bold tracking-tight">Laboratoire de vocabulaire</h1>
                 </div>
                 <p className="text-muted-foreground ml-11">
-                   Manage your personal dictionary and track your mastery.
+                   Gérez votre lexique personnel et suivez votre progression.
                 </p>
              </div>
 
@@ -207,18 +202,18 @@ export default function VocabPage() {
                          <BookOpen className="h-8 w-8 text-muted-foreground/60" />
                       </div>
                       <div className="space-y-1">
-                         <h3 className="text-lg font-medium">No words found</h3>
+                         <h3 className="text-lg font-medium">Aucun mot trouvé</h3>
                          <p className="text-muted-foreground max-w-xs mx-auto">
-                            Try adjusting your filters or add your first vocabulary word.
+                            Ajustez vos filtres ou ajoutez votre premier mot de vocabulaire.
                          </p>
                       </div>
                       <Button onClick={() => setShowAddModal(true)}>
-                         <Plus className="h-4 w-4 mr-2" /> Add Word
+                         <Plus className="h-4 w-4 mr-2" /> Ajouter un mot
                       </Button>
                    </div>
                 ) : (
                    <div className={cn(
-                      "grid gap-3 transition-all duration-300",
+                      "grid gap-4 transition-all duration-300",
                       viewMode === "grid" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"
                    )}>
                       {list.filter(card => {
@@ -255,10 +250,10 @@ export default function VocabPage() {
                          disabled={page === 0 || loading}
                          onClick={() => setPage(p => p - 1)}
                       >
-                         Previous
+                         Précédent
                       </Button>
                       <span className="text-sm font-medium px-4">
-                         {page + 1} of {totalPages}
+                         {page + 1} sur {totalPages}
                       </span>
                       <Button
                          variant="ghost"
@@ -266,7 +261,7 @@ export default function VocabPage() {
                          disabled={page >= totalPages - 1 || loading}
                          onClick={() => setPage(p => p + 1)}
                       >
-                         Next
+                         Suivant
                       </Button>
                    </div>
                </div>

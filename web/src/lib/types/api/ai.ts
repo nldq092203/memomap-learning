@@ -69,9 +69,141 @@ export interface ChatRequest {
   history_max_turns?: number
 }
 
-export interface ChatResponse { 
+export interface ChatResponse {
   conversation_id: string
   language: string
   message: string
   response: string
+}
+
+// ---- Specialized AI task types ----
+
+export type AITaskType =
+  | "quick_explain"
+  | "deep_breakdown"
+  | "generate_examples"
+  | "grammar_check"
+  | "create_mnemonic"
+
+export interface AITaskMeta {
+  isJson: boolean
+  task: AITaskType
+  error?: boolean
+}
+
+export interface AITaskResponse<T = unknown> {
+  content: T
+  meta: AITaskMeta
+}
+
+// Quick Explain
+export interface QuickExplainRequest {
+  text: string
+  learning_lang?: string
+  native_lang?: string
+}
+
+export interface QuickExplainData {
+  word: string
+  meaning: string
+  pos: string
+  pronunciation: string
+  gender: string | null
+  example: string
+}
+
+// Deep Breakdown
+export interface DeepBreakdownRequest {
+  text: string
+  learning_lang?: string
+  native_lang?: string
+  level?: CEFRLevel
+}
+
+export interface DeepBreakdownData {
+  word: string
+  pronunciation: string
+  pos: string
+  meaning: string
+  grammar: {
+    structure: string
+    tense_mood: string
+    notes: string[]
+  }
+  nuance: {
+    register: string
+    frequency: string
+    notes: string
+  }
+  synonyms: Array<{ word: string; diff: string }>
+  delf_tips: {
+    level: string
+    usage: string
+    section: string
+  }
+  collocations: string[]
+  examples: Array<{ fr: string; translation: string }>
+}
+
+// Example Generator
+export interface ExampleGeneratorRequest {
+  text: string
+  learning_lang?: string
+  native_lang?: string
+  level?: CEFRLevel
+  count?: number
+}
+
+export interface ExampleGeneratorData {
+  word: string
+  level: string
+  examples: Array<{
+    fr: string
+    translation: string
+    audio_text: string
+    context: string
+  }>
+}
+
+// Grammar Check
+export interface GrammarCheckRequest {
+  text: string
+  learning_lang?: string
+  native_lang?: string
+}
+
+export interface GrammarError {
+  text: string
+  correction: string
+  type: "spelling" | "grammar" | "accent" | "conjugation" | "agreement" | "punctuation"
+  start_index: number
+  end_index: number
+  explanation: string
+}
+
+export interface GrammarCheckData {
+  original: string
+  corrected: string
+  is_correct: boolean
+  score: number
+  errors: GrammarError[]
+  suggestions: string[]
+}
+
+// Mnemonic Creator
+export interface MnemonicRequest {
+  text: string
+  learning_lang?: string
+  native_lang?: string
+}
+
+export interface MnemonicData {
+  word: string
+  meaning: string
+  mnemonics: Array<{
+    type: "sound" | "visual" | "story" | "acronym" | "association"
+    trick: string
+    explanation: string
+  }>
+  best_pick: string
 }

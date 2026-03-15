@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import type { CoCeTranscript } from "@/lib/types/api/coce"
 import { FileText, RefreshCw } from "lucide-react"
 
@@ -9,40 +10,34 @@ interface TranscriptViewProps {
 
 export function TranscriptView({ transcript, loading }: TranscriptViewProps) {
   return (
-    <div className="mb-6 animate-in slide-in-from-top-4 duration-300">
-      <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-card to-primary/5">
-        <CardHeader className="border-b border-primary/10 bg-primary/5">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20">
-              <FileText className="h-4 w-4 text-primary" />
-            </div>
-            Transcript
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          {loading && !transcript ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="space-y-3 text-center">
-                <RefreshCw className="mx-auto h-8 w-8 animate-spin text-primary" />
-                <p className="text-sm text-muted-foreground">Loading transcript...</p>
-              </div>
-            </div>
-          ) : transcript ? (
-            <div className="prose prose-sm max-w-none dark:prose-invert">
-              <p className="whitespace-pre-wrap leading-relaxed text-foreground/90">
-                {transcript.transcript}
-              </p>
-            </div>
-          ) : (
-            <div className="py-8 text-center">
-              <FileText className="mx-auto h-12 w-12 text-muted-foreground/30" />
-              <p className="mt-3 text-sm text-muted-foreground">
-                Transcript not available for this exercise.
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+    <Card className="rounded-[30px] border border-slate-200 bg-white shadow-sm">
+      <CardHeader className="border-b border-slate-100 pb-4">
+        <CardTitle className="flex items-center gap-3 text-base font-semibold text-slate-950">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-teal-50 text-teal-700">
+            <FileText className="h-4 w-4" />
+          </div>
+          Transcription
+        </CardTitle>
+      </CardHeader>
+
+      <CardContent className="p-0">
+        {loading && !transcript ? (
+          <div className="flex items-center justify-center px-6 py-12 text-sm text-slate-500">
+            <RefreshCw className="mr-2 h-4 w-4 animate-spin text-teal-600" />
+            Chargement de la transcription...
+          </div>
+        ) : transcript ? (
+          <ScrollArea className="h-[260px] px-6 py-5">
+            <p className="whitespace-pre-wrap text-sm leading-7 text-slate-700">
+              {transcript.transcript}
+            </p>
+          </ScrollArea>
+        ) : (
+          <div className="px-6 py-12 text-center text-sm text-slate-500">
+            Transcription indisponible.
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }

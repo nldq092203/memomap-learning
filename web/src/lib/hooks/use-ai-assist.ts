@@ -2,7 +2,17 @@
 
 import { useCallback, useRef, useState } from "react"
 import { aiService } from "@/lib/services/ai"
-import type { CEFRLevel, ChatResponse, ExplainResponse } from "@/lib/types/api/ai"
+import type {
+  CEFRLevel,
+  ChatResponse,
+  ExplainResponse,
+  AITaskResponse,
+  QuickExplainData,
+  DeepBreakdownData,
+  ExampleGeneratorData,
+  GrammarCheckData,
+  MnemonicData,
+} from "@/lib/types/api/ai"
 import { notificationService } from "@/lib/services/notification-service"
 
 type Settings = {
@@ -56,10 +66,25 @@ const saveSettings = (s: Settings) => {
   try { localStorage.setItem(storeKey, JSON.stringify(s)) } catch {}
 }
 
+function handleAIError(e: unknown, endpoint: string): never {
+  const errorCode = (e as { response?: { status?: number; data?: { message?: string } } })?.response?.status
+  const errorMessage = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
+
+  console.error("ai_error", { endpoint, code: errorCode })
+
+  if (errorCode === 429) {
+    notificationService.error(errorMessage || "Too many AI requests. Please wait and try again.")
+  } else {
+    notificationService.error("AI unavailable, try again")
+  }
+  throw e
+}
+
 export function useAiAssist(initial?: Partial<Settings>) {
   const [settings, setSettings] = useState<Settings>({ ...loadSettings(), ...initial })
   const [isExplaining, setIsExplaining] = useState(false)
   const [isChatting, setIsChatting] = useState(false)
+  const [isTaskLoading, setIsTaskLoading] = useState(false)
   const [explain, setExplain] = useState<ExplainResponse | null>(null)
   const [chat, setChat] = useState<Array<{ role: "user" | "assistant"; content: string }>>([])
   const [threadId, setThreadId] = useState<string | null>(() => {
@@ -72,6 +97,13 @@ export function useAiAssist(initial?: Partial<Settings>) {
   const [rateLimitError, setRateLimitError] = useState<{ message: string; retryAfter: number } | null>(null)
   const abortRef = useRef<AbortController | null>(null)
 
+  // Task-specific results
+  const [quickExplainResult, setQuickExplainResult] = useState<AITaskResponse<QuickExplainData> | null>(null)
+  const [deepBreakdownResult, setDeepBreakdownResult] = useState<AITaskResponse<DeepBreakdownData> | null>(null)
+  const [examplesResult, setExamplesResult] = useState<AITaskResponse<ExampleGeneratorData> | null>(null)
+  const [grammarCheckResult, setGrammarCheckResult] = useState<AITaskResponse<GrammarCheckData> | null>(null)
+  const [mnemonicResult, setMnemonicResult] = useState<AITaskResponse<MnemonicData> | null>(null)
+
   const updateSettings = useCallback((patch: Partial<Settings>) => {
     setSettings(prev => {
       const next = { ...prev, ...patch }
@@ -81,7 +113,7 @@ export function useAiAssist(initial?: Partial<Settings>) {
   }, [])
 
   const cacheKeyFor = useCallback(async (body: { text?: string } & Record<string, unknown>) => {
-    const keyObj = { ...body, // shape
+    const keyObj = { ...body,
       text: body.text,
       learning_lang: settings.learning_lang,
       native_lang: settings.native_lang,
@@ -107,39 +139,18 @@ export function useAiAssist(initial?: Partial<Settings>) {
     const cached = cache.get(key)
     if (cached && (now - cached.ts) < TTL) {
       setExplain(cached.data)
-      console.log("ai_explain_success", { isJson: cached.data?.meta?.isJson, latency_ms: 0, cached: true })
       return cached.data
     }
     abortRef.current?.abort()
     abortRef.current = new AbortController()
-    const t0 = performance.now()
     setIsExplaining(true)
     try {
-      console.log("ai_explain_request", { chars: body.text.length, targets: body.target_langs?.length, level: body.level })
       const res = await aiService.explain(body)
       cache.set(key, { data: res, ts: now })
       setExplain(res)
-      console.log("ai_explain_success", { isJson: res?.meta?.isJson, latency_ms: Math.round(performance.now() - t0), cached: false })
       return res
     } catch (e: unknown) {
-      const errorCode = (e as { response?: { status?: number; data?: { message?: string } } })?.response?.status
-      const errorMessage = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
-
-      console.error("ai_error", { endpoint: "web/ai/assist", code: errorCode })
-
-      if (errorCode === 429) {
-        // Rate limit error - extract retry time from message
-        const match = errorMessage?.match(/(\d+)\s+seconds/)
-        const retryAfter = match ? parseInt(match[1], 10) : 60
-        setRateLimitError({
-          message: errorMessage || "Too many AI requests. Please wait and try again.",
-          retryAfter
-        })
-        notificationService.error(errorMessage || "Too many AI requests. Please wait and try again.")
-      } else {
-        notificationService.error("AI unavailable, try again")
-      }
-      throw e
+      handleAIError(e, "web/ai/assist")
     } finally {
       setIsExplaining(false)
     }
@@ -157,52 +168,133 @@ export function useAiAssist(initial?: Partial<Settings>) {
       thread_id: threadId,
       history_max_turns: 5,
     }
-    const t0 = performance.now()
     setIsChatting(true)
     try {
-      console.log("ai_chat_request", { use_context: body.use_context })
       setChat(prev => [...prev, { role: "user", content: body.question }])
       const res: ChatResponse = await aiService.chat(body)
       setChat(prev => [...prev, { role: "assistant", content: res.response }])
-      // Update thread ID from response if we got a conversation_id
       if (res.conversation_id && res.conversation_id !== threadId) {
         setThreadId(res.conversation_id)
         try { localStorage.setItem('ai_thread_id', res.conversation_id) } catch {}
       } else if (!threadId) {
-        // Fallback: create a thread id if we don't have one and API didn't provide one
         const id = `t_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
         setThreadId(id)
         try { localStorage.setItem('ai_thread_id', id) } catch {}
       }
-      console.log("ai_chat_success", { latency_ms: Math.round(performance.now() - t0), conversation_id: res.conversation_id })
       return res
     } catch (e: unknown) {
-      const errorCode = (e as { response?: { status?: number; data?: { message?: string } } })?.response?.status
-      const errorMessage = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
-
-      console.error("ai_error", { endpoint: "web/ai/chat", code: errorCode })
-
-      if (errorCode === 429) {
-        // Rate limit error - extract retry time from message
-        const match = errorMessage?.match(/(\d+)\s+seconds/)
-        const retryAfter = match ? parseInt(match[1], 10) : 60
-        setRateLimitError({
-          message: errorMessage || "Too many AI requests. Please wait and try again.",
-          retryAfter
-        })
-        notificationService.error(errorMessage || "Too many AI requests. Please wait and try again.")
-      } else {
-        notificationService.error("AI unavailable, try again")
-      }
-      throw e
+      handleAIError(e, "web/ai/chat")
     } finally {
       setIsChatting(false)
     }
   }, [settings, threadId])
 
+  // ── New specialized task methods ──
+
+  const quickExplain = useCallback(async (text: string) => {
+    if (!text.trim()) return null
+    setIsTaskLoading(true)
+    setQuickExplainResult(null)
+    try {
+      const res = await aiService.quickExplain({
+        text: text.trim(),
+        learning_lang: settings.learning_lang,
+        native_lang: settings.native_lang,
+      })
+      setQuickExplainResult(res)
+      return res
+    } catch (e: unknown) {
+      handleAIError(e, "web/ai/quick-explain")
+    } finally {
+      setIsTaskLoading(false)
+    }
+  }, [settings])
+
+  const deepBreakdown = useCallback(async (text: string) => {
+    if (!text.trim()) return null
+    setIsTaskLoading(true)
+    setDeepBreakdownResult(null)
+    try {
+      const res = await aiService.deepBreakdown({
+        text: text.trim(),
+        learning_lang: settings.learning_lang,
+        native_lang: settings.native_lang,
+        level: settings.level,
+      })
+      setDeepBreakdownResult(res)
+      return res
+    } catch (e: unknown) {
+      handleAIError(e, "web/ai/deep-breakdown")
+    } finally {
+      setIsTaskLoading(false)
+    }
+  }, [settings])
+
+  const generateExamples = useCallback(async (text: string, count?: number) => {
+    if (!text.trim()) return null
+    setIsTaskLoading(true)
+    setExamplesResult(null)
+    try {
+      const res = await aiService.generateExamples({
+        text: text.trim(),
+        learning_lang: settings.learning_lang,
+        native_lang: settings.native_lang,
+        level: settings.level,
+        count: count ?? 3,
+      })
+      setExamplesResult(res)
+      return res
+    } catch (e: unknown) {
+      handleAIError(e, "web/ai/examples")
+    } finally {
+      setIsTaskLoading(false)
+    }
+  }, [settings])
+
+  const grammarCheck = useCallback(async (text: string) => {
+    if (!text.trim()) return null
+    setIsTaskLoading(true)
+    setGrammarCheckResult(null)
+    try {
+      const res = await aiService.grammarCheck({
+        text: text.trim(),
+        learning_lang: settings.learning_lang,
+        native_lang: settings.native_lang,
+      })
+      setGrammarCheckResult(res)
+      return res
+    } catch (e: unknown) {
+      handleAIError(e, "web/ai/grammar-check")
+    } finally {
+      setIsTaskLoading(false)
+    }
+  }, [settings])
+
+  const createMnemonic = useCallback(async (text: string) => {
+    if (!text.trim()) return null
+    setIsTaskLoading(true)
+    setMnemonicResult(null)
+    try {
+      const res = await aiService.createMnemonic({
+        text: text.trim(),
+        learning_lang: settings.learning_lang,
+        native_lang: settings.native_lang,
+      })
+      setMnemonicResult(res)
+      return res
+    } catch (e: unknown) {
+      handleAIError(e, "web/ai/mnemonic")
+    } finally {
+      setIsTaskLoading(false)
+    }
+  }, [settings])
+
   return {
+    // Settings
     settings,
     updateSettings,
+
+    // Existing: explain + chat
     isExplaining,
     isChatting,
     explain,
@@ -211,6 +303,21 @@ export function useAiAssist(initial?: Partial<Settings>) {
     askMore,
     threadId,
     setThreadId,
+
+    // New specialized tasks
+    isTaskLoading,
+    quickExplain,
+    quickExplainResult,
+    deepBreakdown,
+    deepBreakdownResult,
+    generateExamples,
+    examplesResult,
+    grammarCheck,
+    grammarCheckResult,
+    createMnemonic,
+    mnemonicResult,
+
+    // Rate limit
     rateLimitError,
     clearRateLimitError: () => setRateLimitError(null),
   }

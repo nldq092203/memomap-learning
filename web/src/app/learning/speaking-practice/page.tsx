@@ -1,6 +1,9 @@
 "use client"
 
 import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { ArrowLeft } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { useSpeakingPractice } from "@/lib/hooks/use-speaking-practice"
 import {
   TopicList,
@@ -9,6 +12,7 @@ import {
 } from "@/components/learning/speaking-practice"
 
 export default function SpeakingPracticePage() {
+  const router = useRouter()
   const {
     topics,
     currentTopic,
@@ -25,59 +29,55 @@ export default function SpeakingPracticePage() {
     backToSubtopics,
   } = useSpeakingPractice()
 
-  // Load topics on mount
   useEffect(() => {
     if (topics.length === 0 && !currentTopic) {
       void loadTopics()
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Handle topic selection
   const handleTopicSelect = (topicId: string) => {
     void loadTopicManifest(topicId)
   }
 
-  // Handle subtopic selection
   const handleSubtopicSelect = (contentPath: string) => {
     void loadContent(contentPath)
   }
 
-  // Render topic selection
-  if (!currentTopic && !currentContent) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="mx-auto max-w-6xl px-4 py-6 md:py-8">
+  const shellClassName = currentContent
+    ? "min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef8f3_100%)]"
+    : "min-h-screen bg-slate-50"
+
+  return (
+    <div className={shellClassName}>
+      <div className={currentContent ? "mx-auto max-w-5xl px-4 py-6 md:px-6 md:py-8" : "mx-auto max-w-6xl px-4 py-6 md:py-8"}>
+        <Button
+          type="button"
+          variant="ghost"
+          className="mb-6 rounded-full px-3 text-slate-600 hover:bg-white hover:text-slate-900"
+          onClick={() => router.push("/learning/workspace")}
+        >
+          <ArrowLeft className="mr-1.5 h-4 w-4" />
+          Retour à l'espace d'entrainement
+        </Button>
+
+        {!currentTopic && !currentContent && (
           <TopicList
             topics={topics}
             loading={loading}
             onSelectTopic={handleTopicSelect}
           />
-        </div>
-      </div>
-    )
-  }
+        )}
 
-  // Render subtopic selection
-  if (currentTopic && !currentContent) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="mx-auto max-w-6xl px-4 py-6 md:py-8">
+        {currentTopic && !currentContent && (
           <SubtopicList
             topic={currentTopic}
             loading={loading}
             onSelectSubtopic={handleSubtopicSelect}
             onBack={backToTopics}
           />
-        </div>
-      </div>
-    )
-  }
+        )}
 
-  // Render practice session
-  if (currentContent) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-        <div className="mx-auto max-w-4xl px-4 py-6 md:py-8">
+        {currentContent && (
           <PracticePlayer
             content={currentContent}
             currentItemIndex={currentItemIndex}
@@ -86,10 +86,8 @@ export default function SpeakingPracticePage() {
             onGoToItem={goToItem}
             onBack={backToSubtopics}
           />
-        </div>
+        )}
       </div>
-    )
-  }
-
-  return null
+    </div>
+  )
 }

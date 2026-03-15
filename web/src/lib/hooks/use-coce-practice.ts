@@ -41,7 +41,7 @@ export function useCoCePractice() {
       if (selectedTopic !== undefined) setTopic(selectedTopic)
     } catch (error) {
       console.error("Failed to load exercises:", error)
-      notificationService.error("Failed to load exercises")
+      notificationService.error("Impossible de charger les exercices")
     } finally {
       setLoading(false)
     }
@@ -59,9 +59,9 @@ export function useCoCePractice() {
         setQuestions(null)
         setUserAnswers([])
         setShowResults(false)
-      } catch (error) {
-        console.error("Failed to load exercise:", error)
-        notificationService.error("Failed to load exercise")
+    } catch (error) {
+      console.error("Failed to load exercise:", error)
+      notificationService.error("Impossible de charger l'exercice")
       } finally {
         setLoading(false)
       }
@@ -79,7 +79,7 @@ export function useCoCePractice() {
       setMode("transcript")
     } catch (error) {
       console.error("Failed to load transcript:", error)
-      notificationService.error("Failed to load transcript")
+      notificationService.error("Impossible de charger la transcription")
     } finally {
       setLoading(false)
     }
@@ -96,9 +96,9 @@ export function useCoCePractice() {
         setMode(type)
         setUserAnswers([])
         setShowResults(false)
-      } catch (error) {
-        console.error("Failed to load questions:", error)
-        notificationService.error("Failed to load questions")
+    } catch (error) {
+      console.error("Failed to load questions:", error)
+      notificationService.error("Impossible de charger les questions")
       } finally {
         setLoading(false)
       }
@@ -129,7 +129,7 @@ export function useCoCePractice() {
     )
 
     if (!allAnswered) {
-      notificationService.error("Please answer all questions before submitting")
+      notificationService.error("Répondez à toutes les questions avant de valider")
       return
     }
 

@@ -97,3 +97,46 @@ class ExplainTextInput(BaseModel):
     include_synonyms: bool = Field(default=True)
     include_examples: bool = Field(default=True)
 
+
+class QuickExplainRequest(BaseModel):
+    """Quick explanation of a word/phrase."""
+
+    text: str = Field(..., min_length=1, max_length=200)
+    learning_lang: str = Field(default="fr")
+    native_lang: str = Field(default="vi")
+
+
+class DeepBreakdownRequest(BaseModel):
+    """Deep grammar/nuance/synonym analysis."""
+
+    text: str = Field(..., min_length=1, max_length=500)
+    learning_lang: str = Field(default="fr")
+    native_lang: str = Field(default="vi")
+    level: str = Field(default="B1")
+
+
+class ExampleGeneratorRequest(BaseModel):
+    """Generate example sentences for a word/phrase."""
+
+    text: str = Field(..., min_length=1, max_length=200)
+    learning_lang: str = Field(default="fr")
+    native_lang: str = Field(default="vi")
+    level: str = Field(default="B1")
+    count: int = Field(default=3, ge=1, le=5)
+
+
+class GrammarCheckRequest(BaseModel):
+    """Check grammar/spelling in user text."""
+
+    text: str = Field(..., min_length=1, max_length=2000)
+    learning_lang: str = Field(default="fr")
+    native_lang: str = Field(default="vi")
+
+
+class MnemonicRequest(BaseModel):
+    """Create mnemonic/memory tricks for a word."""
+
+    text: str = Field(..., min_length=1, max_length=200)
+    learning_lang: str = Field(default="fr")
+    native_lang: str = Field(default="vi")
+

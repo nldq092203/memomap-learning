@@ -34,23 +34,32 @@ export function TranscribeRunSection({
 
   return (
     <section className="space-y-4">
-      <div className="flex flex-col gap-4 rounded-lg border bg-card p-4">
+      <div className="flex flex-col gap-4 rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-5">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-sm font-semibold tracking-wide text-slate-700">
+            3. Lancez la transcription
+          </h2>
+          <p className="text-xs text-slate-500">
+            Vérifiez votre configuration puis lancez votre studio de transcription.
+          </p>
+        </div>
+
         <Button
           type="button"
           onClick={onTranscribeClick}
           disabled={isDisabled}
           size="lg"
-          className="w-full gap-2"
+          className="h-14 w-full gap-2 rounded-full bg-emerald-100 text-emerald-700 shadow-[0_0_24px_rgba(16,185,129,0.14)] hover:bg-emerald-200"
         >
           {isTranscribing ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Transcribing…
+              Transcription en cours…
             </>
           ) : (
             <>
               <Sparkles className="h-4 w-4" />
-              Transcribe Audio
+              Lancer la transcription
             </>
           )}
         </Button>
@@ -60,7 +69,7 @@ export function TranscribeRunSection({
           {isModelLoading && (
             <div className="animate-in fade-in slide-in-from-top-2 space-y-2 duration-300">
               <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>Downloading model...</span>
+                <span>Préparation du modèle…</span>
                 {typeof modelProgress === "number" && (
                   <span className="font-medium">{modelProgress}%</span>
                 )}
@@ -75,7 +84,7 @@ export function TranscribeRunSection({
             <div className="animate-in fade-in slide-in-from-top-2 space-y-2 duration-300">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground">
-                  Processing audio chunks...
+                  Analyse de l'audio…
                 </span>
                 {totalChunks > 0 && (
                   <span className="font-medium text-primary">
@@ -87,7 +96,7 @@ export function TranscribeRunSection({
                 <div className="space-y-1">
                   <Progress value={transcriptionProgress} className="h-2" />
                   <p className="text-center text-[0.7rem] text-muted-foreground">
-                    {Math.round(transcriptionProgress)}% complete
+                    {Math.round(transcriptionProgress)}% terminé
                   </p>
                 </div>
               )}
@@ -95,14 +104,14 @@ export function TranscribeRunSection({
           )}
 
           {!isModelLoading && !isTranscribing && hasFile && !errorMessage && (
-            <p className="text-center text-xs text-muted-foreground">
-              Ready to transcribe your audio
+            <p className="text-center text-xs text-slate-500">
+              Tout est prêt pour lancer votre transcription.
             </p>
           )}
 
           {!hasFile && !errorMessage && (
-            <p className="text-center text-xs text-muted-foreground">
-              Upload an audio file to get started
+            <p className="text-center text-xs text-slate-500">
+              Importez un audio pour commencer.
             </p>
           )}
         </div>
@@ -119,4 +128,3 @@ export function TranscribeRunSection({
     </section>
   )
 }
-

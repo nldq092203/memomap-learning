@@ -5,6 +5,7 @@ import { Upload, FileAudio, CheckCircle2, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { formatFileSize } from "@/lib/utils/audio-processing"
+import { cn } from "@/lib/utils"
 
 type UploadSectionProps = {
   selectedFile: File | null
@@ -58,32 +59,60 @@ export function TranscribeUploadSection({
 
   return (
     <section className="space-y-4">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-sm font-semibold tracking-wide text-slate-700">
+          1. Importez votre audio
+        </h2>
+        <p className="text-xs text-slate-500">
+          Glissez votre fichier audio ici. Votre audio ne quitte jamais votre navigateur (100% privé).
+        </p>
+      </div>
+
       <div
         role="button"
         tabIndex={0}
-        aria-label="Upload audio file for transcription"
+        aria-label="Importer un fichier audio"
         onClick={onClick}
         onKeyDown={onKeyDown}
         onDrop={onDrop}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
-        className={[
-          "group relative cursor-pointer rounded-lg border-2 border-dashed px-6 py-10 text-center transition-all",
-          "hover:border-primary/50 hover:bg-primary/5",
+        className={cn(
+          "group relative cursor-pointer overflow-hidden rounded-[28px] border-2 border-dashed px-6 py-10 text-center transition-all",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           isDragging
-            ? "border-primary bg-primary/10 scale-[1.02]"
-            : "border-border bg-muted/20",
-        ].join(" ")}
+            ? "scale-[1.01] border-teal-400 bg-teal-50"
+            : "border-slate-200 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_35%,#eef7f6_100%)] hover:border-teal-300"
+        )}
       >
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#99f6e4_0%,#d1fae5_50%,#5eead4_100%)] opacity-90" />
+        <div className="pointer-events-none absolute right-6 top-6 opacity-15">
+          <div className="flex items-end gap-1">
+            {[22, 36, 28, 44, 32, 54, 26, 40, 24].map((height, index) => (
+              <span
+                key={index}
+                className={cn(
+                  "w-1.5 rounded-full",
+                  index % 3 === 0
+                    ? "bg-emerald-300"
+                    : index % 3 === 1
+                      ? "border border-slate-200 bg-white"
+                      : "bg-teal-300"
+                )}
+                style={{ height }}
+              />
+            ))}
+          </div>
+        </div>
+
         <div className="flex flex-col items-center gap-3">
           <div
-            className={[
+            className={cn(
               "rounded-full p-3 transition-colors",
               isDragging
-                ? "bg-primary/20 text-primary"
-                : "bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary",
-            ].join(" ")}
+                ? "bg-teal-100 text-teal-700"
+                : "bg-slate-100 text-slate-500 group-hover:bg-teal-100 group-hover:text-teal-700"
+            )}
           >
             <Upload className="h-6 w-6" />
           </div>
@@ -91,19 +120,19 @@ export function TranscribeUploadSection({
           <div>
             <p className="text-sm font-medium">
               {isDragging
-                ? "Drop your audio file here"
-                : "Drag and drop audio, or click to browse"}
+                ? "Déposez votre audio ici"
+                : "Glissez votre audio ici, ou cliquez pour le choisir"}
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              MP3, WAV, M4A, WEBM • Processed locally in your browser
+            <p className="mt-1 text-xs text-slate-500">
+              MP3, WAV, M4A, WEBM • 100% privé dans votre navigateur
             </p>
           </div>
         </div>
 
         {selectedFile && (
-          <div className="mt-4 inline-flex items-center gap-3 rounded-lg border bg-background px-4 py-3 shadow-sm">
-            <div className="rounded-md bg-primary/10 p-2">
-              <FileAudio className="h-4 w-4 text-primary" />
+          <div className="mt-4 inline-flex items-center gap-3 rounded-xl border bg-white px-4 py-3 shadow-sm">
+            <div className="rounded-md bg-teal-100 p-2">
+              <FileAudio className="h-4 w-4 text-teal-700" />
             </div>
             <div className="flex flex-col items-start gap-1">
               <span className="max-w-[200px] truncate text-sm font-medium">
@@ -113,9 +142,9 @@ export function TranscribeUploadSection({
                 {formatFileSize(selectedFile.size)}
               </span>
             </div>
-            <Badge variant="default" className="gap-1.5">
+            <Badge variant="default" className="gap-1.5 bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
               <CheckCircle2 className="h-3 w-3" />
-              Ready
+              Prêt
             </Badge>
             <Button
               variant="ghost"
@@ -129,11 +158,10 @@ export function TranscribeUploadSection({
         )}
       </div>
 
-      {/* Audio Preview Player */}
       {selectedFile && audioUrl && (
-        <div className="animate-in slide-in-from-top-2 rounded-lg border bg-card p-4 duration-300">
-          <p className="mb-3 text-xs font-medium text-muted-foreground">
-            Audio Preview
+        <div className="animate-in slide-in-from-top-2 rounded-[24px] border border-slate-200 bg-white p-4 duration-300">
+          <p className="mb-3 text-xs font-medium text-slate-500">
+            Aperçu audio
           </p>
           <audio
             ref={audioRef}
@@ -142,7 +170,7 @@ export function TranscribeUploadSection({
             className="w-full"
             preload="metadata"
           >
-            Your browser does not support the audio element.
+            Votre navigateur ne prend pas en charge l'audio HTML5.
           </audio>
         </div>
       )}

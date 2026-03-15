@@ -31,12 +31,12 @@ export function ExerciseList({
         <div>
           <h1 className="text-2xl font-bold">{LEVEL_INFO[level].name}</h1>
           <p className="text-sm text-muted-foreground">
-            {exercises.length} exercise{exercises.length !== 1 ? "s" : ""} available
+            {exercises.length} exercice{exercises.length !== 1 ? "s" : ""} disponible{exercises.length !== 1 ? "s" : ""}
           </p>
         </div>
         <Button variant="outline" onClick={onBackToLevelSelection}>
           <ChevronLeft className="mr-2 h-4 w-4" />
-          Change Level
+          Changer de niveau
         </Button>
       </div>
 
@@ -77,8 +77,8 @@ export function ExerciseList({
                         <Headphones className="h-6 w-6 text-primary" />
                       </div>
                       <Badge variant="outline" className="bg-background/50 backdrop-blur-sm gap-1.5 font-normal text-xs">
-                        <Sparkles className="h-3 w-3 text-amber-500" />
-                        AI Generated Audio
+                        <Sparkles className="h-3 w-3 text-primary" />
+                        Audio guide
                       </Badge>
                     </div>
                   )}
@@ -120,9 +120,9 @@ export function ExerciseList({
                       </span>
                     </div>
                     {isVideo && (
-                       <div className="flex items-center gap-1 text-amber-600/80 dark:text-amber-400/80">
+                       <div className="flex items-center gap-1 text-primary/80">
                          <Sparkles className="h-3 w-3" />
-                         <span>AI Analysis</span>
+                         <span>Analyse guidee</span>
                        </div>
                     )}
                   </CardDescription>
@@ -130,7 +130,7 @@ export function ExerciseList({
                 <CardContent className="pb-4">
                   <Button className="w-full" size="sm" variant={isVideo ? "default" : "secondary"}>
                     <Play className="mr-2 h-3.5 w-3.5" />
-                    Start Exercise
+                    Ouvrir l'exercice
                   </Button>
                 </CardContent>
               </Card>

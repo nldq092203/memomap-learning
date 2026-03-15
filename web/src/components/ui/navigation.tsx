@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import {
   BookOpen,
@@ -48,6 +48,7 @@ export function Navigation() {
   const isAuthenticated = useIsAuthenticated()
   const isLoading = useAuthLoading()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [isReviewOpen, setIsReviewOpen] = useState(false)
@@ -86,6 +87,13 @@ export function Navigation() {
   }, [isCollapsed])
 
   if (isReviewOpen) {
+    return null
+  }
+
+  const isWorkspaceEditor =
+    pathname === "/learning/workspace" && searchParams.get("open") === "editor"
+
+  if (isWorkspaceEditor) {
     return null
   }
 
@@ -233,13 +241,13 @@ export function Navigation() {
           ) : isAuthenticated ? (
             <div
               className={cn(
-                "rounded-2xl border border-border/70 bg-muted/40 p-3",
+                "min-w-0 overflow-hidden rounded-2xl border border-border/70 bg-muted/40 p-3",
                 isCollapsed && "lg:px-2",
               )}
             >
               <UserProfile
                 showLogout={false}
-                className={cn(isCollapsed && "lg:justify-center")}
+                className={cn("min-w-0", isCollapsed && "lg:justify-center")}
               />
               <div className={cn("mt-3", isCollapsed && "lg:hidden")}>
                 <LogoutButton variant="ghost" className="w-full justify-start rounded-xl">

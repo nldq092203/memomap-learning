@@ -11,69 +11,56 @@ import {
   CardContent,
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-
-import { Progress } from "@/components/ui/progress"
 import {
-  Flame,
   Play,
-  Sparkles,
   BookOpen,
-  ArrowRight,
-  TrendingUp,
-  Target,
-  Pencil,
   Mic,
   Layers,
+  HelpCircle,
+  Timer,
+  Flame,
+  Clock,
 } from "lucide-react"
 import { StartSessionModal } from "@/components/learning/session/start-session-modal"
 import { learningApi } from "@/lib/services/learning-api"
 import { analyticsCache } from "@/lib/services/analytics-cache"
 import type { LearningAnalytics } from "@/lib/types/learning-vocab"
 import { ActivityLineChart } from "@/components/learning/analytics/activity-line-chart"
-import { WorkspaceShelf } from "@/components/learning/session/workspace-shelf"
 import { BottomDock, type DockAction } from "@/components/learning/layout/bottom-dock"
 import { useLearningLang } from "@/lib/contexts/learning-lang-context"
-import { useOnboarding } from "@/lib/contexts/onboarding-context"
 import { ShortcutPanel } from "@/components/ui/shortcut-panel"
+import { FeatureGuideModal } from "@/components/learning/layout/feature-guide-modal"
+import { useLearningTimeSession } from "@/lib/contexts/learning-time-session-context"
+import { useRecentSessions } from "@/lib/hooks/use-recent-sessions"
+import { cn } from "@/lib/utils"
 
 export default function LearningPage() {
   const router = useRouter()
   const [isStartOpen, setIsStartOpen] = useState(false)
+  const [isGuideOpen, setIsGuideOpen] = useState(false)
   const { lang: selectedLanguage } = useLearningLang()
-  const { isCompleted: onboardingCompleted, preferences } = useOnboarding()
   const [analytics, setAnalytics] = useState<LearningAnalytics | null>(null)
   const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(true)
   const [chartDays, setChartDays] = useState<7 | 30>(30)
+  const { isActive: sessionIsActive } = useLearningTimeSession()
+  const { sessions, isLoading: sessionsLoading } = useRecentSessions(selectedLanguage)
 
-  // Redirect to onboarding if not completed
-  useEffect(() => {
-    if (!onboardingCompleted) {
-      router.push("/onboarding")
-    }
-  }, [onboardingCompleted, router])
-
-  // Use user's personalized daily goal, fallback to 30 minutes
-  const dailyMinutesTarget = preferences?.dailyGoal || 30
-  
   const dockActions: DockAction[] = [
-    { label: "Review", hint: "R", icon: BookOpen, onClick: () => router.push("/learning/review-hub") },
-    { label: "Training", hint: "T", icon: Layers, onClick: () => router.push("/learning/workspace") },
-    { label: "Transcribe", hint: "R", icon: Mic, onClick: () => router.push("/learning/transcribe") },
-    { label: "Create Session", hint: "C", icon: Pencil, onClick: () => setIsStartOpen(true) },
+    { label: "Révision", hint: "R", icon: BookOpen, onClick: () => router.push("/learning/review-hub") },
+    { label: "Entraînement", hint: "T", icon: Layers, onClick: () => router.push("/learning/workspace") },
+    { label: "Transcrire", hint: "D", icon: Mic, onClick: () => router.push("/learning/transcribe") },
+    { label: "Session", hint: "S", icon: Timer, onClick: () => setIsStartOpen(true) },
   ]
 
   useEffect(() => {
     let cancelled = false
-    // 1) Load cached analytics immediately (if any)
     const cached = analyticsCache.get(selectedLanguage)
     if (cached) {
       setAnalytics(cached)
       setIsLoadingAnalytics(false)
     } else {
-      // Show default UI quickly
       setIsLoadingAnalytics(false)
     }
-    // 2) Fetch fresh analytics in background
     ;(async () => {
       try {
         const data = await learningApi.getAnalytics(selectedLanguage, 30, 0)
@@ -83,7 +70,7 @@ export default function LearningPage() {
         }
       } catch (error) {
         if (!cancelled) {
-          console.error('Failed to load analytics:', error)
+          console.error("Failed to load analytics:", error)
         }
       }
     })()
@@ -91,176 +78,241 @@ export default function LearningPage() {
   }, [selectedLanguage])
 
   const todaysMinutes = analytics?.today_minutes || 0
-  const momentumPercent = Math.min(100, Math.round((todaysMinutes / dailyMinutesTarget) * 100))
+  const dailyMinutesTarget = 30
   const currentStreak = analytics?.current_streak_days || 0
-  const longestStreak = analytics?.longest_streak_days || 0
 
   return (
     <ProtectedRoute>
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 md:py-10 pb-24 md:pb-28 text-sm md:text-base">
-      <div className="flex flex-wrap items-center justify-between gap-3 md:gap-4 mb-6 md:mb-8">
-        <div>
-          <p className="text-[11px] md:text-xs uppercase tracking-wide text-muted-foreground">
-            Learning Dashboard
-          </p>
-          <h1 className="text-2xl md:text-4xl font-semibold">Your Learning Journey</h1>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 md:py-8 pb-24 md:pb-28">
+        {/* Header — compact, non-distracting */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground/70 mb-0.5">
+              Tableau de bord
+            </p>
+            <h1 className="text-xl md:text-2xl font-semibold tracking-tight">Votre parcours</h1>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsGuideOpen(true)}
+              className="h-7 px-2 text-[11px] text-muted-foreground hover:text-foreground gap-1 rounded-full"
+            >
+              <HelpCircle className="h-3 w-3" />
+              Guide
+            </Button>
+            <ShortcutPanel />
+          </div>
         </div>
-        <ShortcutPanel />
-      </div>
 
-      <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        {/* ═══════════════════════════════════════════════
+            BENTO GRID
+            ═══════════════════════════════════════════════ */}
+        <div className="space-y-4">
           {isLoadingAnalytics ? (
-            <div className="grid gap-6 lg:grid-cols-3">
-              <div className="h-64 lg:col-span-2 animate-pulse rounded-3xl bg-muted/40" />
-              <div className="h-64 animate-pulse rounded-3xl bg-muted/40" />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="h-44 lg:col-span-2 animate-pulse rounded-2xl bg-muted/30" />
+              <div className="h-44 animate-pulse rounded-2xl bg-muted/30" />
             </div>
           ) : (
             <>
-              {/* Momentum Section */}
-              <div className="grid gap-6 md:grid-cols-3">
-                <Card className="col-span-1 md:col-span-2 relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-background border-primary/10 shadow-lg">
-                  <div className="absolute top-0 right-0 p-32 bg-primary/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
-                  <CardContent className="p-8 flex flex-col md:flex-row items-center justify-between gap-8 h-full">
-                    <div className="space-y-6 flex-1 text-center md:text-left z-10">
-                      <div>
-                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium mb-3">
-                           <Sparkles className="h-3 w-3" />
-                           Daily Progress
-                         </div>
-                         <h2 className="text-3xl font-bold tracking-tight mb-2">
-                           {todaysMinutes >= dailyMinutesTarget ? "Goal Crushed! 🎉" : "Keep Learning!"}
-                         </h2>
-                         <p className="text-muted-foreground text-lg">
-                           You&apos;ve done <span className="text-foreground font-semibold">{todaysMinutes} min</span> of your {dailyMinutesTarget} min goal.
-                         </p>
-                      </div>
+              {/* ── Row 1: Hero Session (2/3) + Progress (1/3) ── */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {/* Hero Session Card */}
+                <Card
+                  className={cn(
+                    "lg:col-span-2 relative overflow-hidden border transition-all duration-500",
+                    sessionIsActive
+                      ? "border-primary/40 bg-gradient-to-br from-primary/10 via-primary/5 to-background shadow-lg shadow-primary/10"
+                      : "border-border/60 bg-gradient-to-br from-muted/30 via-background to-background",
+                  )}
+                >
+                  {/* Ambient glow when session active */}
+                  {sessionIsActive && (
+                    <div className="absolute -top-20 -right-20 h-56 w-56 rounded-full bg-primary/15 blur-3xl animate-pulse pointer-events-none" />
+                  )}
 
-                      <div className="flex flex-wrap gap-3 justify-center md:justify-start">
-                        <Button 
-                          size="lg"
-                          onClick={() => setIsStartOpen(true)}
-                          className="rounded-full px-8 shadow-md shadow-primary/20 hover:shadow-lg transition-all"
-                        >
-                          <Play className="h-4 w-4 mr-2" /> Start Session
-                        </Button>
+                  <CardContent className="p-6 md:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 relative z-10">
+                    <div className="space-y-2 flex-1 min-w-0">
+                      <div className="inline-flex items-center gap-1.5 text-[11px] font-medium text-primary/80">
+                        <Timer className="h-3 w-3" />
+                        {sessionIsActive ? "Session en cours" : "Session d'apprentissage"}
+                      </div>
+                      <h2 className="text-xl md:text-2xl font-bold tracking-tight">
+                        {sessionIsActive ? "Focus mode 🎯" : "Prêt pour une session ?"}
+                      </h2>
+                      <p className="text-sm text-muted-foreground leading-relaxed max-w-md">
+                        {sessionIsActive
+                          ? "Votre chronomètre tourne. Continuez votre apprentissage !"
+                          : "Lancez le chrono pour enregistrer votre temps d'étude."}
+                      </p>
+                    </div>
+                    {!sessionIsActive && (
+                      <Button
+                        size="lg"
+                        onClick={() => setIsStartOpen(true)}
+                        className="rounded-full px-7 shadow-md shadow-primary/15 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all shrink-0"
+                      >
+                        <Play className="h-4 w-4 mr-2" /> Démarrer
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Progress / Stats Card */}
+                <Card className="border-border/60 bg-card/80 backdrop-blur-sm">
+                  <CardContent className="p-6 flex flex-col justify-center h-full gap-5">
+                    {/* Streak */}
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-xl bg-orange-500/10 text-orange-500">
+                        <Flame className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold leading-none">{currentStreak}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                          {currentStreak === 1 ? "jour consécutif" : "jours consécutifs"}
+                        </p>
                       </div>
                     </div>
 
-                    {/* Enhanced Momentum Ring */}
-                    <div className="relative z-10 flex-shrink-0">
-                      <div className="relative h-40 w-40">
-                         {/* Background blur for glow */}
-                         <div className="absolute inset-4 rounded-full bg-primary/20 blur-xl animate-pulse" />
-                         <svg className="w-full h-full transform -rotate-90 drop-shadow-lg">
-                           <circle
-                             cx="80" cy="80" r="72"
-                             stroke="currentColor" strokeWidth="12" fill="transparent"
-                             className="text-muted/20"
-                           />
-                           <circle
-                             cx="80" cy="80" r="72"
-                             stroke="currentColor" strokeWidth="12" fill="transparent"
-                             strokeDasharray={2 * Math.PI * 72}
-                             strokeDashoffset={(2 * Math.PI * 72) * (1 - momentumPercent / 100)}
-                             strokeLinecap="round"
-                             className="text-primary transition-all duration-1000 ease-out"
-                           />
-                         </svg>
-                         <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                           <span className="text-3xl font-bold tracking-tighter">{momentumPercent}%</span>
-                         </div>
+                    {/* Daily Goal */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-muted-foreground">Objectif du jour</span>
+                        <span className="font-semibold text-foreground">
+                          {todaysMinutes}/{dailyMinutesTarget} min
+                        </span>
+                      </div>
+                      <div className="h-2 rounded-full bg-muted/40 overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-primary/80 to-primary transition-all duration-700 ease-out"
+                          style={{ width: `${Math.min(100, (todaysMinutes / dailyMinutesTarget) * 100)}%` }}
+                        />
                       </div>
                     </div>
                   </CardContent>
                 </Card>
-
-                {/* Quick Stats Column */}
-                <div className="space-y-4">
-                   <div className="grid grid-cols-2 md:grid-cols-1 gap-4 h-full">
-                      <Card className="flex flex-col justify-center p-6 bg-orange-50/50 dark:bg-orange-900/10 border-orange-200/50 dark:border-orange-800/50">
-                        <div className="flex items-center gap-3 mb-2">
-                           <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600">
-                             <Flame className="h-5 w-5" />
-                           </div>
-                           <span className="text-sm font-medium text-muted-foreground">Streak</span>
-                        </div>
-                        <p className="text-3xl font-bold">{currentStreak} <span className="text-sm font-normal text-muted-foreground">days</span></p>
-                        <p className="text-xs text-muted-foreground mt-1">Best: <span className="font-medium">{longestStreak} days</span></p>
-                      </Card>
-
-                      <Card className="flex flex-col justify-center p-6 bg-blue-50/50 dark:bg-blue-900/10 border-blue-200/50 dark:border-blue-800/50">
-                         <div className="flex items-center gap-3 mb-2">
-                           <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600">
-                             <TrendingUp className="h-5 w-5" />
-                           </div>
-                           <span className="text-sm font-medium text-muted-foreground">Avg. Time</span>
-                        </div>
-                        <p className="text-3xl font-bold">{analytics?.avg_minutes_7d || 0} <span className="text-sm font-normal text-muted-foreground">min</span></p>
-                        <p className="text-xs text-muted-foreground mt-1">Last 7 days</p>
-                      </Card>
-                   </div>
-                </div>
               </div>
 
-              {/* Quick Actions Bar */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                 {[
-                   { label: "Vocabulary", icon: BookOpen, path: "/learning/vocab", color: "text-emerald-500", bg: "bg-emerald-500/10" },
-                   { label: "Workspace", icon: Layers, path: "/learning/workspace", color: "text-purple-500", bg: "bg-purple-500/10" },
-                   { label: "Transcribe", icon: Mic, path: "/learning/transcribe", color: "text-pink-500", bg: "bg-pink-500/10" }
-                 ].map((action) => (
-                   <button
-                     key={action.label}
-                     onClick={() => router.push(action.path)}
-                     className="flex flex-col items-center justify-center p-4 rounded-2xl bg-card border hover:border-primary/50 hover:bg-muted/50 transition-all group"
-                   >
-                     <div className={`p-3 rounded-xl ${action.bg} ${action.color} mb-3 group-hover:scale-110 transition-transform`}>
-                       <action.icon className="h-6 w-6" />
-                     </div>
-                     <span className="text-sm font-medium">{action.label}</span>
-                   </button>
-                 ))}
-              </div>
-
-              {/* Analytics Diagram */}
-              {analytics && (
-                <Card className="overflow-hidden border-none shadow-md bg-gradient-to-b from-card to-muted/20">
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <div>
-                      <CardTitle className="text-lg">Learning Activity</CardTitle>
-                      <CardDescription>Your consistency over time</CardDescription>
+              {/* ── Row 2: Shortcut Cards (3 cols) ── */}
+              <div className="grid grid-cols-3 gap-4">
+                {[
+                  { label: "Vocabulaire", icon: BookOpen, path: "/learning/vocab", color: "text-emerald-500", borderHover: "hover:border-emerald-500/40" },
+                  { label: "Entraînement", icon: Layers, path: "/learning/workspace", color: "text-purple-500", borderHover: "hover:border-purple-500/40" },
+                  { label: "Transcrire", icon: Mic, path: "/learning/transcribe", color: "text-pink-500", borderHover: "hover:border-pink-500/40" },
+                ].map((action) => (
+                  <button
+                    key={action.label}
+                    onClick={() => router.push(action.path)}
+                    className={cn(
+                      "group flex items-center gap-3 rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm",
+                      "px-4 py-4 text-left transition-all duration-200",
+                      "hover:bg-card/80 hover:shadow-sm active:scale-[0.98]",
+                      action.borderHover,
+                    )}
+                  >
+                    <div className={cn("p-2 rounded-xl bg-muted/50", action.color, "group-hover:scale-110 transition-transform")}>
+                      <action.icon className="h-5 w-5" />
                     </div>
-                    <div className="flex items-center bg-muted rounded-lg p-1 text-xs">
-                       <button
-                         onClick={() => setChartDays(7)}
-                         className={`px-3 py-1 rounded-md transition-all ${chartDays === 7 ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                       >
-                         7 Days
-                       </button>
-                       <button
-                         onClick={() => setChartDays(30)}
-                         className={`px-3 py-1 rounded-md transition-all ${chartDays === 30 ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                       >
-                         30 Days
-                       </button>
+                    <span className="text-sm font-medium">{action.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* ── Row 3: Chart (2/3) + Recent Sessions (1/3) ── */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {/* Activity Chart */}
+                <Card className="lg:col-span-2 border-border/50 bg-card/60 backdrop-blur-sm overflow-hidden">
+                  <CardHeader className="flex flex-row items-center justify-between pb-1 pt-5 px-5">
+                    <div>
+                      <CardTitle className="text-sm font-semibold">Activité</CardTitle>
+                      <CardDescription className="text-[11px]">Votre régularité au fil du temps</CardDescription>
+                    </div>
+                    <div className="flex items-center bg-muted/60 rounded-lg p-0.5 text-[11px]">
+                      <button
+                        onClick={() => setChartDays(7)}
+                        className={cn(
+                          "px-2.5 py-1 rounded-md transition-all",
+                          chartDays === 7 ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        7j
+                      </button>
+                      <button
+                        onClick={() => setChartDays(30)}
+                        className={cn(
+                          "px-2.5 py-1 rounded-md transition-all",
+                          chartDays === 30 ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        30j
+                      </button>
                     </div>
                   </CardHeader>
-                  <CardContent className="pt-4 px-2 sm:px-6">
-                    <div className="h-[300px] w-full">
-                      <ActivityLineChart daily={analytics.daily ?? []} days={chartDays} />
-                    </div>
+                  <CardContent className="pt-2 px-2 sm:px-5 pb-4">
+                    {analytics ? (
+                      <div className="h-[200px] w-full">
+                        <ActivityLineChart daily={analytics.daily ?? []} days={chartDays} />
+                      </div>
+                    ) : (
+                      <div className="h-[200px] flex items-center justify-center text-sm text-muted-foreground">
+                        Les données apparaîtront après votre première session.
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
-              )}
-              
-              <WorkspaceShelf language={selectedLanguage} />
+
+                {/* Recent Sessions */}
+                <Card className="border-border/50 bg-card/60 backdrop-blur-sm">
+                  <CardHeader className="pb-2 pt-5 px-5">
+                    <CardTitle className="text-sm font-semibold">Sessions récentes</CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-5 pb-5 space-y-2 max-h-[240px] overflow-y-auto">
+                    {sessionsLoading ? (
+                      <div className="space-y-2">
+                        {[1, 2, 3].map((i) => (
+                          <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />
+                        ))}
+                      </div>
+                    ) : sessions.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-6 text-center">
+                        <div className="h-10 w-10 rounded-full bg-muted/40 flex items-center justify-center mb-3">
+                          <Clock className="h-4 w-4 text-muted-foreground/50" />
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Votre première session<br />apparaîtra ici.
+                        </p>
+                      </div>
+                    ) : (
+                      sessions.slice(0, 4).map((session) => {
+                        const minutes = Math.max(1, Math.round((session.duration || 0) / 60))
+                        return (
+                          <div
+                            key={session.id}
+                            className="flex items-center gap-3 rounded-xl border border-border/40 px-3 py-2.5 transition-colors hover:bg-muted/30"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium truncate">{session.title || "Session"}</p>
+                            </div>
+                            <span className="text-[10px] font-medium text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full shrink-0">
+                              {minutes} min
+                            </span>
+                          </div>
+                        )
+                      })
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             </>
           )}
-      </div>
+        </div>
 
-      <BottomDock actions={dockActions} />
-      <StartSessionModal open={isStartOpen} onOpenChange={setIsStartOpen} />
-    </div>
+        <BottomDock actions={dockActions} />
+        <StartSessionModal open={isStartOpen} onOpenChange={setIsStartOpen} />
+        <FeatureGuideModal open={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
+      </div>
     </ProtectedRoute>
   )
 }

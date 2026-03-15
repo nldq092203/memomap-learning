@@ -20,6 +20,14 @@ class ApiClient {
   /**
    * Create a unique key for request deduplication
    */
+  private shouldAttachAuthHeader(endpoint?: string): boolean {
+    if (!endpoint) {
+      return true;
+    }
+
+    return !endpoint.startsWith('/auth/token');
+  }
+
   private createRequestKey(method: string, endpoint: string, params?: Record<string, unknown>): string {
     const sortedParams = params ? Object.keys(params).sort().reduce((result, key) => {
       result[key] = params[key];
@@ -46,14 +54,13 @@ class ApiClient {
       try {
         if (typeof window !== 'undefined') {
           const token = localStorage.getItem('auth_token');
-          if (token) {
+          const endpoint =
+            typeof config.url === 'string'
+              ? config.url
+              : undefined;
+
+          if (token && this.shouldAttachAuthHeader(endpoint)) {
             config.headers.Authorization = `Bearer ${token}`;
-          }
-          
-          // Add Google Drive access token if available (for Drive-backed endpoints)
-          const driveToken = localStorage.getItem('google_drive_token');
-          if (driveToken) {
-            config.headers['X-Google-Access-Token'] = driveToken;
           }
         }
       } catch {}
@@ -324,34 +331,6 @@ class ApiClient {
     return this.baseUrl;
   }
 
-  /**
-   * Set Google Drive access token for Drive-backed endpoints
-   */
-  setDriveToken(token: string | null): void {
-    try {
-      if (typeof window !== 'undefined') {
-        if (token) {
-          localStorage.setItem('google_drive_token', token);
-        } else {
-          localStorage.removeItem('google_drive_token');
-        }
-      }
-    } catch (error) {
-      console.error('Failed to set Drive token:', error);
-    }
-  }
-
-  /**
-   * Get stored Google Drive access token
-   */
-  getDriveToken(): string | null {
-    try {
-      if (typeof window !== 'undefined') {
-        return localStorage.getItem('google_drive_token');
-      }
-    } catch {}
-    return null;
-  }
 }
 
 // Export singleton instance

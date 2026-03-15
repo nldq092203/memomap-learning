@@ -72,7 +72,7 @@ export function AiAssistantLauncher({
       {open && (
         <FloatingWindow
           id="ai-assistant-window"
-          title="AI Assistant"
+          title="Assistant IA"
           persistKey="ai-assistant-window"
           defaultWidth={480}
           defaultHeight={520}

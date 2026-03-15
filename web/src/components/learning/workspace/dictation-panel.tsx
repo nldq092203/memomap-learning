@@ -5,6 +5,7 @@ import {
   type TranscriptEditorHandle,
 } from "@/components/learning/editor/transcript-editor"
 import { Button } from "@/components/ui/button"
+import type { AudioLessonListItem } from "@/lib/services/learning-api"
 import { Focus, Headphones } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -16,6 +17,12 @@ interface DictationPanelProps {
   isAudioWindowOpen: boolean
   onToggleFocusMode: () => void
   lessonDetail: unknown | null
+  selectedLessonId: string
+  audioLessons: AudioLessonListItem[]
+  audioLessonsLoading: boolean
+  audioLessonsError: string | null
+  hasAudioOptions: boolean
+  onSelectLesson: (lessonId: string) => void
   onToggleAudioWindow: () => void
   editorKey?: string
 }
@@ -32,70 +39,77 @@ export const DictationPanel = memo(function DictationPanel({
   isAudioWindowOpen,
   onToggleFocusMode,
   lessonDetail,
+  selectedLessonId,
+  audioLessons,
+  audioLessonsLoading,
+  audioLessonsError,
+  hasAudioOptions,
+  onSelectLesson,
   onToggleAudioWindow,
   editorKey,
 }: DictationPanelProps) {
-  const hasAudioLesson = !!lessonDetail
-
   return (
     <>
-      {/* Desk-like background with centered paper sheet */}
       <div
         className={cn(
-          "relative h-full flex justify-center overflow-auto px-4 md:px-8 py-6 transition-colors",
-          isFocusMode ? "bg-[#f2f2f2]" : "bg-[#fafafa]"
+          "relative flex h-full justify-center overflow-auto rounded-[28px] border border-slate-200 bg-slate-50 p-3 md:p-5 transition-colors",
+          isFocusMode && "bg-slate-100"
         )}
       >
         <div
           className={cn(
-            "w-full min-h-[80vh] bg-white rounded-2xl border border-neutral-200 shadow-[0_2px_10px_rgba(0,0,0,0.06)] px-6 md:px-10 py-8 transition-all",
-            isFocusMode ? "max-w-4xl" : "max-w-3xl"
+            "w-full min-h-[72vh] rounded-[28px] border border-slate-200/80 bg-white px-6 py-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)] transition-all md:px-10 md:py-10",
+            isFocusMode ? "max-w-5xl" : "max-w-4xl"
           )}
         >
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-400">
-              Dictation / Input
-            </p>
-            <ShortcutPanel />
+          <div className="mb-6 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+                Transcription
+              </p>
+              <p className="mt-1 text-sm text-slate-500">
+                Tapez ce que vous entendez. La mise en page reste nette pendant l'ecriture.
+              </p>
+            </div>
+            <div className="hidden md:block">
+              <ShortcutPanel />
+            </div>
           </div>
           <TranscriptEditor
             key={editorKey ?? "session-editor"}
             ref={editorRef}
             value={value}
             onChange={onChange}
-            className="min-h-[220px] flex-1 bg-transparent p-0 text-[15px] md:text-[16px] leading-relaxed tracking-[0.2px]"
+            className="min-h-[320px] flex-1 bg-transparent p-0 text-[16px] leading-10 tracking-[0.02em] text-slate-700 md:text-[18px]"
           />
         </div>
       </div>
 
-      {/* Floating toolbar – always visible, independent of scroll */}
-      <div className="fixed bottom-8 right-8 flex flex-col gap-3 bg-white/90 backdrop-blur shadow-lg border border-neutral-200 rounded-xl px-3 py-3 z-50">
+      <div className="fixed bottom-8 right-8 flex flex-col gap-3 bg-white/80 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-black/[0.04] rounded-[1.25rem] p-3 z-50">
         <Button
           type="button"
           size="sm"
-          variant={isFocusMode ? "default" : "outline"}
-          className="h-8 gap-1 rounded-full px-3 text-xs shadow-sm"
+          variant="secondary"
+          className="h-9 gap-1.5 rounded-xl border border-slate-200 bg-white px-4 text-xs font-medium text-slate-700 shadow-sm transition-transform active:scale-95"
           onClick={onToggleFocusMode}
         >
-          <Focus className="h-3.5 w-3.5" />
-          Focus
+          <Focus className="h-4 w-4" />
+          Concentration
         </Button>
         <Button
           type="button"
           size="sm"
-          variant={
-            hasAudioLesson
-              ? isAudioWindowOpen
-                ? "default"
-                : "outline"
-              : "ghost"
-          }
-          className="h-8 gap-1 rounded-full px-3 text-xs shadow-sm"
-          disabled={!hasAudioLesson}
+          variant="secondary"
+          className={cn(
+            "h-9 gap-1.5 rounded-xl px-4 text-xs font-medium text-emerald-600 active:scale-95 transition-transform shadow-sm",
+            lessonDetail
+              ? "border border-emerald-200 bg-emerald-50 hover:bg-emerald-100"
+              : "border border-dashed border-emerald-200 bg-white"
+          )}
           onClick={onToggleAudioWindow}
         >
-          <Headphones className="h-3.5 w-3.5" />
-          Audio
+          <Headphones className="h-4 w-4" />
+          {lessonDetail ? "Audio" : "Ouvrir l'audio"}
         </Button>
       </div>
     </>

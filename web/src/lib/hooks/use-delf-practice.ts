@@ -53,7 +53,7 @@ export function useDelfPractice() {
         setVariant(derivedVariant)
       } catch (error) {
         console.error("Failed to load DELF tests:", error)
-        notificationService.error("Failed to load DELF tests")
+        notificationService.error("Impossible de charger les sujets DELF")
       } finally {
         setLoading(false)
       }
@@ -75,7 +75,7 @@ export function useDelfPractice() {
         setShowResults(false)
       } catch (error) {
         console.error("Failed to load test paper:", error)
-        notificationService.error("Failed to load test paper")
+        notificationService.error("Impossible de charger le sujet")
       } finally {
         setLoading(false)
       }

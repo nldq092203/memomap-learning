@@ -1,7 +1,8 @@
 "use client"
 
 import { useCallback, useRef, useState } from "react"
-import { Settings, Info, CheckCircle2, RefreshCw } from "lucide-react"
+import { ArrowLeft, CheckCircle2, Info, RefreshCw, Settings } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 import {
   Card,
@@ -36,6 +37,7 @@ import {
 } from "@/lib/utils/audio-processing"
 import { Input } from "@/components/ui/input"
 import { toast } from "@/lib/toast"
+import { Badge } from "@/components/ui/badge"
 
 const MODEL_TINY: WhisperModelId = "Xenova/whisper-tiny"
 const MODEL_BASE: WhisperModelId = "Xenova/whisper-base"
@@ -65,6 +67,7 @@ const getFileBaseName = (name: string): string => {
 }
 
 const LearningTranscribePage = () => {
+  const router = useRouter()
   // File state
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -386,81 +389,114 @@ const LearningTranscribePage = () => {
     (!isManualMode && (!!errorMessage || isTranscribing || isModelLoading))
 
   return (
-    <main className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-4xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-            🎙️ Audio Transcription
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Transcribe audio entirely in your browser using Whisper AI. 100%
-            private and free.
-          </p>
-          <div className="mt-3 max-w-sm">
-            <label className="block text-xs font-medium text-muted-foreground">
-              Audio Name
-            </label>
-            <Input
-              value={lessonName}
-              onChange={(e) => setLessonName(e.target.value)}
-              placeholder={
-                selectedFile
-                  ? getFileBaseName(selectedFile.name)
-                  : "My audio"
-              }
-              className="mt-1 h-8 text-xs"
-            />
-          </div>
-        </div>
+    <main className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+      <Button
+        type="button"
+        variant="ghost"
+        className="w-fit rounded-full px-3 text-slate-600 hover:bg-white hover:text-slate-900"
+        onClick={() => router.push("/learning/workspace")}
+      >
+        <ArrowLeft className="mr-1.5 h-4 w-4" />
+        Retour à l'espace d'entrainement
+      </Button>
 
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSaveLessonClick}
-            disabled={isSaveDisabled}
-            className="h-9"
-          >
-            {isSavingLesson ? (
-              "Saving…"
-            ) : saveStatus === "success" ? (
-              <span className="flex items-center gap-1">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                All done
-              </span>
-            ) : saveStatus === "error" ? (
-              <span className="flex items-center gap-1">
-                <RefreshCw className="h-4 w-4" />
-                Retry save
-              </span>
-            ) : (
-              "Save to Drive"
-            )}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowStoragePanel(!showStoragePanel)}
-            className="h-9"
-          >
-            <Settings className="h-4 w-4" />
-          </Button>
+      <div className="rounded-[32px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_45%,#eef7f6_100%)] p-8 shadow-sm">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div className="max-w-3xl space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className="rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700 hover:bg-teal-50">
+                Learning Studio
+              </Badge>
+              <Badge className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100">
+                100% privé dans le navigateur
+              </Badge>
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+                Studio de transcription audio
+              </h1>
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
+                Importez un audio, choisissez votre mode de travail, puis lancez une dictée guidée
+                ou une transcription instantanée sans quitter votre navigateur.
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[
+                { step: "1", title: "Importez", desc: "Ajoutez votre audio" },
+                { step: "2", title: "Choisissez", desc: "Dictée ou IA" },
+                { step: "3", title: "Transcrivez", desc: "Travaillez ou générez" },
+              ].map((item) => (
+                <div key={item.step} className="rounded-[22px] border border-slate-200 bg-white/80 px-4 py-3">
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-teal-700">
+                    {item.step}
+                  </div>
+                  <div className="mt-1 text-sm font-semibold text-slate-900">{item.title}</div>
+                  <div className="text-xs text-slate-500">{item.desc}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="max-w-sm">
+              <label className="block text-xs font-medium text-slate-500">
+                Nom de l'audio
+              </label>
+              <Input
+                value={lessonName}
+                onChange={(e) => setLessonName(e.target.value)}
+                placeholder={selectedFile ? getFileBaseName(selectedFile.name) : "Mon audio"}
+                className="mt-1 h-10 rounded-xl border-slate-200 bg-white text-sm"
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-2 self-start">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSaveLessonClick}
+              disabled={isSaveDisabled}
+              className="h-10 rounded-full border-slate-200 bg-white"
+            >
+              {isSavingLesson ? (
+                "Enregistrement…"
+              ) : saveStatus === "success" ? (
+                <span className="flex items-center gap-1">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  Enregistré
+                </span>
+              ) : saveStatus === "error" ? (
+                <span className="flex items-center gap-1">
+                  <RefreshCw className="h-4 w-4" />
+                  Réessayer
+                </span>
+              ) : (
+                "Enregistrer dans Drive"
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowStoragePanel(!showStoragePanel)}
+              className="h-10 rounded-full border-slate-200 bg-white"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Main Card */}
-      <Card>
-        <CardHeader className="pb-4">
+      <Card className="rounded-[32px] border border-slate-200 bg-white shadow-sm">
+        <CardHeader className="space-y-4 pb-4">
           <div className="flex items-center gap-2">
-            <Info className="h-4 w-4 text-muted-foreground" />
-            <CardDescription className="text-xs">
+            <Info className="h-4 w-4 text-slate-400" />
+            <CardDescription className="text-xs text-slate-500">
               {runtimeLabel}
             </CardDescription>
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-8">
           <TranscribeUploadSection
             selectedFile={selectedFile}
             isDragging={isDragging}
@@ -516,7 +552,6 @@ const LearningTranscribePage = () => {
         </CardContent>
       </Card>
 
-      {/* Collapsible Panels */}
       {showStoragePanel && (
         <div className="animate-in slide-in-from-top-4 duration-300">
           <StorageInfoPanel />
@@ -531,7 +566,7 @@ const LearningTranscribePage = () => {
             onClick={() => setShowDebugLog(!showDebugLog)}
             className="h-8 text-xs"
           >
-            {showDebugLog ? "Hide" : "Show"} Debug Log ({debugLines.length})
+            {showDebugLog ? "Masquer" : "Afficher"} le journal ({debugLines.length})
           </Button>
         </div>
       )}
@@ -547,7 +582,7 @@ const LearningTranscribePage = () => {
 
       {saveLessonError && (
         <p className="text-xs text-destructive">
-          Failed to save audio lesson: {saveLessonError}
+          Échec de l’enregistrement : {saveLessonError}
         </p>
       )}
 

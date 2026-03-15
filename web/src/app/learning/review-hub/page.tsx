@@ -1,14 +1,12 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { LearningVocabCard } from "@/lib/types/learning-vocab"
 import { learningVocabApi } from "@/lib/services/learning-vocab-api"
 import type { VocabStats } from "@/lib/types/learning-vocab"
 import { useAuth } from "@/lib/contexts/auth-context"
-import { Target, Play } from "lucide-react"
+import { Sparkles, Play } from "lucide-react"
 import { ReviewModal } from "@/components/learning/review/session-review-modal"
 import { useLearningLang } from "@/lib/contexts/learning-lang-context"
 import { REVIEW_CHALLENGES, type ReviewChallengeId } from "@/components/learning/review/challenges"
@@ -24,21 +22,45 @@ export default function ReviewHub() {
   const [challengePrefs, setChallengePrefs] = useState<Partial<Record<ReviewChallengeId, boolean>>>({})
   const [stats, setStats] = useState<VocabStats | null>(null)
   const [loading, setLoading] = useState(true)
-  const [loadingDue, setLoadingDue] = useState(true)
-  const [loadingStats, setLoadingStats] = useState(true)
-  const [slow, setSlow] = useState(false)
   const [showReview, setShowReview] = useState(false)
   const [sessionCards, setSessionCards] = useState<LearningVocabCard[]>([])
 
   const [sessionFilter, setSessionFilter] = useState<"all" | "new" | "learning" | "review">("all")
 
+  const newCount = stats?.new || 0
+  const learningCount = stats?.learning || 0
+  const reviewCount = stats?.overdue || 0
+  const totalTrackedCards = newCount + learningCount + reviewCount
+  const stackedSegments = [
+    {
+      key: "new" as const,
+      label: "Nouvelles",
+      value: newCount,
+      barClass: "bg-slate-500",     
+      textClass: "text-slate-700",
+      ringClass: "ring-slate-100",
+    },
+    {
+      key: "learning" as const,
+      label: "En cours",
+      value: learningCount,
+      barClass: "bg-indigo-400",    
+      textClass: "text-slate-700",
+      ringClass: "ring-indigo-100",
+    },
+    {
+      key: "review" as const,
+      label: "A revoir",
+      value: reviewCount,
+      barClass: "bg-teal-600",      
+      textClass: "text-slate-700",
+      ringClass: "ring-teal-100",
+    },
+  ]
+
   useEffect(() => {
     if (!user) return
     setLoading(true)
-    setLoadingDue(true)
-    setLoadingStats(true)
-    setSlow(false)
-    const timer = setTimeout(() => setSlow(true), 1200)
 
     // Fetch due first — it enables the primary action quickly
     learningVocabApi.due(selectedLanguage, reviewLimit)
@@ -50,18 +72,13 @@ export default function ReviewHub() {
       })
       .finally(() => {
         setLoading(false)
-        setLoadingDue(false)
       })
 
     // Fetch stats in parallel (does not block UI)
     learningVocabApi.stats(selectedLanguage)
       .then((s) => setStats(s))
       .catch(() => { /* optional */ })
-      .finally(() => {
-        setLoadingStats(false)
-        clearTimeout(timer)
-        setSlow(false)
-      })
+      .finally(() => {})
   }, [user, selectedLanguage, reviewLimit])
 
   // Load saved preferences (count), language comes from shared context
@@ -147,6 +164,18 @@ export default function ReviewHub() {
   const radius = 80
   const circumference = 2 * Math.PI * radius
   const strokeDashoffset = circumference - (progressPercent / 100) * circumference
+  const directionOptions = [
+    { id: "word_to_translation" as const, label: "Mot -> Traduction" },
+    { id: "translation_to_word" as const, label: "Traduction -> Mot" },
+  ]
+  const filteredCount = sessionFilter === "all"
+    ? dueCards.length
+    : dueCards.filter((card) => {
+        if (sessionFilter === "new") return card.status === "new"
+        if (sessionFilter === "learning") return card.status === "learning"
+        if (sessionFilter === "review") return card.status !== "new" && card.status !== "learning"
+        return true
+      }).length
 
   if (loading) {
     return (
@@ -157,176 +186,228 @@ export default function ReviewHub() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/20 p-4 md:p-8 space-y-8">
-      <div className="max-w-3xl mx-auto space-y-8">
-        
-        {/* Header with Streak */}
-        <div className="flex items-center justify-between">
-          <div>
-             <h1 className="text-3xl font-bold tracking-tight">Review Hub</h1>
-             <p className="text-muted-foreground">Mission Control</p>
+    <div className="min-h-screen bg-muted/20 px-4 py-4 md:px-6 md:py-6">
+      <div className="mx-auto flex max-w-[1180px] flex-col gap-5">
+        <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+          <div className="flex flex-col gap-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="space-y-2">
+                <h1 className="text-3xl font-bold tracking-tight text-slate-900 md:text-[2rem]">
+                  Review Hub
+                </h1>
+                <p className="max-w-xl text-sm leading-6 text-slate-600">
+                  Gardez votre flux de révision net, régulier et prêt à lancer en une action.
+                </p>
+              </div>
+
+              <div className="flex w-full flex-col gap-3 lg:w-auto lg:min-w-[250px]">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                  <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+                    <span>Volume</span>
+                    <span>{reviewLimit} cartes</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 rounded-2xl bg-white p-1 shadow-sm">
+                    {[10, 20, 50].map((limit) => (
+                      <button
+                        key={limit}
+                        onClick={() => setReviewLimit(limit)}
+                        className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                          reviewLimit === limit
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                        }`}
+                      >
+                        {limit}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_380px] xl:items-start">
+              <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-5 md:p-6">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">Répartition des cartes</p>
+                    <p className="text-sm text-slate-500">Visualisez l’équilibre entre nouveauté, consolidation et rappel.</p>
+                  </div>
+                  <button
+                    onClick={() => setSessionFilter("all")}
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                      sessionFilter === "all"
+                        ? "bg-slate-900 text-white"
+                        : "bg-white text-slate-500 shadow-sm hover:text-slate-900"
+                    }`}
+                  >
+                    Toutes
+                  </button>
+                </div>
+
+                <div className="overflow-hidden rounded-full bg-slate-200/60">
+                  <div className="flex h-4 w-full">
+                    {stackedSegments.map((segment) => {
+                      const width = totalTrackedCards > 0 ? (segment.value / totalTrackedCards) * 100 : 0
+                      return (
+                        <div
+                          key={segment.key}
+                          className={`${segment.barClass} transition-[width] duration-500`}
+                          style={{ width: `${width}%` }}
+                        />
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                  {stackedSegments.map((segment) => {
+                    const isActive = sessionFilter === segment.key
+                    return (
+                      <button
+                        key={segment.key}
+                        onClick={() => setSessionFilter(segment.key)}
+                        className={`rounded-2xl border px-4 py-3 text-left transition ${
+                          isActive
+                            ? `border-slate-200 bg-white shadow-sm ring-1 ${segment.ringClass}`
+                            : "border-transparent bg-slate-50/80 hover:border-slate-200 hover:bg-white"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className={`h-2.5 w-2.5 rounded-full ${segment.barClass}`} />
+                          <span className="text-sm font-semibold text-slate-900">{segment.label}</span>
+                        </div>
+                        <p className={`mt-2 text-sm font-medium ${segment.textClass}`}>{segment.value}</p>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div className="flex flex-col items-center rounded-[24px] border border-slate-200 bg-slate-50/50 px-5 py-5 text-center shadow-sm">
+                <div className="relative flex h-56 w-56 items-center justify-center md:h-60 md:w-60">
+                  <div className="absolute inset-10 rounded-full bg-primary/10 blur-xl animate-pulse" />
+                  <svg className="relative h-full w-full -rotate-90">
+                    <circle
+                      cx="50%"
+                      cy="50%"
+                      r={radius}
+                      stroke="currentColor"
+                      strokeWidth="18"
+                      fill="transparent"
+                      className="text-slate-200"
+                    />
+                    <circle
+                      cx="50%"
+                      cy="50%"
+                      r={radius}
+                      stroke="currentColor"
+                      strokeWidth="18"
+                      fill="transparent"
+                      strokeDasharray={circumference}
+                      strokeDashoffset={strokeDashoffset}
+                      strokeLinecap="round"
+                      className="text-primary transition-all duration-1000 ease-out"
+                    />
+                  </svg>
+
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-6xl font-bold leading-none tracking-[-0.04em] text-slate-700 md:text-7xl">
+                      {dueCards.length}
+                    </span>
+                    <span className="mt-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+                      Cartes prêtes
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-4 w-full max-w-sm space-y-3">
+                  <Button
+                    size="lg"
+                    className={`h-14 w-full rounded-full bg-primary text-base font-bold text-primary-foreground shadow-sm transition hover:bg-primary/90 ${
+                      dueCards.length > 0 ? "" : "opacity-60 saturate-50"
+                    }`}
+                    onClick={handleStartReview}
+                    disabled={dueCards.length === 0}
+                  >
+                    <Play className="mr-2 h-5 w-5 fill-current" />
+                    Commencer la révision
+                  </Button>
+                  <p className="text-sm text-slate-600">
+                    {dueCards.length === 0
+                      ? "Aucune carte urgente pour le moment."
+                      : `${filteredCount} carte${filteredCount > 1 ? "s" : ""} correspondent au filtre actif.`}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-5 md:p-6">
+              <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-end">
+                <div className="space-y-5">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">Paramètres de session</p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Ajustez le sens des cartes et activez un défi d’expression sans quitter votre flux.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      Direction
+                    </span>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {directionOptions.map((option) => {
+                        const isActive = reviewDirection === option.id
+                        return (
+                          <button
+                            key={option.id}
+                            onClick={() => setReviewDirection(option.id)}
+                            className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+                              isActive
+                                ? "border-primary/20 bg-white text-primary shadow-sm ring-1 ring-primary/15"
+                                : "border-transparent bg-white/75 text-slate-500 hover:border-slate-200 hover:text-slate-900"
+                            }`}
+                          >
+                            {option.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-[22px] border border-slate-200 bg-white px-4 py-4 shadow-sm lg:min-w-[250px]">
+                  <div className="flex items-start gap-3">
+                    <div className="rounded-2xl bg-primary/10 p-2 text-primary">
+                      <Sparkles className="h-4 w-4" />
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">Défi supplémentaire</p>
+                        <p className="text-sm text-slate-500">Ajoutez une phrase d’usage pendant la révision.</p>
+                      </div>
+                      <button
+                        onClick={() =>
+                          setChallengePrefs((prev) => ({
+                            ...prev,
+                            usage_sentence: !prev.usage_sentence,
+                          }))
+                        }
+                        className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                          challengePrefs["usage_sentence"]
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        }`}
+                      >
+                        {challengePrefs["usage_sentence"] ? "Activé : phrase d’usage" : "Activer la phrase d’usage"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-
-        {/* Filters / Segmented Controls */}
-        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-card p-2 rounded-xl border shadow-sm">
-           
-           {/* Limit Toggle */}
-           <div className="flex items-center bg-muted rounded-lg p-1">
-              {[10, 20, 50].map((limit) => (
-                <button
-                  key={limit}
-                  onClick={() => setReviewLimit(limit)}
-                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
-                    reviewLimit === limit 
-                      ? "bg-background text-foreground shadow-sm" 
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {limit}
-                </button>
-              ))}
-           </div>
-
-           {/* Stats / Session Filters */}
-           <div className="flex items-center gap-2">
-              <button
-                onClick={() => setSessionFilter("new")}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all ${
-                  sessionFilter === "new" 
-                    ? "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300 ring-2 ring-blue-500/20" 
-                    : "hover:bg-muted border-transparent"
-                }`}
-              >
-                <div className="w-2 h-2 rounded-full bg-blue-500" />
-                <span className="text-sm font-medium">New</span>
-                <span className="text-xs opacity-70 ml-1">{stats?.new || 0}</span>
-              </button>
-
-              <button
-                onClick={() => setSessionFilter("learning")}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all ${
-                  sessionFilter === "learning" 
-                    ? "bg-orange-50 border-orange-200 text-orange-700 dark:bg-orange-900/20 dark:border-orange-800 dark:text-orange-300 ring-2 ring-orange-500/20" 
-                    : "hover:bg-muted border-transparent"
-                }`}
-              >
-                <div className="w-2 h-2 rounded-full bg-orange-500" />
-                <span className="text-sm font-medium">Learning</span>
-                <span className="text-xs opacity-70 ml-1">{stats?.learning || 0}</span>
-              </button>
-
-              <button
-                onClick={() => setSessionFilter("review")}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all ${
-                  sessionFilter === "review" 
-                    ? "bg-green-50 border-green-200 text-green-700 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300 ring-2 ring-green-500/20" 
-                    : "hover:bg-muted border-transparent"
-                }`}
-              >
-                <div className="w-2 h-2 rounded-full bg-green-500" />
-                <span className="text-sm font-medium">To Review</span>
-                <span className="text-xs opacity-70 ml-1">{stats?.overdue || 0}</span>
-              </button>
-           </div>
-        </div>
-
-        {/* Hero Section: Circular Progress */}
-        <div className="relative flex flex-col items-center justify-center py-12">
-           {/* SVG Circle */}
-           <div className="relative w-64 h-64">
-              {/* Background Circle */}
-              <svg className="w-full h-full transform -rotate-90">
-                <circle
-                  cx="128"
-                  cy="128"
-                  r={radius}
-                  stroke="currentColor"
-                  strokeWidth="12"
-                  fill="transparent"
-                  className="text-muted/20"
-                />
-                <circle
-                  cx="128"
-                  cy="128"
-                  r={radius}
-                  stroke="currentColor"
-                  strokeWidth="12"
-                  fill="transparent"
-                  strokeDasharray={circumference}
-                  strokeDashoffset={strokeDashoffset}
-                  strokeLinecap="round"
-                  className="text-primary transition-all duration-1000 ease-out"
-                />
-              </svg>
-              
-              {/* Center Content */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                 <span className="text-6xl font-bold tracking-tighter leading-none">{dueCards.length}</span>
-                 <span className="text-[10px] text-muted-foreground uppercase tracking-widest mt-2 font-medium">Due Cards</span>
-              </div>
-           </div>
-
-           {/* CTA Button */}
-           <div className="mt-8">
-              <Button 
-                size="lg" 
-                className={`h-14 px-8 text-lg rounded-full shadow-lg shadow-primary/25 transition-all w-full
-                  ${dueCards.length > 0 ? "animate-pulse" : "opacity-50"}
-                `}
-                onClick={handleStartReview}
-                disabled={dueCards.length === 0}
-              >
-                <Play className="w-5 h-5 mr-2 fill-current" />
-                REVIEW NOW
-              </Button>
-           </div>
-           
-           <p className="mt-4 text-sm text-muted-foreground">
-             {dueCards.length === 0 ? "All caught up! Great job." : "Stay consistent to maintain your streak."}
-           </p>
-        </div>
-
-        {/* Session Settings */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-           {/* Direction Control */}
-           <div className="bg-card p-4 rounded-xl border shadow-sm flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Direction</span>
-              <Select
-                value={reviewDirection}
-                onValueChange={(value) =>
-                  setReviewDirection(
-                    value === "translation_to_word" ? "translation_to_word" : "word_to_translation"
-                  )
-                }
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="word_to_translation">Word → Translation</SelectItem>
-                  <SelectItem value="translation_to_word">Translation → Word</SelectItem>
-                </SelectContent>
-              </Select>
-           </div>
-
-           {/* Challenge Control */}
-           <div className="bg-card p-4 rounded-xl border shadow-sm flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Extra Challenge</span>
-              <div className="flex items-center gap-2">
-                 <Button
-                   variant={challengePrefs["usage_sentence"] ? "default" : "outline"}
-                   size="sm"
-                   onClick={() => setChallengePrefs(prev => ({ ...prev, usage_sentence: !prev.usage_sentence }))}
-                   className="gap-2"
-                 >
-                   {challengePrefs["usage_sentence"] && <Target className="h-4 w-4" />}
-                   Make Sentences
-                 </Button>
-              </div>
-           </div>
-        </div>
-
+        </section>
       </div>
 
       <ReviewModal

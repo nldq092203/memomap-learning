@@ -20,20 +20,13 @@ export class AuthService {
   }
 
   /**
-   * Exchange Google token (id_token or access_token) for app JWT token
+   * Exchange Google authorization code for app JWT token.
    */
-  async exchangeGoogleToken(
-    token: string,
-    isAccessToken = false,
-  ): Promise<{ token: string; user: User }> {
+  async exchangeGoogleCode(code: string): Promise<{ token: string; user: User }> {
     try {
-      const payload = isAccessToken 
-        ? { access_token: token }
-        : { id_token: token };
-      
       const response = await apiClient.post<AuthTokenExchangeResponse>(
         '/auth/token',
-        payload
+        { code }
       );
       this.setToken(response.token);
       return {
@@ -41,7 +34,7 @@ export class AuthService {
         user: this.normalizeExchangeUser(response),
       };
     } catch (error) {
-      console.error('Failed to exchange Google token:', error);
+      console.error('Failed to exchange Google code:', error);
       throw new Error('Failed to authenticate with Google');
     }
   }
@@ -93,8 +86,6 @@ export class AuthService {
     try {
       // Clear client-side stored data
       this.clearToken();
-      // Also clear Drive access token used for Drive-backed endpoints
-      apiClient.setDriveToken(null);
       // Note: Backend has no /auth/logout endpoint - JWT tokens are stateless
       // and will expire naturally. We only need to clear client-side storage.
     } catch (error) {

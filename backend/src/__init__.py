@@ -19,6 +19,11 @@ from src.utils.response_builder import ResponseBuilder
 METRICS_TOKEN = os.getenv("METRICS_TOKEN")
 
 
+def _normalize_origin(origin: str) -> str:
+    """Keep origin matching stable across env files and browser headers."""
+    return origin.strip().strip("\"'").rstrip("/")
+
+
 def create_app(config_object: type[LearningConfig] | None = None) -> Flask:
     """Create and configure the Learning Flask application."""
     app = Flask(__name__)
@@ -26,16 +31,33 @@ def create_app(config_object: type[LearningConfig] | None = None) -> Flask:
 
     # ---------- CORS ----------
     default_origins = [
-        "chrome-extension://*",
-        "http://127.0.0.1:*",
-        "http://localhost:*",
-        "https://localhost:*",
-        "https://127.0.0.1:*",
-        "http://localhost:3000",
-        "http://127.0.0.1:5000",
+        r"^chrome-extension://.*$",
+        r"^http://localhost(:\d+)?$",
+        r"^https://localhost(:\d+)?$",
+        r"^http://127\.0\.0\.1(:\d+)?$",
+        r"^https://127\.0\.0\.1(:\d+)?$",
     ]
-    allowed_origins = default_origins + (app.config.get("ALLOWED_ORIGINS", []) or [])
-    cors.init_app(app, origins=allowed_origins)
+    configured_origins = [
+        _normalize_origin(origin)
+        for origin in (app.config.get("ALLOWED_ORIGINS", []) or [])
+        if _normalize_origin(origin)
+    ]
+    allowed_origins = [*default_origins, *configured_origins]
+    cors.init_app(
+        app,
+        resources={
+            r"/api/*": {
+                "origins": allowed_origins,
+                "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+                "allow_headers": [
+                    "Authorization",
+                    "Content-Type",
+                    "X-Admin-Token",
+                    "X-Google-Access-Token",
+                ],
+            }
+        },
+    )
 
     # ---------- Health Check ----------
     @app.get("/api/health")

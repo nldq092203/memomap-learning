@@ -23,7 +23,7 @@ export const ShortcutPanel: React.FC = () => {
         className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
       >
         <Keyboard className="h-3 w-3 mr-1" />
-        Shortcuts ({totalShortcuts})
+        Raccourcis ({totalShortcuts})
         {isExpanded ? (
           <ChevronUp className="h-3 w-3 ml-1" />
         ) : (
@@ -37,7 +37,7 @@ export const ShortcutPanel: React.FC = () => {
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
               <Keyboard className="h-4 w-4" />
-              Keyboard Shortcuts
+              Raccourcis clavier
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -45,9 +45,9 @@ export const ShortcutPanel: React.FC = () => {
             {formatting.length > 0 && (
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <Badge variant="secondary" className="text-xs">Formatting</Badge>
+                  <Badge variant="secondary" className="text-xs">Mise en forme</Badge>
                   <span className="text-xs text-muted-foreground">
-                    {formatting.length} shortcut{formatting.length !== 1 ? 's' : ''}
+                    {formatting.length} raccourci{formatting.length !== 1 ? 's' : ''}
                   </span>
                 </div>
                 <div className="grid gap-1">
@@ -69,7 +69,7 @@ export const ShortcutPanel: React.FC = () => {
                 <div className="flex items-center gap-2 mb-2">
                   <Badge variant="default" className="text-xs">Actions</Badge>
                   <span className="text-xs text-muted-foreground">
-                    {custom.length} shortcut{custom.length !== 1 ? 's' : ''}
+                    {custom.length} raccourci{custom.length !== 1 ? 's' : ''}
                   </span>
                 </div>
                 <div className="grid gap-1">

@@ -18,25 +18,25 @@ export function PracticeItem({ item, itemType }: PracticeItemProps) {
         return {
           title: "Introduction",
           icon: MessageSquare,
-          color: "text-blue-600 dark:text-blue-400",
-          bgColor: "bg-blue-500/10",
-          borderColor: "border-blue-500/20",
+          color: "text-emerald-600",
+          bgColor: "bg-emerald-50",
+          borderColor: "border-emerald-200",
         }
       case "question":
         return {
-          title: "Practice Question",
+          title: "Question d'entrainement",
           icon: MessageSquare,
-          color: "text-primary",
-          bgColor: "bg-primary/10",
-          borderColor: "border-primary/20",
+          color: "text-emerald-600",
+          bgColor: "bg-emerald-50",
+          borderColor: "border-emerald-200",
         }
       case "model":
         return {
-          title: "Model Answer",
+          title: "Réponse modèle",
           icon: MessageSquare,
-          color: "text-emerald-600 dark:text-emerald-400",
-          bgColor: "bg-emerald-500/10",
-          borderColor: "border-emerald-500/20",
+          color: "text-teal-600",
+          bgColor: "bg-teal-50",
+          borderColor: "border-teal-200",
         }
     }
   }
@@ -45,47 +45,43 @@ export function PracticeItem({ item, itemType }: PracticeItemProps) {
   const Icon = config.icon
 
   return (
-    <Card className={cn("border-border/60 bg-gradient-to-br from-background to-muted/20", config.borderColor)}>
-      <CardContent className="p-6 space-y-4">
-        {/* Header */}
+    <Card className={cn("rounded-[28px] border bg-white shadow-sm", config.borderColor)}>
+      <CardContent className="space-y-4 p-6">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className={cn("flex h-10 w-10 items-center justify-center rounded-xl", config.bgColor)}>
+            <div className={cn("flex h-10 w-10 items-center justify-center rounded-2xl", config.bgColor)}>
               <Icon className={cn("h-5 w-5", config.color)} />
             </div>
             <div>
-              <h3 className="font-semibold">{config.title}</h3>
+              <h3 className="font-semibold text-slate-950">{config.title}</h3>
               {item.s && (
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+                <div className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">
                   <Clock className="h-3 w-3" />
-                  <span>{item.s} seconds to respond</span>
+                  <span>{item.s} secondes pour répondre</span>
                 </div>
               )}
             </div>
           </div>
           {itemType === "question" && item.s && (
-            <Badge variant="secondary" className="shrink-0">
+            <Badge className="shrink-0 rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-50">
               {item.s}s
             </Badge>
           )}
         </div>
 
-        {/* Content */}
-        <div className="rounded-lg bg-muted/30 p-4 border border-border/40">
-          <p className="text-base sm:text-lg leading-relaxed">{item.t}</p>
+        <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
+          <p className="text-base leading-relaxed text-slate-800 sm:text-lg">{item.t}</p>
         </div>
 
-        {/* Hint for questions */}
         {itemType === "question" && (
-          <p className="text-sm text-muted-foreground italic">
-            💡 Take your time to think about your answer, then speak when ready
+          <p className="text-sm italic text-slate-500">
+            Prenez un moment pour préparer votre réponse, puis parlez quand vous êtes prêt.
           </p>
         )}
 
-        {/* Hint for model answers */}
         {itemType === "model" && (
-          <p className="text-sm text-muted-foreground italic">
-            📝 Listen to this example answer to improve your speaking
+          <p className="text-sm italic text-slate-500">
+            Écoutez cette réponse exemple pour enrichir votre expression orale.
           </p>
         )}
       </CardContent>

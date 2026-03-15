@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ---------- THEME VARIABLES ---------- */
-/* Jade Green Theme - Light Mode (same as extension) */
+/* Soft Jade Theme - Light Mode */
 :root {
   --background: 0 0% 100%;
   --foreground: 215 25% 27%;
@@ -16,10 +16,10 @@
   --popover: 0 0% 100%;
   --popover-foreground: 215 25% 27%;
 
-  --primary: 158 64% 52%;           /* #29ab87 - Jade Green */
+  --primary: 156 56% 60%;           /* softer jade green */
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 158 100% 40%;         /* Emerald-ish for accents */
+  --secondary: 156 52% 92%;         /* pale green accent surface */
   --secondary-foreground: 0 0% 100%;
 
   --muted: 210 40% 96%;
@@ -33,12 +33,12 @@
 
   --border: 214 32% 91%;
   --input: 214 32% 91%;
-  --ring: 158 64% 52%;
+  --ring: 156 56% 60%;
 
   --radius: 14px; /* nice rounded cards/buttons */
 }
 
-/* Optional Dark Mode (keeps jade primary) */
+/* Optional Dark Mode (keeps softer jade primary) */
 .dark {
   --background: 222 47% 8%;
   --foreground: 210 40% 98%;
@@ -49,10 +49,10 @@
   --popover: 222 47% 10%;
   --popover-foreground: 210 40% 98%;
 
-  --primary: 158 64% 52%;
+  --primary: 156 56% 60%;
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 158 100% 40%;
+  --secondary: 156 44% 24%;
   --secondary-foreground: 0 0% 100%;
 
   --muted: 217 33% 17%;
@@ -66,7 +66,7 @@
 
   --border: 217 33% 20%;
   --input: 217 33% 20%;
-  --ring: 158 64% 52%;
+  --ring: 156 56% 60%;
 }
 
 /* ---------- BASE RESETS ---------- */
@@ -106,4 +106,3 @@
     @apply text-xs;
   }
 }
-

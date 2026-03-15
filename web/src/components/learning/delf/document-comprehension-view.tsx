@@ -23,74 +23,72 @@ export function DocumentComprehensionView({
   const docs = exercise.documents?.length ? exercise.documents : (exercise.document ? [exercise.document] : [])
 
   return (
-    <Card className="overflow-hidden border shadow-sm">
+    <Card className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
       <CardContent className="p-0">
-        
-        {/* Header & Instruction */}
-        <div className="bg-muted/30 border-b p-5 sm:p-6 space-y-4">
-          <h3 className="font-semibold text-lg flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary shrink-0">
+        <div className="space-y-4 border-b bg-slate-50 p-5 sm:p-6">
+          <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-950">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-100 text-xs font-bold text-teal-700">
               {index + 1}
             </span>
             {exercise.title}
           </h3>
           
           {exercise.instruction && (
-            <p className="text-base font-medium text-foreground/80 border-l-4 border-primary/40 pl-4 py-1.5 bg-background">
+            <p className="border-l-4 border-teal-300 bg-white py-1.5 pl-4 text-base font-medium text-slate-700">
               {exercise.instruction}
             </p>
           )}
         </div>
 
-        {/* Embedded Reading Documents */}
         {docs.length > 0 && (
           <div className="p-5 sm:p-8 space-y-6">
             {docs.map((doc, docIdx) => {
-              // Cast to any to safely access fields that might only exist on DelfReadingDocument
               const d = doc as any
               return (
-                <div key={d.id || docIdx} className="rounded-xl border shadow-sm bg-card overflow-hidden">
-                  
-                  {/* Email details */}
+                <div key={d.id || docIdx} className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm">
+                  <div className="border-b border-slate-200 bg-slate-950 px-5 py-3 text-white">
+                    <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em]">
+                      Document {docIdx + 1}
+                    </span>
+                  </div>
+
                   {(d.type === "email" || (!d.title && d.sender)) && (
-                    <div className="bg-muted/40 border-b px-5 py-3 space-y-2 text-sm">
-                      <div className="flex items-center gap-2 font-medium text-foreground/90">
-                        <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <span className="text-muted-foreground w-12 text-right">De :</span>
+                    <div className="space-y-2 border-b bg-slate-50 px-5 py-3 text-sm">
+                      <div className="flex items-center gap-2 font-medium text-slate-800">
+                        <Mail className="h-4 w-4 shrink-0 text-slate-400" />
+                        <span className="w-12 text-right text-slate-500">De :</span>
                         <span>{d.sender || "Inconnu"}</span>
                       </div>
                       {d.subject && (
-                        <div className="flex items-start gap-2 font-semibold text-foreground">
-                          <span className="text-muted-foreground font-medium text-sm w-12 text-right shrink-0">Objet :</span>
+                        <div className="flex items-start gap-2 font-semibold text-slate-900">
+                          <span className="w-12 shrink-0 text-right text-sm font-medium text-slate-500">Objet :</span>
                           <span>{d.subject}</span>
                         </div>
                       )}
                     </div>
                   )}
 
-                  {/* Article header */}
                   {d.title && (
-                    <div className="bg-muted/30 border-b px-5 py-4 flex items-center justify-center text-center">
-                      <h4 className="font-bold text-lg text-foreground">{d.title}</h4>
+                    <div className="flex items-center justify-center border-b bg-slate-50 px-5 py-4 text-center">
+                      <h4 className="text-lg font-bold text-slate-950">{d.title}</h4>
                     </div>
                   )}
                   
-                  <div className="p-5 sm:p-6 text-foreground/90 leading-relaxed whitespace-pre-wrap font-medium text-[15px]">
+                  <div className="whitespace-pre-wrap p-5 text-[15px] font-medium leading-relaxed text-slate-800 sm:p-6">
                     {d.content || d.body}
                   </div>
 
-                  {/* Explicitly labeled parts reference (if provided) */}
                   {d.parts && d.parts.length > 0 && (
-                    <div className="border-t bg-primary/5 p-4 sm:p-5 space-y-3">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-primary/70 mb-3">
+                    <div className="space-y-3 border-t bg-teal-50/60 p-4 sm:p-5">
+                      <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-teal-700">
                         Parties à analyser
                       </h4>
                       {d.parts.map((part: any) => (
                         <div key={part.label} className="flex gap-3 text-sm">
-                          <span className="flex h-6 w-6 items-center justify-center rounded-sm bg-primary/20 text-primary font-bold shrink-0 mt-0.5 shadow-sm">
+                          <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-sm bg-teal-100 font-bold text-teal-700 shadow-sm">
                             {part.label}
                           </span>
-                          <p className="font-medium text-foreground/80 italic leading-relaxed">
+                          <p className="font-medium italic leading-relaxed text-slate-700">
                             « {part.excerpt} »
                           </p>
                         </div>
@@ -103,14 +101,13 @@ export function DocumentComprehensionView({
           </div>
         )}
 
-        {/* Sub-Questions Loop */}
         <div className="p-5 sm:p-8 pt-0 space-y-6">
           <div className="flex items-center gap-3">
-            <div className="h-px bg-border flex-1"></div>
-            <span className="text-sm font-semibold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
+            <div className="h-px flex-1 bg-border"></div>
+            <span className="whitespace-nowrap text-sm font-semibold uppercase tracking-widest text-muted-foreground">
               Questions
             </span>
-            <div className="h-px bg-border flex-1"></div>
+            <div className="h-px flex-1 bg-border"></div>
           </div>
 
           {exercise.questions?.map((q) => (

@@ -149,8 +149,7 @@ export function useNumbersDictation() {
             }
           : prev,
       )
-
-      await loadNext(session.sessionId)
+      setCurrent(evaluated)
     } catch (e) {
       console.error("Failed to submit Numbers answer", e)
       notificationService.error("Unable to submit answer")
@@ -158,6 +157,15 @@ export function useNumbersDictation() {
       setPending(false)
     }
   }, [session, current, loadNext])
+
+  const advanceToNextExercise = useCallback(async () => {
+    if (!session) return
+    if (session.completed >= session.totalExercises) {
+      setCurrent(null)
+      return
+    }
+    await loadNext(session.sessionId)
+  }, [loadNext, session])
 
   const finishSession = useCallback(async () => {
     if (!session) return
@@ -217,6 +225,7 @@ export function useNumbersDictation() {
     startSession,
     updateAnswer,
     submitAnswer,
+    advanceToNextExercise,
     finishSession,
     resetSession,
   }

@@ -6,7 +6,7 @@ These endpoints keep the original Drive-based flow for audio lessons:
 
 Auth:
 - JWT (Authorization: Bearer <jwt>)
-- Google Drive access token for Drive ops (X-Google-Access-Token)
+- Google Drive access is refreshed server-side from the user's stored Google session
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ from flask import Response, request
 from src.api.decorators import require_auth
 from src.api.errors import BadRequestError, NotFoundError
 from src.shared.drive_services import (
-    get_drive_services_from_request,
+    get_drive_services_for_user,
     parse_optional_json,
 )
 from src.infra.tts.tts_service import TTSService
@@ -31,7 +31,7 @@ tts_service = TTSService()
 def audio_lessons_list(user_id: str):
     """GET /web/audio-lessons"""
     try:
-        drive = get_drive_services_from_request()
+        drive = get_drive_services_for_user(user_id)
     except ValueError as e:
         raise BadRequestError(str(e))
 
@@ -49,7 +49,7 @@ def audio_lessons_list(user_id: str):
 def audio_lesson_transcript(lesson_id: str, user_id: str):
     """GET /web/audio-lessons/<lesson_id>/transcript"""
     try:
-        drive = get_drive_services_from_request()
+        drive = get_drive_services_for_user(user_id)
     except ValueError as e:
         raise BadRequestError(str(e))
 
@@ -64,7 +64,7 @@ def audio_lesson_transcript(lesson_id: str, user_id: str):
 def audio_lesson_stream(lesson_id: str, user_id: str):
     """GET /web/audio-lessons/<lesson_id>/audio"""
     try:
-        drive = get_drive_services_from_request()
+        drive = get_drive_services_for_user(user_id)
     except ValueError as e:
         raise BadRequestError(str(e))
 
@@ -91,7 +91,7 @@ def audio_lesson_create(user_id: str):
     - name: optional
     """
     try:
-        drive = get_drive_services_from_request()
+        drive = get_drive_services_for_user(user_id)
     except ValueError as e:
         raise BadRequestError(str(e))
 
@@ -150,7 +150,7 @@ def audio_lesson_generate_tts(user_id: str):
     }
     """
     try:
-        drive = get_drive_services_from_request()
+        drive = get_drive_services_for_user(user_id)
     except ValueError as e:
         raise BadRequestError(str(e))
 
@@ -206,7 +206,7 @@ def audio_lesson_generate_conversation_tts(user_id: str):
     }
     """
     try:
-        drive = get_drive_services_from_request()
+        drive = get_drive_services_for_user(user_id)
     except ValueError as e:
         raise BadRequestError(str(e))
 
@@ -290,7 +290,7 @@ def audio_lesson_save_questions(lesson_id: str, user_id: str):
     }
     """
     try:
-        drive = get_drive_services_from_request()
+        drive = get_drive_services_for_user(user_id)
     except ValueError as e:
         raise BadRequestError(str(e))
 

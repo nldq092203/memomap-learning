@@ -1,5 +1,4 @@
 import { memo } from "react"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { TabNavigation } from "@/components/learning/editor/tab-navigation"
 import { TabContent } from "@/components/learning/editor/tab-content"
 import { cn } from "@/lib/utils"
@@ -7,6 +6,8 @@ import { cn } from "@/lib/utils"
 interface SidebarTabsProps {
   isDimmed: boolean
   flexBasis: string
+  compact?: boolean
+  desktopOnly?: boolean
 }
 
 /**
@@ -16,23 +17,40 @@ interface SidebarTabsProps {
 export const SidebarTabs = memo(function SidebarTabs({
   isDimmed,
   flexBasis,
+  compact = false,
+  desktopOnly = false,
 }: SidebarTabsProps) {
   return (
     <div
       className={cn(
-        "space-y-3 md:space-y-4 md:h-[calc(100vh-56px-64px-48px)] md:flex-shrink-0",
-        isDimmed ? "hidden md:hidden" : "block md:block"
+        "flex flex-col",
+        compact
+          ? "space-y-0"
+          : "space-y-4 md:h-[calc(100vh-56px-64px-48px)] md:flex-shrink-0 md:space-y-6",
+        isDimmed ? "hidden md:hidden" : "block md:block",
+        desktopOnly && "hidden xl:flex"
       )}
       style={{ flexBasis }}
     >
-      <Card>
-        <CardHeader className="pb-0 px-3 md:px-4 py-2 md:py-3">
-          <TabNavigation />
-        </CardHeader>
-        <CardContent className="pt-2 md:pt-3 space-y-3 px-3 md:px-4 pb-3 md:pb-4">
+      <div className={cn(
+        "flex flex-1 flex-col overflow-hidden transition-all",
+        compact
+          ? "rounded-[20px] border border-slate-200/80 bg-white"
+          : "rounded-3xl border border-black/[0.04] bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)]"
+      )}>
+        <div className={cn(
+          "border-b border-black/[0.04] bg-transparent",
+          compact ? "px-4 py-3" : "px-5 py-4 md:px-6 md:py-5"
+        )}>
+          <TabNavigation compact={compact} />
+        </div>
+        <div className={cn(
+          "flex-1 overflow-y-auto bg-transparent",
+          compact ? "p-4" : "p-5 md:p-6"
+        )}>
           <TabContent />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 })

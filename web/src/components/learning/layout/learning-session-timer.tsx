@@ -1,20 +1,22 @@
 "use client"
 
-import type React from "react"
-
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useState } from "react"
 import { createPortal } from "react-dom"
 import { Button } from "@/components/ui/button"
+import { useConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { useLearningTimeSession } from "@/lib/contexts/learning-time-session-context"
-import { getNextFloatingWindowZIndex } from "@/lib/utils/z-index-manager"
 import { cn } from "@/lib/utils"
-import { RefreshCw } from "lucide-react"
+import { Pause, Play, Square, X, Clock, Loader2 } from "lucide-react"
 
 function formatElapsed(seconds: number): string {
-  const m = Math.floor(seconds / 60)
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
   const s = seconds % 60
   const mm = m.toString().padStart(2, "0")
   const ss = s.toString().padStart(2, "0")
+  if (h > 0) {
+    return `${h}:${mm}:${ss}`
+  }
   return `${mm}:${ss}`
 }
 
@@ -31,303 +33,161 @@ export function LearningSessionTimer() {
     cancelSession,
   } = useLearningTimeSession()
 
-  const [mounted, setMounted] = useState(false)
   const [isStopping, setIsStopping] = useState(false)
-  const [isExpanded, setIsExpanded] = useState(true)
-  const [position, setPosition] = useState({ x: 24, y: 72 })
-  const [isDragging, setIsDragging] = useState(false)
-  const [zIndex, setZIndex] = useState(() => getNextFloatingWindowZIndex())
+  const { confirm, dialog, setLoading } = useConfirmationDialog()
 
-  const positionRef = useRef(position)
-  const dragStateRef = useRef<{
-    startClientX: number
-    startClientY: number
-    startX: number
-    startY: number
-  } | null>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    positionRef.current = position
-  }, [position])
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  useEffect(() => {
-    if (typeof window === "undefined") return
-    try {
-      const saved = window.localStorage.getItem("learning-timer-position")
-      if (saved) {
-        const parsed = JSON.parse(saved) as { x?: number; y?: number } | null
-        if (parsed) {
-          setPosition({
-            x: typeof parsed.x === "number" ? parsed.x : 24,
-            y: typeof parsed.y === "number" ? parsed.y : 72,
-          })
-        }
-      }
-    } catch {
-      // ignore
-    }
-  }, [])
-
-  const persistPosition = () => {
-    if (typeof window === "undefined") return
-    try {
-      window.localStorage.setItem(
-        "learning-timer-position",
-        JSON.stringify(positionRef.current),
-      )
-    } catch {
-      // ignore
-    }
-  }
-
-  useEffect(() => {
-    if (!isDragging) return
-
-    const handlePointerMove = (event: PointerEvent) => {
-      if (!dragStateRef.current) return
-
-      const deltaX = event.clientX - dragStateRef.current.startClientX
-      const deltaY = event.clientY - dragStateRef.current.startClientY
-
-      const newX = Math.max(
-        0,
-        Math.min(
-          window.innerWidth - (isExpanded ? 180 : 80),
-          dragStateRef.current.startX + deltaX,
-        ),
-      )
-      const newY = Math.max(
-        0,
-        Math.min(
-          window.innerHeight - (isExpanded ? 180 : 80),
-          dragStateRef.current.startY + deltaY,
-        ),
-      )
-
-      setPosition({ x: newX, y: newY })
-    }
-
-    const handlePointerUp = () => {
-      setIsDragging(false)
-      dragStateRef.current = null
-      if (typeof document !== "undefined") {
-        document.body.style.userSelect = ""
-      }
-      persistPosition()
-    }
-
-    window.addEventListener("pointermove", handlePointerMove)
-    window.addEventListener("pointerup", handlePointerUp)
-
-    return () => {
-      window.removeEventListener("pointermove", handlePointerMove)
-      window.removeEventListener("pointerup", handlePointerUp)
-    }
-  }, [isDragging, isExpanded])
-
-  useEffect(() => {
-    if (!isActive || !isExpanded) return
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
-        setIsExpanded(false)
-      }
-    }
-
-    const timer = setTimeout(() => {
-      if (typeof document !== "undefined") {
-        document.addEventListener("mousedown", handleClickOutside)
-      }
-    }, 100)
-
-    return () => {
-      clearTimeout(timer)
-      if (typeof document !== "undefined") {
-        document.removeEventListener("mousedown", handleClickOutside)
-      }
-    }
-  }, [isActive, isExpanded])
-
-  const handlePointerDown = (event: React.PointerEvent) => {
-    if (event.button !== 0) return
-    event.preventDefault()
-
-    setZIndex(getNextFloatingWindowZIndex())
-    setIsDragging(true)
-    if (typeof document !== "undefined") {
-      document.body.style.userSelect = "none"
-    }
-
-    dragStateRef.current = {
-      startClientX: event.clientX,
-      startClientY: event.clientY,
-      startX: positionRef.current.x,
-      startY: positionRef.current.y,
-    }
-  }
+  if (!isActive) return null
 
   const displaySeconds = plannedSeconds
     ? Math.max(plannedSeconds - elapsedSeconds, 0)
     : elapsedSeconds
 
-  const progress = useMemo(() => {
-    const maxSeconds = plannedSeconds && plannedSeconds > 0 ? plannedSeconds : 60 * 60
-    return Math.min((elapsedSeconds / maxSeconds) * 100, 100)
-  }, [elapsedSeconds, plannedSeconds])
+  const progress = plannedSeconds && plannedSeconds > 0
+    ? Math.min((elapsedSeconds / plannedSeconds) * 100, 100)
+    : null
 
-  if (!isActive) {
-    return null
-  }
-
-  if (!mounted) return null
-
-  const size = isExpanded ? 180 : 80
-  const circleSize = isExpanded ? 160 : 70
-  const strokeWidth = isExpanded ? 6 : 5
-  const radius = (circleSize - strokeWidth) / 2
-  const circumference = 2 * Math.PI * radius
-  const strokeDashoffset = circumference - (progress / 100) * circumference
-
-  return createPortal(
-    <div
-      ref={containerRef}
-      style={{
-        position: "fixed",
-        left: position.x,
-        top: position.y,
-        width: size,
-        height: size,
-        zIndex,
-      }}
-      className="pointer-events-auto"
-    >
+  const timerContent = (
+    <div className="pointer-events-none fixed inset-x-0 bottom-[72px] z-50 flex justify-center px-2 sm:px-4">
       <div
         className={cn(
-          "relative h-full w-full cursor-grab rounded-full bg-background/95",
-          "backdrop-blur-sm shadow-[0_8px_32px_rgba(0,0,0,0.12)]",
+          "pointer-events-auto flex items-center gap-2 sm:gap-3 rounded-full",
+          "border bg-background/95 backdrop-blur-md shadow-lg",
+          "px-3 sm:px-4 py-2 max-w-[calc(100vw-1rem)]",
           "transition-all duration-300",
-          isDragging && "cursor-grabbing",
+          isPaused && "border-yellow-500/50 bg-yellow-50/50 dark:bg-yellow-950/20",
+          !isPaused && "border-primary/30",
         )}
-        onPointerDown={handlePointerDown}
-        onClick={() => !isDragging && !isExpanded && setIsExpanded(true)}
       >
-        <svg
-          className="absolute inset-0 -rotate-90 transition-all duration-300"
-          width={size}
-          height={size}
-        >
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            stroke="currentColor"
-            strokeWidth={strokeWidth}
-            fill="none"
-            className="text-muted/20"
-          />
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            stroke="currentColor"
-            strokeWidth={strokeWidth}
-            fill="none"
-            strokeDasharray={circumference}
-            strokeDashoffset={strokeDashoffset}
-            strokeLinecap="round"
-            className="text-primary transition-all duration-300"
-          />
-        </svg>
+        {/* Progress bar (for planned sessions) */}
+        {progress !== null && (
+          <div className="absolute bottom-0 left-4 right-4 h-0.5 rounded-full bg-muted/30 overflow-hidden">
+            <div
+              className="h-full bg-primary rounded-full transition-all duration-1000 ease-linear"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        )}
 
-        <div className="absolute inset-0 flex items-center justify-center">
-          {isExpanded ? (
-            <div className="flex flex-col items-center justify-center gap-2 p-4">
-              <div className="mb-1 text-center space-y-1">
-                <p className="tabular-nums text-2xl font-bold text-foreground">
-                  {formatElapsed(displaySeconds)}
-                </p>
-                <p
-                  className="mx-auto max-w-[150px] break-words text-[10px] leading-snug text-muted-foreground"
-                  title={name || undefined}
-                >
-                  {name || "Learning session"}
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center justify-center gap-1.5">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-7 rounded-full bg-transparent px-2 text-[10px]"
-                  disabled={isStopping}
-                  onClick={event => {
-                    event.stopPropagation()
-                    cancelSession()
-                  }}
-                  onPointerDown={event => event.stopPropagation()}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-7 rounded-full bg-transparent px-2 text-[10px]"
-                  disabled={isStopping}
-                  onClick={event => {
-                    event.stopPropagation()
-                    if (isPaused) {
-                      resumeSession()
-                    } else {
-                      pauseSession()
-                    }
-                  }}
-                  onPointerDown={event => event.stopPropagation()}
-                >
-                  {isPaused ? "Resume" : "Stop"}
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  className="h-7 rounded-full px-2 text-[10px]"
-                  disabled={isStopping}
-                  onClick={async event => {
-                    event.stopPropagation()
-                    if (isStopping) return
-                    setIsStopping(true)
-                    try {
-                      await stopSession()
-                    } catch {
-                      // errors are already handled in context
-                    }
-                  }}
-                  onPointerDown={event => event.stopPropagation()}
-                >
-                  {isStopping && (
-                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                  )}
-                  {isStopping ? "Saving..." : "Stop & Save"}
-                </Button>
-              </div>
-            </div>
+        {/* Timer icon + time */}
+        <div className="flex items-center gap-1.5">
+          <Clock className={cn("h-3.5 w-3.5", isPaused ? "text-yellow-600" : "text-primary")} />
+          <span className={cn(
+            "tabular-nums text-sm font-semibold",
+            isPaused ? "text-yellow-700 dark:text-yellow-400" : "text-foreground"
+          )}>
+            {formatElapsed(displaySeconds)}
+          </span>
+        </div>
+
+        {/* Separator */}
+        <div className="h-4 w-px bg-border" />
+
+        {/* Session name */}
+        <span className="hidden sm:inline text-xs text-muted-foreground truncate max-w-[150px]" title={name}>
+          {name || "Session"}
+        </span>
+
+        {/* Paused badge */}
+        {isPaused && (
+          <span className="text-[10px] font-medium text-yellow-700 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/30 px-1.5 py-0.5 rounded-full">
+            En pause
+          </span>
+        )}
+
+        {/* Hidden separator on mobile */}
+        <div className="hidden sm:block h-4 w-px bg-border" />
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-1">
+          {isPaused ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0 rounded-full hover:bg-primary/10 text-primary"
+              onClick={resumeSession}
+              title="Reprendre"
+            >
+              <Play className="h-3.5 w-3.5" />
+            </Button>
           ) : (
-            <div className="text-center">
-              <p className="tabular-nums text-sm font-bold text-foreground">
-                {formatElapsed(displaySeconds)}
-              </p>
-            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0 rounded-full hover:bg-yellow-100 dark:hover:bg-yellow-900/30 text-yellow-600"
+              onClick={pauseSession}
+              title="Pause"
+            >
+              <Pause className="h-3.5 w-3.5" />
+            </Button>
           )}
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 p-0 rounded-full hover:bg-primary/10 text-primary"
+            disabled={isStopping}
+            onClick={() => {
+              if (isStopping) return
+              confirm({
+                title: "Arrêter la session ?",
+                description:
+                  "Choisissez ce que vous voulez faire avec cette session.\n\nEnregistrer : conserver le temps dans votre historique.\nSupprimer : fermer la session sans l'enregistrer.",
+                confirmText: "Enregistrer",
+                cancelText: "Continuer",
+                onConfirm: async () => {
+                  setIsStopping(true)
+                  setLoading(true)
+                  try {
+                    await stopSession()
+                  } catch {
+                    // errors handled in context
+                  } finally {
+                    setIsStopping(false)
+                    setLoading(false)
+                  }
+                },
+                thirdAction: {
+                  text: "Supprimer",
+                  variant: "destructive",
+                  onAction: () => {
+                    cancelSession()
+                  },
+                },
+              })
+            }}
+            title="Arrêter la session"
+          >
+            {isStopping ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Square className="h-3 w-3" />
+            )}
+          </Button>
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 p-0 rounded-full hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+            onClick={cancelSession}
+            title="Annuler"
+          >
+            <X className="h-3.5 w-3.5" />
+          </Button>
         </div>
       </div>
-    </div>,
+    </div>
+  )
+
+  if (typeof document === "undefined") return null
+  return createPortal(
+    <>
+      {timerContent}
+      {dialog}
+    </>,
     document.body,
   )
 }

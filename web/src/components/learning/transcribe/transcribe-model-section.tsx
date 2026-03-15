@@ -1,13 +1,12 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { CheckCircle2, Download, Zap, Clock } from "lucide-react"
+import { CheckCircle2, ShieldCheck, Zap } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import type { WhisperModelId } from "@/components/learning/transcribe/transcribe-types"
 import {
   isModelLikelyCached,
-  getModelApproximateSize,
 } from "@/lib/services/whisper-cache"
 
 type ModelSectionProps = {
@@ -20,24 +19,24 @@ type ModelOption = {
   id: WhisperModelId
   label: string
   description: string
-  speedEstimate: string
-  speedIcon: typeof Zap
+  emphasis: string
+  speedIcon: typeof Zap | typeof ShieldCheck
 }
 
 const MODEL_OPTIONS: ModelOption[] = [
   {
     id: "Xenova/whisper-tiny",
-    label: "Tiny — fastest, lightest",
-    description: "Great for quick drafts and short clips.",
-    speedEstimate: "~30s for 5min audio",
+    label: "Rapide",
+    description: "Pour lancer un premier brouillon sans attendre.",
+    emphasis: "Priorité à la vitesse",
     speedIcon: Zap,
   },
   {
     id: "Xenova/whisper-base",
-    label: "Base — better accuracy",
-    description: "Higher quality transcripts, a bit slower.",
-    speedEstimate: "~2min for 5min audio",
-    speedIcon: Clock,
+    label: "Précis",
+    description: "Pour une transcription plus propre et plus fiable.",
+    emphasis: "Priorité à la qualité",
+    speedIcon: ShieldCheck,
   },
 ]
 
@@ -71,11 +70,19 @@ export function TranscribeModelSection({
 
   return (
     <section className="space-y-4">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-sm font-semibold tracking-wide text-slate-700">
+          Modèle IA
+        </h2>
+        <p className="text-xs text-slate-500">
+          Choisissez entre une exécution rapide ou une meilleure qualité de transcription.
+        </p>
+      </div>
+
       <div className="grid gap-3 sm:grid-cols-2">
         {MODEL_OPTIONS.map((option) => {
           const isActive = option.id === activeModelId
           const isCached = cacheStatus[option.id]
-          const modelSize = getModelApproximateSize(option.id)
           const SpeedIcon = option.speedIcon
 
           return (
@@ -84,80 +91,68 @@ export function TranscribeModelSection({
               type="button"
               onClick={() => onSelectModel(option.id)}
               className={cn(
-                "group relative flex h-full flex-col items-start rounded-lg border-2 p-4 text-left transition-all",
-                "hover:shadow-md",
+                "group relative flex h-full flex-col items-start rounded-[24px] border-2 p-5 text-left transition-all",
+                "hover:shadow-md hover:border-teal-300",
                 isActive
-                  ? "border-primary bg-primary/5 shadow-sm"
-                  : "border-border bg-card hover:border-primary/30"
+                  ? "border-teal-500 bg-teal-50/60 shadow-sm"
+                  : "border-slate-200 bg-white"
               )}
             >
-              {/* Active indicator */}
               {isActive && (
                 <div className="absolute right-3 top-3">
-                  <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                  <div className="h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
                 </div>
               )}
 
-              {/* Header */}
               <div className="flex w-full items-start justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <div
                     className={cn(
-                      "rounded-md p-1.5 transition-colors",
+                      "rounded-xl p-2 transition-colors",
                       isActive
-                        ? "bg-primary/10 text-primary"
-                        : "bg-muted text-muted-foreground group-hover:bg-primary/10"
+                        ? "bg-teal-100 text-teal-700"
+                        : "bg-slate-100 text-slate-500 group-hover:bg-teal-100 group-hover:text-teal-700"
                     )}
                   >
                     <SpeedIcon className="h-4 w-4" />
                   </div>
                   <span className="text-sm font-semibold">
-                    {option.label.split(" —")[0]}
+                    {option.label}
                   </span>
                 </div>
 
                 {isCached ? (
                   <Badge
                     variant="outline"
-                    className="gap-1 border-green-500/20 bg-green-500/10 text-green-600 dark:text-green-500"
+                    className="gap-1 border-emerald-200 bg-emerald-50 text-emerald-700"
                   >
                     <CheckCircle2 className="h-3 w-3" />
-                    Cached
+                    Prêt
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="gap-1">
-                    <Download className="h-3 w-3" />
-                    {modelSize.formatted}
+                  <Badge variant="outline" className="gap-1 border-slate-200 text-slate-500">
+                    À télécharger
                   </Badge>
                 )}
               </div>
 
-              {/* Description */}
-              <p className="mt-3 text-xs text-muted-foreground">
+              <p className="mt-3 text-sm leading-6 text-slate-600">
                 {option.description}
               </p>
 
-              {/* Speed estimate */}
-              <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
-                <span className="font-medium">Speed:</span>
-                <span>{option.speedEstimate}</span>
+              <div className="mt-3 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                {option.emphasis}
               </div>
-
-              {/* Model ID */}
-              <span className="mt-2 font-mono text-[0.65rem] text-muted-foreground/60">
-                {option.id}
-              </span>
             </button>
           )
         })}
       </div>
 
       {runtimeLabel && (
-        <div className="flex items-start gap-2 rounded-md bg-muted/30 px-3 py-2">
-          <span className="text-xs text-muted-foreground">{runtimeLabel}</span>
+        <div className="flex items-start gap-2 rounded-xl bg-slate-50 px-3 py-2">
+          <span className="text-xs text-slate-500">{runtimeLabel}</span>
         </div>
       )}
     </section>
   )
 }
-

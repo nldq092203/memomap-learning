@@ -24,7 +24,7 @@ export function useSpeakingPractice() {
       setTopics(data)
     } catch (error) {
       console.error("Failed to load topics:", error)
-      notificationService.error("Failed to load speaking practice topics")
+      notificationService.error("Impossible de charger les thèmes d'entrainement oral")
     } finally {
       setLoading(false)
     }
@@ -40,7 +40,7 @@ export function useSpeakingPractice() {
       setCurrentItemIndex(0)
     } catch (error) {
       console.error("Failed to load topic manifest:", error)
-      notificationService.error("Failed to load topic details")
+      notificationService.error("Impossible de charger le détail du thème")
     } finally {
       setLoading(false)
     }
@@ -55,7 +55,7 @@ export function useSpeakingPractice() {
       setCurrentItemIndex(0)
     } catch (error) {
       console.error("Failed to load content:", error)
-      notificationService.error("Failed to load practice content")
+      notificationService.error("Impossible de charger le contenu d'entrainement")
     } finally {
       setLoading(false)
     }

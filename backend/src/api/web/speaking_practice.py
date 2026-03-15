@@ -19,7 +19,7 @@ MemoMap/LearningTracker/SpeakingPractice/<level>/<topic_id>/
 
 Auth:
 - JWT (Authorization: Bearer <jwt>)
-- Google Drive access token for Drive ops (X-Google-Access-Token)
+- Google Drive access is refreshed server-side from the user's stored Google session
 """
 
 from __future__ import annotations
@@ -33,7 +33,7 @@ from flask import request, Response
 from src.api.decorators import require_auth
 from src.api.errors import BadRequestError
 from src.infra.tts.tts_service import TTSService
-from src.shared.drive_services import get_drive_services_from_request
+from src.shared.drive_services import get_drive_services_for_user
 from src.shared.speaking_practice_repo import SpeakingPracticeRepository
 from src.utils.response_builder import ResponseBuilder
 from src.config import Config
@@ -84,7 +84,7 @@ def speaking_practice_create(user_id: str):
     }
     """
     try:
-        drive = get_drive_services_from_request()
+        drive = get_drive_services_for_user(user_id)
     except ValueError as e:
         raise BadRequestError(str(e))
 

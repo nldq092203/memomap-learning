@@ -9,20 +9,21 @@ import { StartSessionModal } from "@/components/learning/session/start-session-m
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
-  Play,
   Clock,
-  RefreshCw,
   Layers,
   Type,
   List,
-  TrendingUp,
-  Award,
   MessageSquare,
   ClipboardList,
+  FileAudio,
+  Sparkles,
 } from "lucide-react"
 import { useLearningLang } from "@/lib/contexts/learning-lang-context"
 import { useConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { listTranscriptDrafts, type TranscriptDraft, deleteTranscriptDraft } from "@/lib/db/transcript-drafts"
+import { cn } from "@/lib/utils"
+
+const WORKSPACE_PROGRESS_KEY = "workspace_module_progress_v1"
 
 export default function WorkspacePage() {
   const router = useRouter()
@@ -32,10 +33,6 @@ export default function WorkspacePage() {
     sessions,
     isLoading,
     isRefreshing,
-    refreshSessions,
-    loadMoreSessions,
-    isLoadingMore,
-    hasMore,
   } = useRecentSessions(lang)
   const [isStartOpen, setIsStartOpen] = useState(false)
   const forceEditor = searchParams.get("open") === "editor"
@@ -45,6 +42,18 @@ export default function WorkspacePage() {
   const [draftsLoaded, setDraftsLoaded] = useState(false)
   const [selectedDraftId, setSelectedDraftId] = useState<string | null>(null)
   const [hasChosenDraft, setHasChosenDraft] = useState(false)
+  const [moduleProgress, setModuleProgress] = useState<Record<string, number>>({})
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(WORKSPACE_PROGRESS_KEY)
+      if (!raw) return
+      const parsed = JSON.parse(raw) as Record<string, number>
+      setModuleProgress(parsed)
+    } catch {
+      // ignore
+    }
+  }, [])
 
   useEffect(() => {
     if (!forceEditor) return
@@ -112,232 +121,186 @@ export default function WorkspacePage() {
       })
     : null
 
+  const activeModules = 5
+
+  const workspaceModules = [
+    {
+      id: "dictation",
+      title: "Dictée",
+      description: "Travaillez l’écoute et la restitution sur texte réel.",
+      path: "/learning/workspace?open=editor",
+      icon: Type,
+      iconTone: "text-teal-700",
+      iconBg: "bg-teal-50",
+      borderTone: "hover:border-teal-200",
+      tags: ["#Écoute", "#Orthographe"],
+    },
+    {
+      id: "numbers",
+      title: "Dictée de nombres",
+      description: "Affûtez votre oreille sur dates, prix et chiffres rapides.",
+      path: "/learning/numbers-dictation",
+      icon: List,
+      iconTone: "text-indigo-700",
+      iconBg: "bg-indigo-50",
+      borderTone: "hover:border-indigo-200",
+      tags: ["#Listening", "#Speed"],
+    },
+    {
+      id: "coce",
+      title: "CO/CE Practice",
+      description: "Travaillez la compréhension sur des formats guidés.",
+      path: "/learning/coce-practice",
+      icon: FileAudio,
+      iconTone: "text-slate-700",
+      iconBg: "bg-slate-100",
+      borderTone: "hover:border-slate-300",
+      tags: ["Niveaux A2-B2", "#Compréhension"],
+    },
+    {
+      id: "speaking",
+      title: "Pratique orale",
+      description: "Répondez à des prompts structurés et gagnez en fluidité.",
+      path: "/learning/speaking-practice",
+      icon: MessageSquare,
+      iconTone: "text-teal-700",
+      iconBg: "bg-teal-50",
+      borderTone: "hover:border-teal-200",
+      tags: ["#Oral", "#Guidé"],
+    },
+    {
+      id: "delf",
+      title: "DELF Practice",
+      description: "Simulez des formats d’examen avec une structure claire.",
+      path: "/learning/delf-practice",
+      icon: ClipboardList,
+      iconTone: "text-indigo-700",
+      iconBg: "bg-indigo-50",
+      borderTone: "hover:border-indigo-200",
+      tags: ["Niveaux A2-B2", "#Examen"],
+    },
+  ]
+
+  const statCards = [
+    {
+      label: "Sessions",
+      value: isLoading || isRefreshing ? "..." : `${totalSessions}`,
+      icon: Layers,
+      iconTone: "text-slate-700",
+      iconBg: "bg-slate-100",
+    },
+    {
+      label: "Modules",
+      value: `${activeModules}`,
+      icon: Sparkles,
+      iconTone: "text-indigo-700",
+      iconBg: "bg-indigo-50",
+    },
+    {
+      label: "Dernière activité",
+      value: lastSessionLabel || "Aucune",
+      icon: Clock,
+      iconTone: "text-teal-700",
+      iconBg: "bg-teal-50",
+    },
+  ]
+
+  const handleOpenModule = (moduleId: string, path: string) => {
+    setModuleProgress((prev) => {
+      const nextValue = Math.min(100, (prev[moduleId] || 0) + 15)
+      const next = { ...prev, [moduleId]: nextValue }
+      try {
+        window.localStorage.setItem(WORKSPACE_PROGRESS_KEY, JSON.stringify(next))
+      } catch {
+        // ignore
+      }
+      return next
+    })
+    router.push(path)
+  }
+
   return (
     <ProtectedRoute>
       <div className="min-h-[calc(100vh-56px)] bg-gradient-to-b from-background via-background to-muted/20">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="mb-10">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <h1 className="text-4xl font-bold tracking-tight text-foreground">Your Learning Space</h1>
-                <p className="text-base text-muted-foreground">
-                  Continue your language journey with structured practice sessions
-                </p>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={refreshSessions}
-                disabled={isLoading || isRefreshing}
-                className="gap-2 hover:bg-accent bg-transparent"
+          <div className="mb-6 space-y-1.5">
+            <p className="text-[10px] uppercase tracking-[0.24em] text-muted-foreground/70">
+              Bibliothèque de modules
+            </p>
+            <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
+              Espace d’entraînement
+            </h1>
+            <p className="text-sm text-slate-500">
+              Choisissez un format de pratique et relancez votre progression en un clic.
+            </p>
+          </div>
+
+          <div className="mb-6 grid gap-3 md:grid-cols-3">
+            {statCards.map((stat) => (
+              <div
+                key={stat.label}
+                className="flex items-center justify-between rounded-[20px] border border-slate-200/80 bg-white/80 px-4 py-3 shadow-sm backdrop-blur-sm"
               >
-                <RefreshCw className={`h-4 w-4 ${(isLoading || isRefreshing) ? "animate-spin" : ""}`} />
-                <span className="hidden sm:inline">Refresh</span>
-              </Button>
-            </div>
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">{stat.label}</p>
+                  <p className="mt-1 text-base font-semibold text-slate-900">{stat.value}</p>
+                </div>
+                <div className={cn("rounded-2xl p-2.5", stat.iconBg, stat.iconTone)}>
+                  <stat.icon className="h-4.5 w-4.5" />
+                </div>
+              </div>
+            ))}
           </div>
 
-          {/* Stats Cards */}
-          <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                    <Layers className="h-6 w-6 text-primary" />
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {workspaceModules.map((module) => {
+              const progress = moduleProgress[module.id] || 10
+              return (
+                <button
+                  key={module.id}
+                  onClick={() => handleOpenModule(module.id, module.path)}
+                  className={cn(
+                    "group relative overflow-hidden rounded-[26px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] p-5 text-left shadow-sm transition-all duration-200",
+                    "hover:-translate-y-1 hover:shadow-[0_18px_40px_-28px_rgba(15,23,42,0.3)] active:scale-[0.99]",
+                    module.borderTone
+                  )}
+                >
+                  <div className="pointer-events-none absolute right-3 top-3 opacity-[0.08] transition group-hover:opacity-[0.14]">
+                    <module.icon className={cn("h-24 w-24", module.iconTone)} />
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-muted-foreground">Total Sessions</p>
-                    <p className="text-2xl font-bold tracking-tight">{totalSessions}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
 
-            <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10">
-                    <TrendingUp className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-muted-foreground">Active Modules</p>
-                    <p className="text-2xl font-bold tracking-tight">3</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  <div className="relative flex h-full min-h-[220px] flex-col">
+                    <div className="mb-5 flex items-start justify-between gap-3">
+                      <div className={cn("rounded-[18px] p-3", module.iconBg, module.iconTone)}>
+                        <module.icon className="h-5 w-5" />
+                      </div>
+                      <div className="flex flex-wrap justify-end gap-2">
+                        {module.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-[11px] font-medium text-slate-500"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
 
-            <Card className="border-border/50 bg-card/50 backdrop-blur-sm sm:col-span-2 lg:col-span-1">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10">
-                    <Clock className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    <div className="space-y-2">
+                      <h2 className="text-lg font-bold tracking-tight text-slate-900">
+                        {module.title}
+                      </h2>
+                      <p className="max-w-[36ch] text-sm leading-6 text-slate-500">
+                        {module.description}
+                      </p>
+                    </div>
+
+                    <div className="mt-auto pt-6" />
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-muted-foreground">Last Activity</p>
-                    <p className="text-lg font-semibold tracking-tight">{lastSessionLabel || "No sessions yet"}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </button>
+              )
+            })}
           </div>
-
-          {/* Learning Activities */}
-          <Card className="mb-8 border-border/50 bg-card/50 backdrop-blur-sm">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Award className="h-5 w-5 text-primary" />
-                <CardTitle>Learning Activities</CardTitle>
-              </div>
-              <CardDescription>Choose a module to practice specific skills and track your progress</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {/* Dictation Activity */}
-              <div className="group relative overflow-hidden rounded-xl border border-border/60 bg-gradient-to-br from-background to-muted/30 p-6 transition-all hover:border-primary/40 hover:shadow-lg">
-                <div className="absolute right-4 top-4 opacity-10 transition-opacity group-hover:opacity-20">
-                  <Type className="h-16 w-16 text-primary" />
-                </div>
-                <div className="relative space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                      <Type className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">Dictation Practice</h3>
-                      <p className="text-xs text-muted-foreground">Listening & Spelling</p>
-                    </div>
-                  </div>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
-                    Listen or read content and retype it to improve your listening comprehension and spelling accuracy.
-                  </p>
-                  <Button
-                    className="w-full gap-2"
-                    onClick={() => router.push("/learning/workspace?open=editor")}
-                  >
-                    <Play className="h-4 w-4" />
-                    Start Dictation
-                  </Button>
-                </div>
-              </div>
-
-              {/* Numbers Activity */}
-              <div className="group relative overflow-hidden rounded-xl border border-border/60 bg-gradient-to-br from-background to-muted/30 p-6 transition-all hover:border-primary/40 hover:shadow-lg">
-                <div className="absolute right-4 top-4 opacity-10 transition-opacity group-hover:opacity-20">
-                  <List className="h-16 w-16 text-primary" />
-                </div>
-                <div className="relative space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                      <List className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">Numbers Dictation</h3>
-                      <p className="text-xs text-muted-foreground">Years, phone numbers, prices</p>
-                    </div>
-                  </div>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
-                    Hear numbers spoken in French and type only the digits you recognize to sharpen real-world listening skills.
-                  </p>
-                  <Button
-                    className="w-full gap-2"
-                    onClick={() => router.push("/learning/numbers-dictation")}
-                  >
-                    <Play className="h-4 w-4" />
-                    Start Numbers Dictation
-                  </Button>
-                </div>
-              </div>
-
-              {/* CO/CE Practice Activity */}
-              <div className="group relative overflow-hidden rounded-xl border border-border/60 bg-gradient-to-br from-background to-muted/30 p-6 transition-all hover:border-primary/40 hover:shadow-lg">
-                <div className="absolute right-4 top-4 opacity-10 transition-opacity group-hover:opacity-20">
-                  <svg className="h-16 w-16 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                <div className="relative space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                      <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">CO/CE Practice</h3>
-                      <p className="text-xs text-muted-foreground">Listening & Reading Comprehension</p>
-                    </div>
-                  </div>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
-                    Practice French listening and reading comprehension with authentic audio exercises and questions at B1-C2 levels.
-                  </p>
-                  <Button
-                    className="w-full gap-2"
-                    onClick={() => router.push("/learning/coce-practice")}
-                  >
-                    <Play className="h-4 w-4" />
-                    Start CO/CE Practice
-                  </Button>
-                </div>
-              </div>
-
-              {/* Speaking Practice Activity */}
-              <div className="group relative overflow-hidden rounded-xl border border-border/60 bg-gradient-to-br from-background to-muted/30 p-6 transition-all hover:border-primary/40 hover:shadow-lg">
-                <div className="absolute right-4 top-4 opacity-10 transition-opacity group-hover:opacity-20">
-                  <MessageSquare className="h-16 w-16 text-primary" />
-                </div>
-                <div className="relative space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                      <MessageSquare className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">Speaking Practice</h3>
-                      <p className="text-xs text-muted-foreground">Structured Speaking Exercises</p>
-                    </div>
-                  </div>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
-                    Improve your speaking skills with guided practice exercises on various topics with model answers and speaking prompts.
-                  </p>
-                  <Button
-                    className="w-full gap-2"
-                    onClick={() => router.push("/learning/speaking-practice")}
-                  >
-                    <Play className="h-4 w-4" />
-                    Start Speaking Practice
-                  </Button>
-                </div>
-              </div>
-
-              {/* DELF Practice Activity */}
-              <div className="group relative overflow-hidden rounded-xl border border-border/60 bg-gradient-to-br from-background to-muted/30 p-6 transition-all hover:border-primary/40 hover:shadow-lg">
-                <div className="absolute right-4 top-4 opacity-10 transition-opacity group-hover:opacity-20">
-                  <ClipboardList className="h-16 w-16 text-primary" />
-                </div>
-                <div className="relative space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                      <ClipboardList className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">DELF Exam Practice</h3>
-                      <p className="text-xs text-muted-foreground">Mock Tests (A1-C2)</p>
-                    </div>
-                  </div>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
-                    Simulate real DELF exam conditions with structured listening and reading tests tailored to your CEFR level.
-                  </p>
-                  <Button
-                    className="w-full gap-2"
-                    onClick={() => router.push("/learning/delf-practice")}
-                  >
-                    <Play className="h-4 w-4" />
-                    Start DELF Practice
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         <StartSessionModal open={isStartOpen} onOpenChange={setIsStartOpen} />

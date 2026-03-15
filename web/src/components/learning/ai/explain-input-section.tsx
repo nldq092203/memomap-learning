@@ -35,14 +35,14 @@ export function ExplainInputSection({
     <div className="space-y-3">
       {/* Guidance */}
       {showGuide && (
-        <div className="text-xs text-muted-foreground rounded-lg border border-border/50 bg-muted/30 px-3 py-2.5 select-none">
-          <span className="font-medium">💡 Tip:</span> Select text in your document, then click Explain or press Enter.
+        <div className="select-none rounded-xl border border-border/50 bg-muted/30 px-3 py-2.5 text-xs text-muted-foreground">
+          <span className="font-medium">Astuce :</span> sélectionnez un mot ou saisissez une expression, puis lancez l’analyse.
         </div>
       )}
 
       <div className="space-y-2">
         <label className="text-xs font-semibold text-foreground">
-          Word or phrase to explain
+          Mot ou expression à expliquer
         </label>
         
         {/* Input field */}
@@ -50,8 +50,8 @@ export function ExplainInputSection({
           <Input
             value={manualWord}
             onChange={(e) => onManualWordChange(e.target.value)}
-            placeholder="Type a word, or use selection below…"
-            className="h-9 text-sm pr-8"
+            placeholder="Saisissez un mot ou utilisez la sélection…"
+            className="h-10 rounded-2xl border-slate-200 bg-white pr-8 text-sm"
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault()
@@ -74,14 +74,14 @@ export function ExplainInputSection({
           {selectedText && (
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/8 border border-primary/20 text-xs font-medium text-foreground">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary/60" />
-              Selected: &ldquo;{selectedText.slice(0, 24)}{selectedText.length > 24 ? "..." : ""}&rdquo;
+              Sélection : &ldquo;{selectedText.slice(0, 24)}{selectedText.length > 24 ? "..." : ""}&rdquo;
             </div>
           )}
           
           {useContext && !manualWord && contextText && (
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-secondary/8 border border-secondary/20 text-xs font-medium text-foreground/70">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-secondary/60" />
-              Context enabled
+              Contexte activé
             </div>
           )}
         </div>

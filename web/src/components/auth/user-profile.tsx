@@ -30,17 +30,17 @@ export function UserProfile({ showLogout = true, className }: UserProfileProps) 
   };
 
   return (
-    <div className={`flex items-center gap-3 ${className || ''}`}>
-      <div className="text-right hidden sm:block">
-        <div className="text-sm font-medium">{user.name || user.email}</div>
-        <div className="text-xs text-muted-foreground">{user.email}</div>
+    <div className={`flex min-w-0 items-center gap-3 ${className || ''}`}>
+      <div className="min-w-0 flex-1 overflow-hidden">
+        <div className="truncate text-sm font-medium">{user.name || user.email}</div>
+        <div className="truncate text-xs text-muted-foreground">{user.email}</div>
       </div>
-      <Avatar className="h-8 w-8">
+      <Avatar className="h-8 w-8 shrink-0">
         <AvatarImage src={user.picture} alt={user.name || user.email} />
         <AvatarFallback>{getInitials(user.name || user.email)}</AvatarFallback>
       </Avatar>
       {showLogout && (
-        <LogoutButton size="sm" variant="ghost" className="ml-2" />
+        <LogoutButton size="sm" variant="ghost" className="ml-2 shrink-0" />
       )}
     </div>
   );

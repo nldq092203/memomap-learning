@@ -63,7 +63,7 @@ export function TranscribeTranscriptSection({
   return (
     <section className="animate-in fade-in slide-in-from-bottom-4 space-y-4 duration-500">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-base font-semibold">Results</h3>
+        <h3 className="text-base font-semibold">Résultat</h3>
         {transcript && (
           <div className="flex flex-wrap items-center gap-2">
             <Button
@@ -74,7 +74,7 @@ export function TranscribeTranscriptSection({
               className="h-8 gap-1.5"
             >
               <Copy className="h-3.5 w-3.5" />
-              {copied ? "Copied!" : "Copy"}
+              {copied ? "Copié" : "Copier"}
             </Button>
             <Button
               type="button"
@@ -84,13 +84,13 @@ export function TranscribeTranscriptSection({
               className="h-8 gap-1.5"
             >
               <Download className="h-3.5 w-3.5" />
-              Download
+              Télécharger
             </Button>
           </div>
         )}
       </div>
 
-      <div className="rounded-lg border bg-card">
+      <div className="rounded-[24px] border border-slate-200 bg-white">
         <pre
           ref={transcriptRef}
           className="min-h-[200px] max-h-[500px] overflow-y-auto whitespace-pre-wrap break-words p-4 text-sm leading-relaxed"
@@ -99,7 +99,7 @@ export function TranscribeTranscriptSection({
           {isTranscribing && !transcript ? (
             <span className="flex items-center gap-2 text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Transcribing audio… Results will appear as chunks are processed.
+              Transcription en cours… Le texte apparaîtra au fur et à mesure.
             </span>
           ) : (
             <>
@@ -121,7 +121,7 @@ export function TranscribeTranscriptSection({
             >
               <span className="flex items-center gap-2">
                 <Clock className="h-3.5 w-3.5" />
-                Timestamps ({liveChunks.length} segments)
+                Horodatage ({liveChunks.length} segments)
               </span>
               {showTimestamps ? (
                 <ChevronUp className="h-4 w-4" />

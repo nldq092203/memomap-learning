@@ -1,10 +1,10 @@
 "use client"
 
-import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { MessageSquare, ChevronRight } from "lucide-react"
 import type { SpeakingTopic } from "@/lib/types/api/speaking-practice"
+import { TrainingChoiceCard, TrainingSectionHeader, TrainingSurface } from "@/components/learning/ui"
 
 interface TopicListProps {
   topics: SpeakingTopic[]
@@ -31,74 +31,50 @@ export function TopicList({ topics, loading, onSelectTopic }: TopicListProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-          Speaking Practice
-        </h1>
-        <p className="text-muted-foreground">
-          Choose a topic to practice structured speaking exercises
-        </p>
-      </div>
+      <TrainingSectionHeader
+        eyebrow="Production orale"
+        title="Entrainement oral"
+        description="Choisissez un thème pour pratiquer des exercices de prise de parole structurés."
+      />
 
-      {/* Topics Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {topics.map((topic) => (
-          <Card
+          <TrainingChoiceCard
             key={topic.id}
-            className="group relative overflow-hidden border-border/60 bg-gradient-to-br from-background to-muted/30 transition-all hover:border-primary/40 hover:shadow-lg cursor-pointer"
             onClick={() => onSelectTopic(topic.id)}
-          >
-            {/* Background Icon */}
-            <div className="absolute right-4 top-4 opacity-10 transition-opacity group-hover:opacity-20">
-              <MessageSquare className="h-16 w-16 text-primary" />
-            </div>
-
-            <CardContent className="relative p-6 space-y-4">
-              {/* Icon and Title */}
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3 flex-1">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                    <MessageSquare className="h-6 w-6" />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="font-semibold text-lg leading-tight">
-                      {topic.title}
-                    </h3>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {topic.subtopics_count} {topic.subtopics_count === 1 ? 'subtopic' : 'subtopics'}
-                    </p>
-                  </div>
-                </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
+            icon={
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                <MessageSquare className="h-6 w-6" />
               </div>
-
-              {/* Action Button */}
+            }
+            title={topic.title}
+            description={`${topic.subtopics_count} ${topic.subtopics_count === 1 ? "sous-theme" : "sous-themes"}`}
+            action={
               <Button
-                className="w-full gap-2"
+                className="w-full gap-2 rounded-full bg-emerald-100 text-emerald-700 hover:bg-emerald-200 sm:w-auto"
                 onClick={(e) => {
                   e.stopPropagation()
                   onSelectTopic(topic.id)
                 }}
               >
-                Explore Topic
+                Explorer le thème
                 <ChevronRight className="h-4 w-4" />
               </Button>
-            </CardContent>
-          </Card>
+            }
+          />
         ))}
       </div>
 
       {topics.length === 0 && !loading && (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <MessageSquare className="h-12 w-12 text-muted-foreground/50 mb-4" />
-            <h3 className="font-semibold mb-2">No Topics Available</h3>
-            <p className="text-sm text-muted-foreground max-w-md">
-              There are no speaking practice topics available at the moment. Please check back later.
+        <TrainingSurface variant="dashed">
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <MessageSquare className="mb-4 h-12 w-12 text-slate-300" />
+            <h3 className="mb-2 font-semibold text-slate-950">Aucun thème disponible</h3>
+            <p className="max-w-md text-sm text-slate-500">
+              Aucun contenu d'entrainement oral n'est disponible pour le moment.
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </TrainingSurface>
       )}
     </div>
   )
