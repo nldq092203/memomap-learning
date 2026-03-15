@@ -39,8 +39,8 @@ class LearningDriveServices:
 
     @staticmethod
     def _audio_root_parts() -> list[str]:
-        # <MemoMap>/LearningTracker/AudioLessons/<lesson-id>/*
-        return ["LearningTracker", "AudioLessons"]
+        # <MemoMap>/AudioLessons/<lesson-id>/*
+        return ["AudioLessons"]
 
     def ensure_audio_root(self) -> str:
         return self.repo.ensure_path(self._audio_root_parts())

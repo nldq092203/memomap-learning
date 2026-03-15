@@ -84,7 +84,7 @@ export default function HomePage() {
               </Button>
             ) : (
               <LoginButton size="lg" className="h-12 rounded-full px-6 text-base">
-                Continuer l&apos;apprentissage
+                Login
               </LoginButton>
             )}
           </div>

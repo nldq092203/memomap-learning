@@ -1,7 +1,7 @@
 """Audio Lessons API endpoints (Drive-backed).
 
 These endpoints keep the original Drive-based flow for audio lessons:
-- Files are stored in Google Drive under: MemoMap/LearningTracker/AudioLessons/<lesson_id>/*
+- Files are stored in Google Drive under: MemoMap/AudioLessons/<lesson_id>/*
 - Metadata is stored in `transcript.json` inside that folder
 
 Auth:

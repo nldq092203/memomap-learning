@@ -38,6 +38,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { toast } from "@/lib/toast"
 import { Badge } from "@/components/ui/badge"
+import { GoogleDriveIcon } from "@/components/learning/transcribe/google-drive-icon"
+import { TranscribeStorageTransparency } from "@/components/learning/transcribe/transcribe-storage-transparency"
 
 const MODEL_TINY: WhisperModelId = "Xenova/whisper-tiny"
 const MODEL_BASE: WhisperModelId = "Xenova/whisper-base"
@@ -458,6 +460,7 @@ const LearningTranscribePage = () => {
               disabled={isSaveDisabled}
               className="h-10 rounded-full border-slate-200 bg-white"
             >
+              <GoogleDriveIcon className="mr-2 h-4 w-4" />
               {isSavingLesson ? (
                 "Enregistrement…"
               ) : saveStatus === "success" ? (
@@ -551,6 +554,8 @@ const LearningTranscribePage = () => {
           )}
         </CardContent>
       </Card>
+
+      <TranscribeStorageTransparency />
 
       {showStoragePanel && (
         <div className="animate-in slide-in-from-top-4 duration-300">

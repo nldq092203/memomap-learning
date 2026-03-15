@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { formatFileSize } from "@/lib/utils/audio-processing"
 import { cn } from "@/lib/utils"
+import { GoogleDriveIcon } from "./google-drive-icon"
 
 type UploadSectionProps = {
   selectedFile: File | null
@@ -174,6 +175,22 @@ export function TranscribeUploadSection({
           </audio>
         </div>
       )}
+
+      <div className="rounded-[20px] border border-sky-200 bg-sky-50/80 px-4 py-3">
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-xl bg-white shadow-sm">
+            <GoogleDriveIcon className="h-4.5 w-4.5" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-sky-800">
+              Safe Storage: This app creates a dedicated folder in your Google Drive to keep your practice sessions organized and private.
+            </p>
+            <p className="mt-1 text-xs leading-5 text-sky-700/80">
+              L’audio et la transcription ne sont enregistrés dans Drive que lorsque vous choisissez de sauvegarder la session.
+            </p>
+          </div>
+        </div>
+      </div>
 
       <input
         ref={inputRef}

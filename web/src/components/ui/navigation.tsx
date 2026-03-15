@@ -130,7 +130,7 @@ export function Navigation() {
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-[60] flex w-[84vw] max-w-[320px] flex-col border-r border-border/70 bg-background shadow-2xl transition-transform duration-300 lg:static lg:z-auto lg:max-w-none lg:translate-x-0 lg:shadow-none",
+          "fixed inset-y-0 left-0 z-[60] flex w-[84vw] max-w-[320px] flex-col border-r border-border/70 bg-background shadow-2xl transition-transform duration-300 lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:max-w-none lg:translate-x-0 lg:shadow-none",
           isMobileOpen ? "translate-x-0" : "-translate-x-full",
           isCollapsed ? "lg:w-24" : "lg:w-72",
         )}
