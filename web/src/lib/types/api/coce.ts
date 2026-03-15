@@ -78,7 +78,11 @@ export interface CoCeQuestion {
 
 // QCM metadata
 export interface QcmMeta {
-  type: 'compréhension_orale' | 'compréhension_écrite'
+  type:
+    | 'comprehension_orale'
+    | 'comprehension_ecrite'
+    | 'compréhension_orale'
+    | 'compréhension_écrite'
   niveau: CEFRLevel
   titre: string
   consigne?: string

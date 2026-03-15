@@ -15,6 +15,18 @@ import { TranscriptView } from "@/components/learning/coce/transcript-view"
 import { PracticeTypeSelector } from "@/components/learning/coce/practice-type-selector"
 import { QuestionsView } from "@/components/learning/coce/questions-view"
 
+function matchesQuestionMode(
+  questionType: string | undefined,
+  mode: "co" | "ce"
+) {
+  if (!questionType) return false
+
+  const normalized = questionType.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  return mode === "co"
+    ? normalized === "comprehension_orale"
+    : normalized === "comprehension_ecrite"
+}
+
 export default function CoCePracticePage() {
   const router = useRouter()
   const {
@@ -69,7 +81,7 @@ export default function CoCePracticePage() {
     setActiveQuestionType(type)
     setActiveQuestionIndex(0)
 
-    if (!questions || questions.meta.type !== (type === "co" ? "compréhension_orale" : "compréhension_écrite")) {
+    if (!questions || !matchesQuestionMode(questions.meta.type, type)) {
       void loadQuestions(type)
     }
   }

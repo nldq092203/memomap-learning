@@ -4,6 +4,18 @@ import type { CoCeQuestions } from "@/lib/types/api/coce"
 import { QuestionCard } from "@/components/learning/coce/question-card"
 import { BookOpen, RefreshCw } from "lucide-react"
 
+function matchesActiveType(
+  questionType: string | undefined,
+  activeType: "co" | "ce" | null
+) {
+  if (!questionType || !activeType) return false
+
+  const normalized = questionType.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  return activeType === "co"
+    ? normalized === "comprehension_orale"
+    : normalized === "comprehension_ecrite"
+}
+
 interface QuestionsViewProps {
   questions: CoCeQuestions | null
   activeType: "co" | "ce" | null
@@ -54,7 +66,7 @@ export function QuestionsView({
 
   if (
     !questions ||
-    questions.meta.type !== (activeType === "co" ? "compréhension_orale" : "compréhension_écrite")
+    !matchesActiveType(questions.meta.type, activeType)
   ) {
     return (
       <Card className="rounded-[30px] border border-slate-200 bg-white shadow-sm">
