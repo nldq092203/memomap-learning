@@ -31,10 +31,6 @@ export function TranscribeStorageTransparency() {
               <GoogleDriveIcon className="h-4.5 w-4.5" />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-800">
-                Safe Storage: This app creates a dedicated folder in your Google Drive to keep your
-                practice sessions organized and private.
-              </p>
               <p className="mt-1 text-xs leading-5 text-slate-500">
                 Votre audio et la transcription enregistrée seront stockés dans un dossier MemoMap
                 simple et dédié, séparé de vos autres fichiers.

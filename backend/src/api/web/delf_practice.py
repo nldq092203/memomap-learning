@@ -13,10 +13,14 @@ delf/a2/tout-public-a2/CO/assets/tp01-q1-a.webp
 
 from __future__ import annotations
 
+import base64
+import binascii
+
 from flask import request, Response
 
 from src.api.decorators import require_auth
 from src.api.errors import BadRequestError, NotFoundError
+from src.shared.delf_practice.github_manager import GitHubDelfManager
 from src.shared.delf_practice.github_repository import GitHubDelfRepository
 from src.shared.delf_practice.test_paper_repository import DelfTestPaperRepository
 from src.shared.delf_practice.schemas import (
@@ -24,6 +28,8 @@ from src.shared.delf_practice.schemas import (
     UpdateDelfTestPaperRequest,
     DelfTestPaperResponse,
     DelfTestPaperDetailResponse,
+    SaveDelfTestContentRequest,
+    UploadDelfRepoFileRequest,
 )
 from src.utils.response_builder import ResponseBuilder
 
@@ -302,6 +308,185 @@ def delf_admin_delete_test(user_id: str, test_paper_id: str):
     )
 
 
+@require_auth  # TODO: Change to @require_admin when ready
+def delf_admin_save_test_content(user_id: str):
+    """
+    POST /web/delf/admin/content
+
+    Save the full DELF test paper JSON to GitHub and upsert DB metadata.
+
+    Body:
+    {
+        "level": "A2",
+        "variant": "tout-public-a2",
+        "section": "CO",
+        "content": { ... DelfTestPaper schema ... }
+    }
+
+    Backward compatibility:
+    {
+        "test_paper_id": "uuid",
+        "content": { ... }
+    }
+    """
+    body = request.get_json() or {}
+
+    try:
+        req = SaveDelfTestContentRequest(**body)
+    except Exception as e:
+        raise BadRequestError(str(e))
+
+    repo = DelfTestPaperRepository()
+
+    content_payload = req.content.model_copy(deep=True)
+    normalized_audio_filename = content_payload.audio_filename
+    if normalized_audio_filename and normalized_audio_filename.startswith("audio/"):
+        normalized_audio_filename = normalized_audio_filename.split("/", 1)[1]
+        content_payload.audio_filename = normalized_audio_filename
+
+    paper = None
+
+    if req.test_paper_id:
+        paper = repo.get_by_id(req.test_paper_id)
+        if not paper:
+            raise NotFoundError("Test paper not found")
+        if paper.test_id != content_payload.test_id:
+            raise BadRequestError(
+                "content.test_id does not match the existing test paper metadata"
+            )
+        if paper.section != (req.section or paper.section):
+            raise BadRequestError(
+                "section does not match the existing test paper metadata"
+            )
+    else:
+        if not req.level or not req.variant or not req.section:
+            raise BadRequestError(
+                "Either test_paper_id or (level, variant, section) is required"
+            )
+
+        paper = repo.get_by_test_id(
+            content_payload.test_id,
+            req.level,
+            req.variant,
+            req.section,
+        )
+
+        if not paper:
+            github_path = (
+                f"delf/{req.level.lower()}/{req.variant}/{req.section}/tp/"
+                f"{content_payload.test_id}.json"
+            )
+            paper = repo.create(
+                test_id=content_payload.test_id,
+                level=req.level,
+                variant=req.variant,
+                section=req.section,
+                github_path=github_path,
+                exercise_count=len(content_payload.exercises),
+                audio_filename=normalized_audio_filename,
+                status=req.status,
+            )
+
+    github_mgr = GitHubDelfManager()
+    content = content_payload.model_dump_json(indent=2, by_alias=True)
+    result = github_mgr.create_or_update_file(
+        file_path=paper.github_path,
+        content=content.encode("utf-8"),
+        commit_message=f"chore: update DELF test content {paper.test_id}",
+    )
+
+    update_fields: dict[str, object] = {
+        "exercise_count": len(content_payload.exercises),
+    }
+    if normalized_audio_filename:
+        update_fields["audio_filename"] = normalized_audio_filename
+    if req.test_paper_id:
+        repo.update(req.test_paper_id, **update_fields)
+    else:
+        repo.update(paper.id, **update_fields)
+
+    return (
+        ResponseBuilder()
+        .success(
+            data={
+                "message": "Test paper content saved to GitHub",
+                "id": paper.id,
+                "test_id": paper.test_id,
+                "level": paper.level,
+                "variant": paper.variant,
+                "section": paper.section,
+                "file_path": paper.github_path,
+                "github_url": result.get("content", {}).get("html_url"),
+                "exercise_count": len(content_payload.exercises),
+            }
+        )
+        .build()
+    )
+
+
+@require_auth  # TODO: Change to @require_admin when ready
+def delf_admin_upload_file(user_id: str):
+    """
+    POST /web/delf/admin/files
+
+    Upload an asset/audio file to GitHub via base64 payload.
+
+    Body:
+    {
+        "test_paper_id": "uuid",
+        "folder": "assets|audio",
+        "filename": "tp01-q1-a.webp",
+        "content_base64": "<base64>",
+        "update_audio_filename": true
+    }
+    """
+    body = request.get_json() or {}
+
+    try:
+        req = UploadDelfRepoFileRequest(**body)
+    except Exception as e:
+        raise BadRequestError(str(e))
+
+    repo = DelfTestPaperRepository()
+    paper = repo.get_by_id(req.test_paper_id)
+
+    if not paper:
+        raise NotFoundError("Test paper not found")
+
+    try:
+        content_bytes = base64.b64decode(req.content_base64, validate=True)
+    except (binascii.Error, ValueError) as e:
+        raise BadRequestError(f"Invalid content_base64: {e}")
+
+    filename = req.filename.split("/")[-1]
+    file_path = (
+        f"delf/{paper.level.lower()}/{paper.variant}/{paper.section}/{req.folder}/{filename}"
+    )
+
+    github_mgr = GitHubDelfManager()
+    result = github_mgr.create_or_update_file(
+        file_path=file_path,
+        content=content_bytes,
+        commit_message=f"chore: upload DELF {req.folder} file for {paper.test_id} ({filename})",
+    )
+
+    if req.folder == "audio" and req.update_audio_filename:
+        repo.update(req.test_paper_id, audio_filename=filename)
+
+    return (
+        ResponseBuilder()
+        .success(
+            data={
+                "message": f"{req.folder.capitalize()} file saved to GitHub",
+                "file_path": file_path,
+                "github_url": result.get("content", {}).get("html_url"),
+                "filename": filename,
+            }
+        )
+        .build()
+    )
+
+
 # Export all endpoints
 __all__ = [
     # User endpoints
@@ -313,4 +498,6 @@ __all__ = [
     "delf_admin_create_test",
     "delf_admin_update_test",
     "delf_admin_delete_test",
+    "delf_admin_save_test_content",
+    "delf_admin_upload_file",
 ]

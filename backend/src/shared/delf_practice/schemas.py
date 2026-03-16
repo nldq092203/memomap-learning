@@ -183,6 +183,27 @@ class UpdateDelfTestPaperRequest(BaseModel):
     status: str | None = Field(None, pattern="^(active|draft|archived)$")
 
 
+class SaveDelfTestContentRequest(BaseModel):
+    """Request to save the full test paper JSON content to GitHub."""
+
+    test_paper_id: str | None = Field(default=None, min_length=1)
+    level: str | None = Field(default=None, pattern="^(A1|A2|B1|B2|C1|C2)$")
+    variant: str | None = Field(default=None, min_length=1, max_length=100)
+    section: str | None = Field(default=None, min_length=1, max_length=100)
+    status: str = Field(default="active", pattern="^(active|draft|archived)$")
+    content: DelfTestPaper
+
+
+class UploadDelfRepoFileRequest(BaseModel):
+    """Request to upload an asset/audio file to GitHub via base64 payload."""
+
+    test_paper_id: str = Field(..., min_length=1)
+    folder: str = Field(..., pattern="^(assets|audio)$")
+    filename: str = Field(..., min_length=1, max_length=255)
+    content_base64: str = Field(..., min_length=1)
+    update_audio_filename: bool = False
+
+
 __all__ = [
     # Content models
     "DelfImageOption",
@@ -201,4 +222,6 @@ __all__ = [
     # Request schemas
     "CreateDelfTestPaperRequest",
     "UpdateDelfTestPaperRequest",
+    "SaveDelfTestContentRequest",
+    "UploadDelfRepoFileRequest",
 ]

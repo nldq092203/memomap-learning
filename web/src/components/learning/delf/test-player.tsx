@@ -8,7 +8,7 @@ import { MatchingExerciseView } from "@/components/learning/delf/matching-exerci
 import { ExtraTranscriptView } from "@/components/learning/delf/extra-transcript-view"
 import { DocumentComprehensionView } from "@/components/learning/delf/document-comprehension-view"
 import { MultipleChoiceSetView } from "@/components/learning/delf/multiple-choice-set-view"
-import { AlertCircle, BookOpen, Pause, Play, RotateCcw } from "lucide-react"
+import { AlertCircle, BookOpen, Pause, Play, RotateCcw, SkipBack, SkipForward } from "lucide-react"
 
 interface TestPlayerProps {
   test: DelfTestPaperDetailResponse
@@ -101,6 +101,7 @@ export function TestPlayer({
   const [progress, setProgress] = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
+  const progressBarRef = useRef<HTMLButtonElement | null>(null)
 
   const audioUrl = test.audio_url || (
     content.audio_filename
@@ -154,6 +155,31 @@ export function TestPlayer({
       void audioRef.current.play()
       setIsPlaying(true)
     }
+  }
+
+  const handleSkip = (deltaSeconds: number) => {
+    if (!audioRef.current) return
+
+    const nextTime = Math.min(
+      Math.max(audioRef.current.currentTime + deltaSeconds, 0),
+      audioRef.current.duration || duration || 0
+    )
+    audioRef.current.currentTime = nextTime
+    setCurrentTime(nextTime)
+    setProgress(audioRef.current.duration ? (nextTime / audioRef.current.duration) * 100 : 0)
+  }
+
+  const handleSeek = (event: React.MouseEvent<HTMLButtonElement>) => {
+    if (!audioRef.current || !progressBarRef.current) return
+
+    const rect = progressBarRef.current.getBoundingClientRect()
+    const clickX = event.clientX - rect.left
+    const ratio = rect.width > 0 ? clickX / rect.width : 0
+    const nextTime = ratio * (audioRef.current.duration || duration || 0)
+
+    audioRef.current.currentTime = nextTime
+    setCurrentTime(nextTime)
+    setProgress(ratio * 100)
   }
 
   const formatTime = (seconds: number) => {
@@ -237,8 +263,32 @@ export function TestPlayer({
                   >
                     <RotateCcw className="h-4.5 w-4.5" />
                   </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleSkip(-5)}
+                    className="h-10 w-10 shrink-0 rounded-full border-slate-200 text-slate-600 hover:bg-white"
+                  >
+                    <SkipBack className="h-4.5 w-4.5" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleSkip(5)}
+                    className="h-10 w-10 shrink-0 rounded-full border-slate-200 text-slate-600 hover:bg-white"
+                  >
+                    <SkipForward className="h-4.5 w-4.5" />
+                  </Button>
                   <div className="min-w-0 flex-1 space-y-2">
-                    <Progress value={progress} className="h-2" />
+                    <button
+                      ref={progressBarRef}
+                      type="button"
+                      onClick={handleSeek}
+                      className="block w-full cursor-pointer"
+                      aria-label="Tuer la piste audio"
+                    >
+                      <Progress value={progress} className="h-2" />
+                    </button>
                     <div className="flex items-center justify-between text-xs font-medium text-slate-500">
                       <span>{formatTime(currentTime)}</span>
                       <span>{formatTime(duration)}</span>

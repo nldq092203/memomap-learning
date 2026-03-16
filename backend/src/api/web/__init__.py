@@ -84,6 +84,8 @@ from src.api.web.delf_practice import (
     delf_admin_create_test,
     delf_admin_update_test,
     delf_admin_delete_test,
+    delf_admin_save_test_content,
+    delf_admin_upload_file,
 )
 from src.api.errors import register_error_handlers
 
@@ -398,4 +400,14 @@ web_bp.add_url_rule(
     "/delf/admin/tests/<test_paper_id>",
     view_func=delf_admin_delete_test,
     methods=["DELETE"],
+)
+web_bp.add_url_rule(
+    "/delf/admin/content",
+    view_func=delf_admin_save_test_content,
+    methods=["POST"],
+)
+web_bp.add_url_rule(
+    "/delf/admin/files",
+    view_func=delf_admin_upload_file,
+    methods=["POST"],
 )
