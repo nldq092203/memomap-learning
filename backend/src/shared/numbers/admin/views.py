@@ -4,7 +4,7 @@ import json
 from datetime import datetime, timezone
 from flask import request
 import requests
-from typing import Any
+from typing import Any, Literal
 
 from src.shared.numbers.admin.audio_storage import AdminAudioStorage
 from src.shared.numbers.admin.dataset_writer import (
@@ -88,25 +88,31 @@ def _load_numbers_github_manifest(version: str) -> dict | None:
     return resp.json()
 
 
-def _load_numbers_drive_manifest(user_id: str, version: str) -> tuple[Any, str, dict | None]:
+def _load_numbers_drive_manifest(
+    user_id: str, version: str
+) -> tuple[Any, str, dict[str, Any]]:
     drive = get_drive_services_for_user(user_id).repo
     version_folder_id = _find_numbers_version_folder(drive, version)
     if not version_folder_id:
         raise FileNotFoundError(f"Dataset version folder '{version}' not found")
 
     manifest = drive.get_json(version_folder_id, MANIFEST_FILENAME)
-    if not manifest:
+    if manifest is None:
         raise FileNotFoundError(f"manifest.json not found for version '{version}'")
 
     return drive, version_folder_id, manifest
 
 
-def _load_numbers_manifest(user_id: str, version: str) -> tuple[str, Any, Any, dict]:
+def _load_numbers_manifest(
+    user_id: str, version: str
+) -> tuple[Literal["github", "drive"], Any, Any, dict[str, Any]]:
     using_github = _is_numbers_github_backed()
     if using_github:
         manifest = _load_numbers_github_manifest(version)
-        if not manifest:
-            raise FileNotFoundError(f"GitHub manifest for version '{version}' not found")
+        if manifest is None:
+            raise FileNotFoundError(
+                f"GitHub manifest for version '{version}' not found"
+            )
         return "github", None, None, manifest
 
     drive, version_folder_id, manifest = _load_numbers_drive_manifest(user_id, version)
@@ -298,16 +304,22 @@ def admin_list_numbers_datasets(user_id: str):
                 .build()
             )
 
-        return ResponseBuilder().success(
-            data={
-                "versions": [version] if exists else [],
-                "storage": "github",
-                "configured_version": version,
-                "base_url": Config.NUMBERS_AUDIO_BASE_URL,
-            }
-        ).build()
+        return (
+            ResponseBuilder()
+            .success(
+                data={
+                    "versions": [version] if exists else [],
+                    "storage": "github",
+                    "configured_version": version,
+                    "base_url": Config.NUMBERS_AUDIO_BASE_URL,
+                }
+            )
+            .build()
+        )
 
-    repo = GoogleDriveNumbersExerciseRepository(get_drive_services_for_user(user_id).repo)
+    repo = GoogleDriveNumbersExerciseRepository(
+        get_drive_services_for_user(user_id).repo
+    )
 
     try:
         versions = repo.list_versions()
@@ -384,7 +396,9 @@ def admin_mark_guest_preview_numbers_manifest(user_id: str):
         )
 
     try:
-        storage, drive, version_folder_id, manifest = _load_numbers_manifest(user_id, version)
+        storage, drive, version_folder_id, manifest = _load_numbers_manifest(
+            user_id, version
+        )
     except FileNotFoundError as e:
         return _error_not_found(str(e))
     except Exception as e:
@@ -411,11 +425,10 @@ def admin_mark_guest_preview_numbers_manifest(user_id: str):
             for ex in exercises
             if isinstance(ex, dict) and ex.get("number_type") == number_type.value
         ]
-        matched.sort(key=lambda ex: (str(ex.get("created_at") or ""), str(ex.get("id") or "")))
-        preview_ids = {
-            str(ex.get("id"))
-            for ex in matched[:count_per_type]
-        }
+        matched.sort(
+            key=lambda ex: (str(ex.get("created_at") or ""), str(ex.get("id") or ""))
+        )
+        preview_ids = {str(ex.get("id")) for ex in matched[:count_per_type]}
         marked_by_type[number_type.value] = len(preview_ids)
 
         for raw in exercises:
@@ -427,9 +440,7 @@ def admin_mark_guest_preview_numbers_manifest(user_id: str):
 
     # Preserve manifest order while applying the flags
     updated_map = {
-        str(ex.get("id")): ex
-        for ex in updated
-        if isinstance(ex, dict) and ex.get("id")
+        str(ex.get("id")): ex for ex in updated if isinstance(ex, dict) and ex.get("id")
     }
     manifest["exercises"] = [
         updated_map.get(str(ex.get("id")), ex) if isinstance(ex, dict) else ex
@@ -538,7 +549,9 @@ def admin_cleanup_numbers_manifest(user_id: str):
         )
 
     try:
-        storage, drive, version_folder_id, manifest = _load_numbers_manifest(user_id, version)
+        storage, drive, version_folder_id, manifest = _load_numbers_manifest(
+            user_id, version
+        )
     except FileNotFoundError as e:
         return _error_not_found(str(e))
     except Exception as e:

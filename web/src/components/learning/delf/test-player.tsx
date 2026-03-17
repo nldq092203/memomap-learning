@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import type { DelfTestPaperDetailResponse, MatchingAnswer } from "@/lib/types/api/delf"
 import { learningDelfApi } from "@/lib/services/learning-delf-api"
+import { SupportProjectTrigger } from "@/components/auth/support-project-trigger"
 import { ExerciseView } from "@/components/learning/delf/exercise-view"
 import { MatchingExerciseView } from "@/components/learning/delf/matching-exercise-view"
 import { ExtraTranscriptView } from "@/components/learning/delf/extra-transcript-view"
@@ -421,13 +422,18 @@ export function TestPlayer({
                 )}
               </div>
             ) : (
-              <Button
-                onClick={onRestartTest}
-                size="lg"
-                className="w-full rounded-full bg-emerald-100 px-8 text-emerald-700 hover:bg-emerald-200 sm:w-auto"
-              >
-                Recommencer
-              </Button>
+              <>
+                <div className="w-full min-w-0 sm:min-w-[320px]">
+                  <SupportProjectTrigger variant="result" />
+                </div>
+                <Button
+                  onClick={onRestartTest}
+                  size="lg"
+                  className="w-full rounded-full bg-emerald-100 px-8 text-emerald-700 hover:bg-emerald-200 sm:w-auto"
+                >
+                  Recommencer
+                </Button>
+              </>
             )}
           </div>
         </div>

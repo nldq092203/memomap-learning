@@ -3,6 +3,15 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Empty turbopack config to allow webpack config
   turbopack: {},
+
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "img.vietqr.io",
+      },
+    ],
+  },
   
   // Optimize for development memory usage
   experimental: {

@@ -20,6 +20,7 @@ import {
 import { UserProfile } from "@/components/auth/user-profile"
 import { LoginButton } from "@/components/auth/login-button"
 import { LogoutButton } from "@/components/auth/logout-button"
+import { SupportProjectTrigger } from "@/components/auth/support-project-trigger"
 import { useIsAuthenticated, useAuthLoading } from "@/lib/hooks/use-auth"
 import { useGuest } from "@/lib/contexts/guest-context"
 import { cn } from "@/lib/utils"
@@ -111,7 +112,7 @@ export function Navigation() {
           </div>
           <div>
             <p className="text-sm font-semibold">MemoMap</p>
-            <p className="text-xs text-muted-foreground">Espace d'apprentissage</p>
+            <p className="text-xs text-muted-foreground">Espace d&apos;apprentissage</p>
           </div>
         </Link>
 
@@ -154,7 +155,7 @@ export function Navigation() {
             <div className={cn("min-w-0", isCollapsed && "lg:hidden")}>
               <p className="font-semibold tracking-tight">MemoMap</p>
               <p className="text-xs text-muted-foreground">
-                Espace d'apprentissage
+                Espace d&apos;apprentissage
               </p>
             </div>
           </Link>
@@ -273,7 +274,11 @@ export function Navigation() {
           </nav>
         </div>
 
-        <div className="border-t border-border/60 p-3">
+        <div className="space-y-3 border-t border-border/60 p-3">
+          <div className={cn(isCollapsed && "lg:hidden")}>
+            <SupportProjectTrigger variant="nav" />
+          </div>
+
           {isLoading ? (
             <div className="flex items-center gap-3 rounded-2xl bg-muted/60 px-3 py-3">
               <div className="h-10 w-10 animate-pulse rounded-full bg-muted" />

@@ -15,6 +15,7 @@ import { TranscriptView } from "@/components/learning/coce/transcript-view"
 import { PracticeTypeSelector } from "@/components/learning/coce/practice-type-selector"
 import { QuestionsView } from "@/components/learning/coce/questions-view"
 import { useGuest, GUEST_ALLOWED_LEVEL } from "@/lib/contexts/guest-context"
+import { SupportProjectTrigger } from "@/components/auth/support-project-trigger"
 
 function matchesQuestionMode(
   questionType: string | undefined,
@@ -409,14 +410,19 @@ export default function CoCePracticePage() {
 
                   <div className="flex flex-wrap items-center gap-3">
                     {showResults ? (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => activeQuestionType && void loadQuestions(activeQuestionType)}
-                        className="rounded-full border-slate-200 px-5 text-slate-700 hover:bg-slate-100"
-                      >
-                        Recommencer
-                      </Button>
+                      <>
+                        <div className="w-full min-w-0 lg:w-auto lg:min-w-[320px]">
+                          <SupportProjectTrigger variant="result" />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => activeQuestionType && void loadQuestions(activeQuestionType)}
+                          className="rounded-full border-slate-200 px-5 text-slate-700 hover:bg-slate-100"
+                        >
+                          Recommencer
+                        </Button>
+                      </>
                     ) : (
                       <Button
                         type="button"

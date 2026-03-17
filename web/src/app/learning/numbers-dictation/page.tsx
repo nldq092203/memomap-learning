@@ -15,6 +15,7 @@ import { notificationService } from "@/lib/services/notification-service"
 import { apiClient } from "@/lib/services/api-client"
 import { cn } from "@/lib/utils"
 import { GuestUpgradeHint } from "@/components/auth/guest-upgrade-hint"
+import { SupportProjectTrigger } from "@/components/auth/support-project-trigger"
 import {
   ArrowLeft,
   CalendarDays,
@@ -72,7 +73,7 @@ function formatTime(seconds: number) {
 export default function NumbersDictationPage() {
   const router = useRouter()
   const { lang } = useLearningLang()
-  const { isGuest } = useGuest()
+  const { isGuest, setShowSyncModal } = useGuest()
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   const [selectedTypes, setSelectedTypes] = useState<NumbersType[]>(["YEAR", "PRICE", "PHONE"])
@@ -592,6 +593,8 @@ export default function NumbersDictationPage() {
                     Nouvelle session
                   </Button>
                 </div>
+
+                <SupportProjectTrigger variant="result" />
               </CardContent>
             </Card>
           </section>

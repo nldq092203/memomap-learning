@@ -43,7 +43,6 @@ export function SyncSaveModal({ open, onOpenChange }: SyncSaveModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md rounded-[28px] border-none bg-gradient-to-b from-white via-white to-slate-50 p-0 shadow-2xl sm:max-w-[440px]">
-        {/* Decorative header gradient */}
         <div className="relative overflow-hidden rounded-t-[28px] bg-gradient-to-br from-primary via-primary/90 to-primary/80 px-6 pb-8 pt-10">
           <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
           <div className="absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-white/10 blur-xl" />
@@ -58,7 +57,6 @@ export function SyncSaveModal({ open, onOpenChange }: SyncSaveModalProps) {
           </DialogHeader>
         </div>
 
-        {/* Benefits */}
         <div className="space-y-3 px-6 pt-5 pb-2">
           {benefits.map((b) => (
             <div
@@ -76,7 +74,6 @@ export function SyncSaveModal({ open, onOpenChange }: SyncSaveModalProps) {
           ))}
         </div>
 
-        {/* Note + CTA */}
         <div className="space-y-4 px-6 pb-6 pt-3">
           <div className="flex items-start gap-2 rounded-xl bg-slate-50 px-3 py-2.5">
             <Shield className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
@@ -91,7 +88,7 @@ export function SyncSaveModal({ open, onOpenChange }: SyncSaveModalProps) {
 
           <LoginButton
             size="lg"
-            className="w-full h-12 rounded-2xl bg-primary text-primary-foreground font-semibold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all"
+            className="h-12 w-full rounded-2xl bg-primary font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90"
           >
             Se connecter avec Google
           </LoginButton>
