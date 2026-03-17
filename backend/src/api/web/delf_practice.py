@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+from typing import Any
 
 from flask import request, Response
 
@@ -46,19 +47,54 @@ def _get_delf_params() -> tuple[str, str, str]:
     return level, variant, section
 
 
+def _is_guest_mode() -> bool:
+    raw = (request.args.get("guest_mode") or "").strip().lower()
+    return raw in ("1", "true", "yes")
+
+
+def _is_guest_preview_record(record: Any) -> bool:
+    extra = getattr(record, "extra", None) or {}
+    return bool(extra.get("guest_preview"))
+
+
+def _filter_guest_preview_records(records: list[Any], limit: int = 2) -> list[Any]:
+    flagged = [record for record in records if _is_guest_preview_record(record)]
+    if flagged:
+        return flagged[:limit]
+    return records[:limit]
+
+
+def _is_guest_accessible_paper(
+    repo: DelfTestPaperRepository,
+    *,
+    paper: Any,
+    level: str,
+    variant: str,
+    section: str,
+    limit: int = 2,
+) -> bool:
+    papers = repo.list_by_level(
+        level=level,
+        section=section or None,
+        variant=variant or None,
+    )
+    allowed_ids = {candidate.id for candidate in _filter_guest_preview_records(papers, limit=limit)}
+    return paper.id in allowed_ids
+
+
 # ============================================================================
 # USER APIs - Test Paper Listing & Retrieval
 # ============================================================================
 
 
-@require_auth
-def delf_list_tests(user_id: str):
+def delf_list_tests():
     """
     GET /web/delf/tests?level=A2&variant=tout-public-a2&section=CO
 
     Returns list of available DELF test papers (from database).
     """
     level, variant, section = _get_delf_params()
+    guest_mode = _is_guest_mode()
 
     repo = DelfTestPaperRepository()
     papers = repo.list_by_level(
@@ -66,6 +102,8 @@ def delf_list_tests(user_id: str):
         section=section or None,
         variant=variant or None,
     )
+    if guest_mode:
+        papers = _filter_guest_preview_records(papers)
 
     items = []
     for paper in papers:
@@ -85,8 +123,7 @@ def delf_list_tests(user_id: str):
     return ResponseBuilder().success(data={"items": items, "level": level}).build()
 
 
-@require_auth
-def delf_get_test(user_id: str, test_id: str):
+def delf_get_test(test_id: str):
     """
     GET /web/delf/tests/<test_id>?level=A2&variant=tout-public-a2&section=CO
 
@@ -102,6 +139,14 @@ def delf_get_test(user_id: str, test_id: str):
 
     if not paper:
         raise NotFoundError("Test paper not found")
+    if _is_guest_mode() and not _is_guest_accessible_paper(
+        repo,
+        paper=paper,
+        level=level,
+        variant=variant,
+        section=section,
+    ):
+        raise NotFoundError("Test paper not available in guest mode")
 
     # Fetch content from GitHub
     github_repo = GitHubDelfRepository()
@@ -140,8 +185,7 @@ def delf_get_test(user_id: str, test_id: str):
     return ResponseBuilder().success(data=result.model_dump(mode="json")).build()
 
 
-@require_auth
-def delf_proxy_audio(user_id: str, audio_path: str):
+def delf_proxy_audio(audio_path: str):
     """
     GET /web/delf/audio/<path:audio_path>
 
@@ -166,8 +210,7 @@ def delf_proxy_audio(user_id: str, audio_path: str):
     )
 
 
-@require_auth
-def delf_proxy_asset(user_id: str, asset_path: str):
+def delf_proxy_asset(asset_path: str):
     """
     GET /web/delf/assets/<path:asset_path>
 
@@ -487,6 +530,51 @@ def delf_admin_upload_file(user_id: str):
     )
 
 
+@require_auth  # TODO: Change to @require_admin when ready
+def delf_admin_mark_guest_preview(user_id: str):
+    """
+    POST /web/delf/admin/tests:guest-preview
+    """
+    body = request.get_json(silent=True) or {}
+    level = str(body.get("level") or "").strip().upper()
+    variant = str(body.get("variant") or "").strip() or None
+    section = str(body.get("section") or "").strip() or None
+    count_raw = body.get("count", 2)
+
+    if not level:
+        raise BadRequestError("level is required")
+
+    try:
+        count = int(count_raw)
+    except (TypeError, ValueError):
+        raise BadRequestError("count must be an integer")
+
+    if count < 0:
+        raise BadRequestError("count must be zero or greater")
+
+    repo = DelfTestPaperRepository()
+    papers = repo.list_by_level(level=level, section=section, variant=variant)
+    selected_ids = {paper.id for paper in papers[:count]}
+
+    updated_ids: list[str] = []
+    for paper in papers:
+        extra = dict(paper.extra or {})
+        extra["guest_preview"] = paper.id in selected_ids
+        if repo.update(paper.id, extra=extra):
+            updated_ids.append(paper.id)
+
+    return ResponseBuilder().success(
+        data={
+            "level": level,
+            "variant": variant,
+            "section": section,
+            "count": count,
+            "selected_ids": list(selected_ids),
+            "updated_ids": updated_ids,
+        }
+    ).build()
+
+
 # Export all endpoints
 __all__ = [
     # User endpoints
@@ -500,4 +588,5 @@ __all__ = [
     "delf_admin_delete_test",
     "delf_admin_save_test_content",
     "delf_admin_upload_file",
+    "delf_admin_mark_guest_preview",
 ]

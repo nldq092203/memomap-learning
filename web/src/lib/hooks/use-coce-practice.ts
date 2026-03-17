@@ -32,10 +32,18 @@ export function useCoCePractice() {
   const [showResults, setShowResults] = useState(false)
 
   // Load exercises for selected level
-  const loadExercises = useCallback(async (selectedLevel: CEFRLevel, selectedTopic?: ExerciseTopic | null) => {
+  const loadExercises = useCallback(async (
+    selectedLevel: CEFRLevel,
+    selectedTopic?: ExerciseTopic | null,
+    guestMode = false,
+  ) => {
     setLoading(true)
     try {
-      const data = await learningCoCeApi.listExercises(selectedLevel, selectedTopic || undefined)
+      const data = await learningCoCeApi.listExercises(
+        selectedLevel,
+        selectedTopic || undefined,
+        guestMode,
+      )
       setExercises(data)
       setLevel(selectedLevel)
       if (selectedTopic !== undefined) setTopic(selectedTopic)
@@ -49,19 +57,26 @@ export function useCoCePractice() {
 
   // Load exercise details
   const loadExercise = useCallback(
-    async (exerciseId: string) => {
+    async (exerciseId: string, guestMode = false, selectedTopic?: ExerciseTopic | null) => {
       setLoading(true)
       try {
-        const data = await learningCoCeApi.getExercise(exerciseId)
+        const data = await learningCoCeApi.getExercise(
+          exerciseId,
+          guestMode,
+          selectedTopic ?? undefined,
+        )
         setCurrentExercise(data)
         setMode("audio")
         setTranscript(null)
         setQuestions(null)
         setUserAnswers([])
         setShowResults(false)
-    } catch (error) {
-      console.error("Failed to load exercise:", error)
-      notificationService.error("Impossible de charger l'exercice")
+        if (selectedTopic !== undefined) setTopic(selectedTopic)
+        return true
+      } catch (error) {
+        console.error("Failed to load exercise:", error)
+        notificationService.error("Impossible de charger l'exercice")
+        return false
       } finally {
         setLoading(false)
       }
@@ -70,11 +85,15 @@ export function useCoCePractice() {
   )
 
   // Load transcript
-  const loadTranscript = useCallback(async () => {
+  const loadTranscript = useCallback(async (guestMode = false) => {
     if (!currentExercise) return
     setLoading(true)
     try {
-      const data = await learningCoCeApi.getTranscript(currentExercise.id)
+      const data = await learningCoCeApi.getTranscript(
+        currentExercise.id,
+        guestMode,
+        currentExercise.topic,
+      )
       setTranscript(data)
       setMode("transcript")
     } catch (error) {
@@ -87,18 +106,23 @@ export function useCoCePractice() {
 
   // Load questions (CO or CE)
   const loadQuestions = useCallback(
-    async (type: "co" | "ce") => {
+    async (type: "co" | "ce", guestMode = false) => {
       if (!currentExercise) return
       setLoading(true)
       try {
-        const data = await learningCoCeApi.getQuestions(currentExercise.id, type)
+        const data = await learningCoCeApi.getQuestions(
+          currentExercise.id,
+          type,
+          guestMode,
+          currentExercise.topic,
+        )
         setQuestions(data)
         setMode(type)
         setUserAnswers([])
         setShowResults(false)
-    } catch (error) {
-      console.error("Failed to load questions:", error)
-      notificationService.error("Impossible de charger les questions")
+      } catch (error) {
+        console.error("Failed to load questions:", error)
+        notificationService.error("Impossible de charger les questions")
       } finally {
         setLoading(false)
       }

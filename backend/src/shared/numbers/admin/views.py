@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import json
+from datetime import datetime, timezone
 from flask import request
+import requests
+from typing import Any
 
 from src.shared.numbers.admin.audio_storage import AdminAudioStorage
 from src.shared.numbers.admin.dataset_writer import (
@@ -16,23 +20,14 @@ from src.shared.numbers.blueprints import NumberType
 from src.shared.numbers.repository.google_drive_repo import (
     GoogleDriveNumbersExerciseRepository,
 )
+from src.shared.drive_services import get_drive_services_for_user
+from src.shared.github_manager import GitHubContentManager
 from src.infra.tts.tts_service import TTSService
 from src.config import Config
-from src.infra.drive import DriveRepository, GoogleDriveClient
 from src.infra.drive.repository import FOLDER_MIME
 from src.infra.drive.client import GoogleDriveError
 from src.utils.response_builder import ResponseBuilder
 from src.extensions import logger
-
-
-def _get_drive_repo(access_token: str) -> DriveRepository:
-    """
-    Create a DriveRepository from an OAuth access token.
-
-    This replaces the old `get_web_store()` dependency.
-    """
-    client = GoogleDriveClient(access_token)
-    return DriveRepository(client)
 
 
 # ============================================================
@@ -71,12 +66,110 @@ def _parse_counts(raw: dict) -> dict[NumberType, int]:
     return counts
 
 
+def _is_numbers_github_backed() -> bool:
+    base_url = (Config.NUMBERS_AUDIO_BASE_URL or "").strip()
+    return base_url.startswith("https://raw.githubusercontent.com/")
+
+
+def _numbers_github_manifest_path(version: str) -> str:
+    return f"number-dictation/{version}/manifest.json"
+
+
+def _load_numbers_github_manifest(version: str) -> dict | None:
+    base_url = (Config.NUMBERS_AUDIO_BASE_URL or "").rstrip("/")
+    if not base_url:
+        return None
+
+    url = f"{base_url}/number-dictation/{version}/manifest.json"
+    resp = requests.get(url, timeout=10)
+    if resp.status_code == 404:
+        return None
+    resp.raise_for_status()
+    return resp.json()
+
+
+def _load_numbers_drive_manifest(user_id: str, version: str) -> tuple[Any, str, dict | None]:
+    drive = get_drive_services_for_user(user_id).repo
+    version_folder_id = _find_numbers_version_folder(drive, version)
+    if not version_folder_id:
+        raise FileNotFoundError(f"Dataset version folder '{version}' not found")
+
+    manifest = drive.get_json(version_folder_id, MANIFEST_FILENAME)
+    if not manifest:
+        raise FileNotFoundError(f"manifest.json not found for version '{version}'")
+
+    return drive, version_folder_id, manifest
+
+
+def _load_numbers_manifest(user_id: str, version: str) -> tuple[str, Any, Any, dict]:
+    using_github = _is_numbers_github_backed()
+    if using_github:
+        manifest = _load_numbers_github_manifest(version)
+        if not manifest:
+            raise FileNotFoundError(f"GitHub manifest for version '{version}' not found")
+        return "github", None, None, manifest
+
+    drive, version_folder_id, manifest = _load_numbers_drive_manifest(user_id, version)
+    return "drive", drive, version_folder_id, manifest
+
+
+def _save_numbers_manifest(
+    storage: str,
+    *,
+    drive: Any,
+    version_folder_id: str | None,
+    version: str,
+    manifest: dict,
+) -> None:
+    if storage == "github":
+        GitHubContentManager(log_prefix="NUMBERS-GITHUB-MANAGER").create_or_update_file(
+            file_path=_numbers_github_manifest_path(version),
+            content=json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",
+            commit_message=f"chore: update numbers dataset manifest {version}",
+        )
+        return
+
+    drive.upsert_json(
+        parent_id=version_folder_id,
+        name=MANIFEST_FILENAME,
+        obj=manifest,
+        app_properties={
+            "type": "numbers_dictation_manifest",
+            "version": manifest.get("version") or version,
+        },
+    )
+
+
+def _error_not_found(message: str):
+    return (
+        ResponseBuilder()
+        .error(
+            error="Not found",
+            message=message,
+            status_code=404,
+        )
+        .build()
+    )
+
+
+def _error_invalid_manifest(message: str, status_code: int = 500):
+    return (
+        ResponseBuilder()
+        .error(
+            error="Invalid manifest",
+            message=message,
+            status_code=status_code,
+        )
+        .build()
+    )
+
+
 # ============================================================
 # Admin endpoints
 # ============================================================
 
 
-def admin_generate_numbers_dataset():
+def admin_generate_numbers_dataset(user_id: str):
     """
     Generate a new Numbers Dictation dataset.
     Body:
@@ -136,24 +229,10 @@ def admin_generate_numbers_dataset():
     # ------------------------------
     # Generator wiring (admin-only)
     # ------------------------------
-    access_token = (request.headers.get("X-Google-Access-Token") or "").strip()
-    if not access_token:
-        return (
-            ResponseBuilder()
-            .error(
-                error="Bad request",
-                message="X-Google-Access-Token header is required for Drive operations",
-                status_code=400,
-            )
-            .build()
-        )
-
-    drive = _get_drive_repo(access_token)
+    drive = get_drive_services_for_user(user_id).repo
 
     audio_storage = AdminAudioStorage(drive)
     dataset_writer = AdminDatasetWriter(drive)
-    repo = GoogleDriveNumbersExerciseRepository(drive)
-
     generator = WeeklyNumbersDatasetGenerator(
         audio_storage=audio_storage,
         dataset_writer=dataset_writer,
@@ -189,24 +268,46 @@ def admin_generate_numbers_dataset():
     )
 
 
-def admin_list_numbers_datasets():
+def admin_list_numbers_datasets(user_id: str):
     """
     List all available Numbers Dictation datasets.
     """
-
-    access_token = (request.headers.get("X-Google-Access-Token") or "").strip()
-    if not access_token:
-        return (
-            ResponseBuilder()
-            .error(
-                error="Bad request",
-                message="X-Google-Access-Token header is required for Drive operations",
-                status_code=400,
+    if _is_numbers_github_backed():
+        version = (Config.NUMBERS_DATA_VERSION or "").strip()
+        if not version:
+            return (
+                ResponseBuilder()
+                .error(
+                    error="Bad configuration",
+                    message="NUMBERS_DATA_VERSION is not configured",
+                    status_code=500,
+                )
+                .build()
             )
-            .build()
-        )
 
-    repo = GoogleDriveNumbersExerciseRepository(_get_drive_repo(access_token))
+        try:
+            exists = _load_numbers_github_manifest(version) is not None
+        except Exception as e:
+            return (
+                ResponseBuilder()
+                .error(
+                    error="Failed to list datasets",
+                    message=str(e),
+                    status_code=500,
+                )
+                .build()
+            )
+
+        return ResponseBuilder().success(
+            data={
+                "versions": [version] if exists else [],
+                "storage": "github",
+                "configured_version": version,
+                "base_url": Config.NUMBERS_AUDIO_BASE_URL,
+            }
+        ).build()
+
+    repo = GoogleDriveNumbersExerciseRepository(get_drive_services_for_user(user_id).repo)
 
     try:
         versions = repo.list_versions()
@@ -228,7 +329,136 @@ __all__ = [
     "admin_generate_numbers_dataset",
     "admin_list_numbers_datasets",
     "admin_cleanup_numbers_manifest",
+    "admin_mark_guest_preview_numbers_manifest",
 ]
+
+
+def admin_mark_guest_preview_numbers_manifest(user_id: str):
+    """
+    Mark a guest-preview subset in a Numbers Dictation manifest.
+
+    Body:
+    {
+      "version": "2025-W50",
+      "count_per_type": 2
+    }
+    """
+
+    payload = request.get_json(silent=True) or {}
+    version = payload.get("version")
+    count_per_type = payload.get("count_per_type", 2)
+
+    if not version or not isinstance(version, str):
+        return (
+            ResponseBuilder()
+            .error(
+                error="Bad request",
+                message="version must be a non-empty string",
+                status_code=400,
+            )
+            .build()
+        )
+
+    try:
+        count_per_type = int(count_per_type)
+    except (TypeError, ValueError):
+        return (
+            ResponseBuilder()
+            .error(
+                error="Bad request",
+                message="count_per_type must be an integer",
+                status_code=400,
+            )
+            .build()
+        )
+
+    if count_per_type < 0:
+        return (
+            ResponseBuilder()
+            .error(
+                error="Bad request",
+                message="count_per_type must be zero or greater",
+                status_code=400,
+            )
+            .build()
+        )
+
+    try:
+        storage, drive, version_folder_id, manifest = _load_numbers_manifest(user_id, version)
+    except FileNotFoundError as e:
+        return _error_not_found(str(e))
+    except Exception as e:
+        return (
+            ResponseBuilder()
+            .error(
+                error="Failed to load manifest",
+                message=str(e),
+                status_code=500,
+            )
+            .build()
+        )
+
+    exercises = manifest.get("exercises", [])
+    if not isinstance(exercises, list):
+        return _error_invalid_manifest("Manifest exercises must be a list")
+
+    updated: list[dict] = []
+    marked_by_type: dict[str, int] = {}
+
+    for number_type in NumberType:
+        matched = [
+            dict(ex)
+            for ex in exercises
+            if isinstance(ex, dict) and ex.get("number_type") == number_type.value
+        ]
+        matched.sort(key=lambda ex: (str(ex.get("created_at") or ""), str(ex.get("id") or "")))
+        preview_ids = {
+            str(ex.get("id"))
+            for ex in matched[:count_per_type]
+        }
+        marked_by_type[number_type.value] = len(preview_ids)
+
+        for raw in exercises:
+            if not isinstance(raw, dict) or raw.get("number_type") != number_type.value:
+                continue
+            candidate = dict(raw)
+            candidate["guest_preview"] = str(candidate.get("id")) in preview_ids
+            updated.append(candidate)
+
+    # Preserve manifest order while applying the flags
+    updated_map = {
+        str(ex.get("id")): ex
+        for ex in updated
+        if isinstance(ex, dict) and ex.get("id")
+    }
+    manifest["exercises"] = [
+        updated_map.get(str(ex.get("id")), ex) if isinstance(ex, dict) else ex
+        for ex in exercises
+    ]
+    manifest["guest_preview_updated_at"] = datetime.now(timezone.utc).isoformat()
+
+    _save_numbers_manifest(
+        storage,
+        drive=drive,
+        version_folder_id=version_folder_id,
+        version=version,
+        manifest=manifest,
+    )
+
+    return (
+        ResponseBuilder()
+        .success(
+            data={
+                "version": manifest.get("version") or version,
+                "count_per_type": count_per_type,
+                "marked_by_type": marked_by_type,
+                "storage": storage,
+                "updated": True,
+            },
+            status_code=200,
+        )
+        .build()
+    )
 
 
 def _find_numbers_version_folder(drive, version: str) -> str | None:
@@ -278,7 +508,7 @@ def _is_gemini_error_sentence(sentence: str) -> bool:
     return any(marker in sentence for marker in markers)
 
 
-def admin_cleanup_numbers_manifest():
+def admin_cleanup_numbers_manifest(user_id: str):
     """
     Cleanup a Numbers Dictation dataset manifest for a specific version.
 
@@ -307,55 +537,24 @@ def admin_cleanup_numbers_manifest():
             .build()
         )
 
-    access_token = (request.headers.get("X-Google-Access-Token") or "").strip()
-    if not access_token:
+    try:
+        storage, drive, version_folder_id, manifest = _load_numbers_manifest(user_id, version)
+    except FileNotFoundError as e:
+        return _error_not_found(str(e))
+    except Exception as e:
         return (
             ResponseBuilder()
             .error(
-                error="Bad request",
-                message="X-Google-Access-Token header is required for Drive operations",
-                status_code=400,
-            )
-            .build()
-        )
-
-    drive = _get_drive_repo(access_token)
-
-    version_folder_id = _find_numbers_version_folder(drive, version)
-    if not version_folder_id:
-        return (
-            ResponseBuilder()
-            .error(
-                error="Not found",
-                message=f"Dataset version folder '{version}' not found",
-                status_code=404,
-            )
-            .build()
-        )
-
-    manifest = drive.get_json(version_folder_id, MANIFEST_FILENAME)
-    if not manifest:
-        return (
-            ResponseBuilder()
-            .error(
-                error="Not found",
-                message=f"manifest.json not found for version '{version}'",
-                status_code=404,
+                error="Failed to load manifest",
+                message=str(e),
+                status_code=500,
             )
             .build()
         )
 
     exercises = manifest.get("exercises", [])
     if not isinstance(exercises, list):
-        return (
-            ResponseBuilder()
-            .error(
-                error="Invalid manifest",
-                message="Manifest exercises must be a list",
-                status_code=500,
-            )
-            .build()
-        )
+        return _error_invalid_manifest("Manifest exercises must be a list")
 
     kept: list[dict] = []
     removed_gemini: list[str] = []
@@ -377,9 +576,8 @@ def admin_cleanup_numbers_manifest():
             removed_missing_audio.append(ex_id)
             continue
 
-        # For non-Drive storage (e.g. Git-backed paths like "fr/2025-W50/..."),
-        # we skip Drive existence checks and trust the manifest.
-        if "/" in audio_ref:
+        # For Git-backed storage, trust manifest paths and skip Drive checks.
+        if storage == "github" or "/" in audio_ref:
             kept.append(ex)
             continue
 
@@ -419,18 +617,14 @@ def admin_cleanup_numbers_manifest():
     manifest["exercises"] = kept
     manifest["exercise_count"] = len(kept)
 
-    from datetime import datetime, timezone
-
     manifest["cleaned_at"] = datetime.now(timezone.utc).isoformat()
 
-    drive.upsert_json(
-        parent_id=version_folder_id,
-        name=MANIFEST_FILENAME,
-        obj=manifest,
-        app_properties={
-            "type": "numbers_dictation_manifest",
-            "version": manifest.get("version") or version,
-        },
+    _save_numbers_manifest(
+        storage,
+        drive=drive,
+        version_folder_id=version_folder_id,
+        version=version,
+        manifest=manifest,
     )
 
     return (
@@ -442,6 +636,7 @@ def admin_cleanup_numbers_manifest():
                 "after": len(kept),
                 "removedGeminiError": removed_gemini,
                 "removedMissingAudio": removed_missing_audio,
+                "storage": storage,
                 "updated": True,
             },
             status_code=200,

@@ -71,12 +71,17 @@ class ApiClient {
     this.client.interceptors.response.use(
       (response) => response,
       async (error) => {
-        // Handle 401 errors globally
+        // Handle 401 errors globally — but only for AUTHENTICATED users.
+        // Guests (no token) should never be redirected/logged-out on 401.
         if (error?.response?.status === 401) {
-          await apiErrorHandler.handleError(error, {
-            showToast: true,
-            redirectToLogin: true
-          });
+          const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('auth_token');
+          if (hasToken) {
+            await apiErrorHandler.handleError(error, {
+              showToast: true,
+              redirectToLogin: true
+            });
+          }
+          // For guests: silently reject without redirect
         } else {
           // For non-401 errors, just log here. Toasts are managed by retry logic.
           console.error('API Error:', error.response?.data || error.message);

@@ -10,9 +10,11 @@ import { useNumbersDictation } from "@/lib/hooks/use-numbers-dictation"
 import type { NumbersType } from "@/lib/services/learning-numbers-api"
 import { learningApi, type LearningLanguage } from "@/lib/services/learning-api"
 import { useLearningLang } from "@/lib/contexts/learning-lang-context"
+import { useGuest } from "@/lib/contexts/guest-context"
 import { notificationService } from "@/lib/services/notification-service"
 import { apiClient } from "@/lib/services/api-client"
 import { cn } from "@/lib/utils"
+import { GuestUpgradeHint } from "@/components/auth/guest-upgrade-hint"
 import {
   ArrowLeft,
   CalendarDays,
@@ -70,6 +72,7 @@ function formatTime(seconds: number) {
 export default function NumbersDictationPage() {
   const router = useRouter()
   const { lang } = useLearningLang()
+  const { isGuest } = useGuest()
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   const [selectedTypes, setSelectedTypes] = useState<NumbersType[]>(["YEAR", "PRICE", "PHONE"])
@@ -121,6 +124,8 @@ export default function NumbersDictationPage() {
     () => NUMPAD_BASE.filter((key) => /\d/.test(key) || allowedSymbols.includes(key)),
     [allowedSymbols],
   )
+  const minExerciseCount = 1
+  const maxExerciseCount = isGuest ? 2 : 20
 
   useEffect(() => {
     const audio = audioRef.current
@@ -161,6 +166,10 @@ export default function NumbersDictationPage() {
     const timeout = window.setTimeout(() => setShakeInput(false), 420)
     return () => window.clearTimeout(timeout)
   }, [answeredCurrent, current?.isCorrect])
+
+  useEffect(() => {
+    setCount((prev) => Math.min(maxExerciseCount, Math.max(minExerciseCount, prev)))
+  }, [maxExerciseCount])
 
   const handleAudioToggle = async () => {
     const audio = audioRef.current
@@ -242,7 +251,11 @@ export default function NumbersDictationPage() {
   }
 
   const handleStart = () => {
-    void startSession(selectedTypes, count)
+    if (count <= 0) {
+      return
+    }
+
+    void startSession(selectedTypes, count, isGuest)
   }
 
   const handleSubmit = () => {
@@ -269,7 +282,7 @@ export default function NumbersDictationPage() {
           onClick={() => router.push("/learning/workspace")}
         >
           <ArrowLeft className="mr-1.5 h-4 w-4" />
-          Retour a l'espace d'entrainement
+          Retour a l&apos;espace d&apos;entrainement
         </Button>
 
         {showSetup && (
@@ -297,6 +310,8 @@ export default function NumbersDictationPage() {
 
               <CardContent className="grid gap-6 p-6 lg:grid-cols-[minmax(0,1fr)_340px]">
                 <div className="space-y-6">
+                  <GuestUpgradeHint description="Connectez-vous pour pratiquer plus de séries, accéder à davantage de dictées de nombres et sauvegarder vos résultats." />
+
                   <div>
                     <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
                       Types de nombres
@@ -332,22 +347,24 @@ export default function NumbersDictationPage() {
                   <div>
                     <div className="mb-3 flex items-center justify-between gap-3">
                       <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-                        Nombre d'exercices
+                        Nombre d&apos;exercices
                       </p>
-                      <span className="text-sm text-muted-foreground">Min 5 · Max 20</span>
+                      <span className="text-sm text-muted-foreground">
+                        Min {minExerciseCount} · Max {maxExerciseCount}
+                      </span>
                     </div>
                     <Input
                       type="number"
-                      min={5}
-                      max={20}
+                      min={minExerciseCount}
+                      max={maxExerciseCount}
                       value={count}
                       onChange={(event) => {
                         const next = Number(event.target.value)
                         if (Number.isNaN(next)) {
-                          setCount(5)
+                          setCount(minExerciseCount)
                           return
                         }
-                        setCount(Math.min(20, Math.max(5, next)))
+                        setCount(Math.min(maxExerciseCount, Math.max(minExerciseCount, next)))
                       }}
                       className="h-14 w-full rounded-2xl text-center text-2xl font-semibold"
                     />
@@ -554,9 +571,15 @@ export default function NumbersDictationPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-3">
-                  <Button type="button" onClick={handleSaveTranscript} disabled={isSavingTranscript} className="rounded-2xl">
-                    {isSavingTranscript ? "Sauvegarde..." : "Enregistrer la session"}
-                  </Button>
+                  {isGuest ? (
+                    <Button type="button" onClick={() => setShowSyncModal(true)} className="rounded-2xl">
+                      Se connecter pour enregistrer
+                    </Button>
+                  ) : (
+                    <Button type="button" onClick={handleSaveTranscript} disabled={isSavingTranscript} className="rounded-2xl">
+                      {isSavingTranscript ? "Sauvegarde..." : "Enregistrer la session"}
+                    </Button>
+                  )}
                   <Button
                     type="button"
                     variant="outline"

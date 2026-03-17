@@ -7,6 +7,7 @@ import { ToastProvider } from "@/lib/toast"
 import { LearningLangProvider } from "@/lib/contexts/learning-lang-context"
 import { OnboardingProvider } from "@/lib/contexts/onboarding-context"
 import { GoogleOAuthProvider } from "@react-oauth/google"
+import { GuestProvider } from "@/lib/contexts/guest-context"
 
 export const metadata: Metadata = {
   title: "MemoMap",
@@ -26,13 +27,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <SettingsProvider>
                 <LearningLangProvider>
                   <OnboardingProvider>
-                    <div className="min-h-screen lg:flex">
-                      <Navigation />
-                      <main className="min-w-0 flex-1 pt-16 lg:pt-0">
-                        {children}
-                      </main>
-                      <ToastProvider />
-                    </div>
+                    <GuestProvider>
+                      <div className="min-h-screen lg:flex">
+                        <Navigation />
+                        <main className="min-w-0 flex-1 pt-16 lg:pt-0">
+                          {children}
+                        </main>
+                        <ToastProvider />
+                      </div>
+                    </GuestProvider>
                   </OnboardingProvider>
                 </LearningLangProvider>
               </SettingsProvider>
@@ -43,13 +46,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <SettingsProvider>
               <LearningLangProvider>
                 <OnboardingProvider>
-                  <div className="min-h-screen lg:flex">
-                    <Navigation />
-                    <main className="min-w-0 flex-1 pt-16 lg:pt-0">
-                      {children}
-                    </main>
-                    <ToastProvider />
-                  </div>
+                  <GuestProvider>
+                    <div className="min-h-screen lg:flex">
+                      <Navigation />
+                      <main className="min-w-0 flex-1 pt-16 lg:pt-0">
+                        {children}
+                      </main>
+                      <ToastProvider />
+                    </div>
+                  </GuestProvider>
                 </OnboardingProvider>
               </LearningLangProvider>
             </SettingsProvider>

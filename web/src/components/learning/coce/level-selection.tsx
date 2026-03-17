@@ -1,8 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import type { CEFRLevel } from "@/lib/types/api/coce"
+import { GUEST_ALLOWED_LEVEL, useGuest } from "@/lib/contexts/guest-context"
 import { cn } from "@/lib/utils"
-import { BookOpen } from "lucide-react"
+import { BookOpen, Lock } from "lucide-react"
 
 const LEVEL_INFO: Record<CEFRLevel, { name: string; description: string; color: string; enabled: boolean }> = {
   A1: {
@@ -50,6 +51,8 @@ interface LevelSelectionProps {
 }
 
 export function LevelSelection({ onSelectLevel }: LevelSelectionProps) {
+  const { isGuest } = useGuest()
+
   return (
     <div className="space-y-6">
       <Card className="border-border/60 bg-card/70 backdrop-blur-sm">
@@ -69,25 +72,40 @@ export function LevelSelection({ onSelectLevel }: LevelSelectionProps) {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {AVAILABLE_COCE_LEVELS.map((lvl) => {
             const info = LEVEL_INFO[lvl]
+            const isLockedForGuest = isGuest && lvl !== GUEST_ALLOWED_LEVEL
+
             return (
               <Card
                 key={lvl}
                 className={cn(
                   "border-2 transition-all",
-                  "cursor-pointer hover:shadow-md",
+                  isLockedForGuest
+                    ? "cursor-not-allowed border-slate-200 bg-slate-50 opacity-60"
+                    : "cursor-pointer hover:shadow-md",
                   info.color
                 )}
-                onClick={() => onSelectLevel(lvl)}
+                onClick={() => {
+                  if (isLockedForGuest) return
+                  onSelectLevel(lvl)
+                }}
               >
                 <CardHeader>
                   <div className="flex items-center justify-between gap-2">
                     <CardTitle className="text-lg">{info.name}</CardTitle>
+                    {isLockedForGuest && <Lock className="h-4 w-4 text-slate-400" />}
                   </div>
-                  <p className="text-xs text-muted-foreground">{info.description}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {isLockedForGuest ? "Disponible apres connexion" : info.description}
+                  </p>
                 </CardHeader>
                 <CardContent>
-                  <Button className="w-full" variant="outline" size="sm">
-                    {`Choisir ${lvl}`}
+                  <Button
+                    className="w-full"
+                    variant="outline"
+                    size="sm"
+                    disabled={isLockedForGuest}
+                  >
+                    {isLockedForGuest ? `A2 seulement en mode invite` : `Choisir ${lvl}`}
                   </Button>
                 </CardContent>
               </Card>

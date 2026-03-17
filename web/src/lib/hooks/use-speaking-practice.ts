@@ -17,10 +17,10 @@ export function useSpeakingPractice() {
   const [loading, setLoading] = useState(false)
 
   // Load all topics
-  const loadTopics = useCallback(async () => {
+  const loadTopics = useCallback(async (guestMode = false) => {
     setLoading(true)
     try {
-      const data = await learningSpeakingApi.listTopics()
+      const data = await learningSpeakingApi.listTopics(guestMode)
       setTopics(data)
     } catch (error) {
       console.error("Failed to load topics:", error)
@@ -31,10 +31,10 @@ export function useSpeakingPractice() {
   }, [])
 
   // Load topic manifest with subtopics
-  const loadTopicManifest = useCallback(async (topicId: string) => {
+  const loadTopicManifest = useCallback(async (topicId: string, guestMode = false) => {
     setLoading(true)
     try {
-      const data = await learningSpeakingApi.getTopicManifest(topicId)
+      const data = await learningSpeakingApi.getTopicManifest(topicId, guestMode)
       setCurrentTopic(data)
       setCurrentContent(null)
       setCurrentItemIndex(0)
@@ -47,10 +47,10 @@ export function useSpeakingPractice() {
   }, [])
 
   // Load practice content
-  const loadContent = useCallback(async (path: string) => {
+  const loadContent = useCallback(async (path: string, guestMode = false) => {
     setLoading(true)
     try {
-      const data = await learningSpeakingApi.getContent(path)
+      const data = await learningSpeakingApi.getContent(path, guestMode)
       setCurrentContent(data)
       setCurrentItemIndex(0)
     } catch (error) {

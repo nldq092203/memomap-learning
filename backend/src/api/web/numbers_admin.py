@@ -7,7 +7,6 @@ This keeps the original admin flow:
 Auth:
 - JWT (Authorization: Bearer <jwt>)
 - Admin token (X-Admin-Token)
-- Google access token for Drive (X-Google-Access-Token)
 """
 
 from __future__ import annotations
@@ -17,6 +16,7 @@ from src.shared.numbers.admin.views import (
     admin_generate_numbers_dataset,
     admin_list_numbers_datasets,
     admin_cleanup_numbers_manifest,
+    admin_mark_guest_preview_numbers_manifest,
 )
 
 
@@ -24,27 +24,33 @@ from src.shared.numbers.admin.views import (
 # @require_admin_token
 def numbers_admin_generate(user_id: str):
     """POST /web/numbers/admin/datasets"""
-    return admin_generate_numbers_dataset()
+    return admin_generate_numbers_dataset(user_id)
 
 
 @require_auth
 # @require_admin_token
 def numbers_admin_list(user_id: str):
     """GET /web/numbers/admin/datasets"""
-    return admin_list_numbers_datasets()
+    return admin_list_numbers_datasets(user_id)
 
 
 @require_auth
 # @require_admin_token
 def numbers_admin_cleanup_manifest(user_id: str):
     """POST /web/numbers/admin/manifests:cleanup"""
-    return admin_cleanup_numbers_manifest()
+    return admin_cleanup_numbers_manifest(user_id)
+
+
+@require_auth
+# @require_admin_token
+def numbers_admin_mark_guest_preview_manifest(user_id: str):
+    """POST /web/numbers/admin/manifests:guest-preview"""
+    return admin_mark_guest_preview_numbers_manifest(user_id)
 
 
 __all__ = [
     "numbers_admin_generate",
     "numbers_admin_list",
     "numbers_admin_cleanup_manifest",
+    "numbers_admin_mark_guest_preview_manifest",
 ]
-
-

@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { ProtectedRoute } from "@/components/auth/protected-route"
 import { useRouter } from "next/navigation"
 import {
   Card,
@@ -33,9 +32,14 @@ import { FeatureGuideModal } from "@/components/learning/layout/feature-guide-mo
 import { useLearningTimeSession } from "@/lib/contexts/learning-time-session-context"
 import { useRecentSessions } from "@/lib/hooks/use-recent-sessions"
 import { cn } from "@/lib/utils"
+import { useAuth } from "@/lib/contexts/auth-context"
+import { useGuest } from "@/lib/contexts/guest-context"
+import { GuestLockedOverlay } from "@/components/auth/guest-locked-overlay"
+import { GuestFeatureShowcase } from "@/components/auth/guest-feature-showcase"
 
 export default function LearningPage() {
   const router = useRouter()
+  const { isAuthenticated } = useAuth()
   const [isStartOpen, setIsStartOpen] = useState(false)
   const [isGuideOpen, setIsGuideOpen] = useState(false)
   const { lang: selectedLanguage } = useLearningLang()
@@ -45,14 +49,21 @@ export default function LearningPage() {
   const { isActive: sessionIsActive } = useLearningTimeSession()
   const { sessions, isLoading: sessionsLoading } = useRecentSessions(selectedLanguage)
 
+  const { isGuest, setShowSyncModal } = useGuest()
+
+  // Dock actions — guest-restricted items open SyncSaveModal
   const dockActions: DockAction[] = [
-    { label: "Révision", hint: "R", icon: BookOpen, onClick: () => router.push("/learning/review-hub") },
+    { label: "Révision", hint: "R", icon: BookOpen, onClick: () => isGuest ? setShowSyncModal(true) : router.push("/learning/review-hub") },
     { label: "Entraînement", hint: "T", icon: Layers, onClick: () => router.push("/learning/workspace") },
-    { label: "Transcrire", hint: "D", icon: Mic, onClick: () => router.push("/learning/transcribe") },
-    { label: "Session", hint: "S", icon: Timer, onClick: () => setIsStartOpen(true) },
+    { label: "Transcrire", hint: "D", icon: Mic, onClick: () => isGuest ? setShowSyncModal(true) : router.push("/learning/transcribe") },
+    { label: "Session", hint: "S", icon: Timer, onClick: () => isGuest ? setShowSyncModal(true) : setIsStartOpen(true) },
   ]
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      setIsLoadingAnalytics(false)
+      return
+    }
     let cancelled = false
     const cached = analyticsCache.get(selectedLanguage)
     if (cached) {
@@ -75,14 +86,13 @@ export default function LearningPage() {
       }
     })()
     return () => { cancelled = true }
-  }, [selectedLanguage])
+  }, [selectedLanguage, isAuthenticated])
 
   const todaysMinutes = analytics?.today_minutes || 0
   const dailyMinutesTarget = 30
   const currentStreak = analytics?.current_streak_days || 0
 
   return (
-    <ProtectedRoute>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 md:py-8 pb-24 md:pb-28">
         {/* Header — compact, non-distracting */}
         <div className="flex items-center justify-between mb-6">
@@ -110,7 +120,7 @@ export default function LearningPage() {
             BENTO GRID
             ═══════════════════════════════════════════════ */}
         <div className="space-y-4">
-          {isLoadingAnalytics ? (
+          {isLoadingAnalytics && isAuthenticated ? (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div className="h-44 lg:col-span-2 animate-pulse rounded-2xl bg-muted/30" />
               <div className="h-44 animate-pulse rounded-2xl bg-muted/30" />
@@ -145,10 +155,12 @@ export default function LearningPage() {
                       <p className="text-sm text-muted-foreground leading-relaxed max-w-md">
                         {sessionIsActive
                           ? "Votre chronomètre tourne. Continuez votre apprentissage !"
-                          : "Lancez le chrono pour enregistrer votre temps d'étude."}
+                          : isAuthenticated
+                            ? "Lancez le chrono pour enregistrer votre temps d'étude."
+                            : "Explorez les exercices en mode invité. Connectez-vous pour suivre votre progression."}
                       </p>
                     </div>
-                    {!sessionIsActive && (
+                    {!sessionIsActive && isAuthenticated && (
                       <Button
                         size="lg"
                         onClick={() => setIsStartOpen(true)}
@@ -161,6 +173,7 @@ export default function LearningPage() {
                 </Card>
 
                 {/* Progress / Stats Card */}
+                {isAuthenticated && (
                 <Card className="border-border/60 bg-card/80 backdrop-blur-sm">
                   <CardContent className="p-6 flex flex-col justify-center h-full gap-5">
                     {/* Streak */}
@@ -193,34 +206,37 @@ export default function LearningPage() {
                     </div>
                   </CardContent>
                 </Card>
+                )}
               </div>
 
               {/* ── Row 2: Shortcut Cards (3 cols) ── */}
               <div className="grid grid-cols-3 gap-4">
                 {[
-                  { label: "Vocabulaire", icon: BookOpen, path: "/learning/vocab", color: "text-emerald-500", borderHover: "hover:border-emerald-500/40" },
-                  { label: "Entraînement", icon: Layers, path: "/learning/workspace", color: "text-purple-500", borderHover: "hover:border-purple-500/40" },
-                  { label: "Transcrire", icon: Mic, path: "/learning/transcribe", color: "text-pink-500", borderHover: "hover:border-pink-500/40" },
+                  { label: "Vocabulaire", icon: BookOpen, path: "/learning/vocab", color: "text-emerald-500", borderHover: "hover:border-emerald-500/40", guestAllowed: false },
+                  { label: "Entraînement", icon: Layers, path: "/learning/workspace", color: "text-purple-500", borderHover: "hover:border-purple-500/40", guestAllowed: true },
+                  { label: "Transcrire", icon: Mic, path: "/learning/transcribe", color: "text-pink-500", borderHover: "hover:border-pink-500/40", guestAllowed: false },
                 ].map((action) => (
-                  <button
-                    key={action.label}
-                    onClick={() => router.push(action.path)}
-                    className={cn(
-                      "group flex items-center gap-3 rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm",
-                      "px-4 py-4 text-left transition-all duration-200",
-                      "hover:bg-card/80 hover:shadow-sm active:scale-[0.98]",
-                      action.borderHover,
-                    )}
-                  >
-                    <div className={cn("p-2 rounded-xl bg-muted/50", action.color, "group-hover:scale-110 transition-transform")}>
-                      <action.icon className="h-5 w-5" />
-                    </div>
-                    <span className="text-sm font-medium">{action.label}</span>
-                  </button>
+                  <GuestLockedOverlay key={action.label} allowed={action.guestAllowed}>
+                    <button
+                      onClick={() => router.push(action.path)}
+                      className={cn(
+                        "group flex items-center gap-3 rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm w-full",
+                        "px-4 py-4 text-left transition-all duration-200",
+                        "hover:bg-card/80 hover:shadow-sm active:scale-[0.98]",
+                        action.borderHover,
+                      )}
+                    >
+                      <div className={cn("p-2 rounded-xl bg-muted/50", action.color, "group-hover:scale-110 transition-transform")}>
+                        <action.icon className="h-5 w-5" />
+                      </div>
+                      <span className="text-sm font-medium">{action.label}</span>
+                    </button>
+                  </GuestLockedOverlay>
                 ))}
               </div>
 
-              {/* ── Row 3: Chart (2/3) + Recent Sessions (1/3) ── */}
+              {/* ── Row 3: Chart + Sessions (auth) OR Feature Showcase (guest) ── */}
+              {isAuthenticated ? (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Activity Chart */}
                 <Card className="lg:col-span-2 border-border/50 bg-card/60 backdrop-blur-sm overflow-hidden">
@@ -305,14 +321,16 @@ export default function LearningPage() {
                   </CardContent>
                 </Card>
               </div>
+              ) : (
+                <GuestFeatureShowcase />
+              )}
             </>
           )}
         </div>
 
         <BottomDock actions={dockActions} />
-        <StartSessionModal open={isStartOpen} onOpenChange={setIsStartOpen} />
+        {isAuthenticated && <StartSessionModal open={isStartOpen} onOpenChange={setIsStartOpen} />}
         <FeatureGuideModal open={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
       </div>
-    </ProtectedRoute>
   )
 }

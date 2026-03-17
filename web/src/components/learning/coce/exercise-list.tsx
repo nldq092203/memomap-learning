@@ -5,6 +5,7 @@ import type { CoCeExercise, CEFRLevel, ExerciseTopic } from "@/lib/types/api/coc
 import { LEVEL_INFO } from "./level-selection"
 import { TopicSelector, TOPICS } from "./topic-selector"
 import { ChevronLeft, Headphones, Play, Volume2, RefreshCw, Video, Sparkles } from "lucide-react"
+import { GuestUpgradeHint } from "@/components/auth/guest-upgrade-hint"
 
 interface ExerciseListProps {
   level: CEFRLevel
@@ -41,6 +42,8 @@ export function ExerciseList({
       </div>
 
       <TopicSelector currentTopic={currentTopic} onSelectTopic={onSelectTopic} />
+
+      <GuestUpgradeHint description="Connectez-vous pour débloquer davantage d&apos;exercices CO/CE, plus de thèmes et une progression sauvegardée." />
 
       {loading ? (
         <Card>
@@ -130,7 +133,7 @@ export function ExerciseList({
                 <CardContent className="pb-4">
                   <Button className="w-full" size="sm" variant={isVideo ? "default" : "secondary"}>
                     <Play className="mr-2 h-3.5 w-3.5" />
-                    Ouvrir l'exercice
+                    Ouvrir l&apos;exercice
                   </Button>
                 </CardContent>
               </Card>

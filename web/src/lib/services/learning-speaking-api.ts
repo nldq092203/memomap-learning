@@ -15,8 +15,10 @@ export const learningSpeakingApi = {
    * List all available speaking practice topics
    * GET /web/speaking-practice/topics
    */
-  async listTopics(): Promise<SpeakingTopic[]> {
-    const response = await apiClient.get<SpeakingTopicsResponse>(`${BASE}/topics`)
+  async listTopics(guestMode = false): Promise<SpeakingTopic[]> {
+    const response = await apiClient.get<SpeakingTopicsResponse>(`${BASE}/topics`, {
+      guest_mode: guestMode,
+    })
     return response.topics
   },
 
@@ -24,16 +26,21 @@ export const learningSpeakingApi = {
    * Get topic manifest with subtopics
    * GET /web/speaking-practice/topics/{topicId}
    */
-  async getTopicManifest(topicId: string): Promise<SpeakingTopicManifest> {
-    return apiClient.get<SpeakingTopicManifestResponse>(`${BASE}/topics/${topicId}`)
+  async getTopicManifest(topicId: string, guestMode = false): Promise<SpeakingTopicManifest> {
+    return apiClient.get<SpeakingTopicManifestResponse>(`${BASE}/topics/${topicId}`, {
+      guest_mode: guestMode,
+    })
   },
 
   /**
    * Get practice content for a subtopic
    * GET /web/speaking-practice/content?path={path}
    */
-  async getContent(path: string): Promise<SpeakingPracticeContent> {
-    return apiClient.get<SpeakingContentResponse>(`${BASE}/content`, { path })
+  async getContent(path: string, guestMode = false): Promise<SpeakingPracticeContent> {
+    return apiClient.get<SpeakingContentResponse>(`${BASE}/content`, {
+      path,
+      guest_mode: guestMode,
+    })
   },
 
   /**

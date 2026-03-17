@@ -1,12 +1,11 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Upload, FileAudio, CheckCircle2, DownloadCloud, HardDriveDownload, X } from "lucide-react"
+import { Upload, FileAudio, CheckCircle2, HardDriveDownload, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { formatFileSize } from "@/lib/utils/audio-processing"
 import { cn } from "@/lib/utils"
-import { GoogleDriveIcon } from "./google-drive-icon"
 
 type UploadSectionProps = {
   selectedFile: File | null
@@ -65,7 +64,7 @@ export function TranscribeUploadSection({
           1. Importez votre audio
         </h2>
         <p className="text-xs text-slate-500">
-          Glissez votre fichier audio ici. Votre audio ne quitte jamais votre navigateur (100% privé).
+          Glissez votre fichier ici ou cliquez pour le choisir.
         </p>
       </div>
 
@@ -171,50 +170,23 @@ export function TranscribeUploadSection({
             className="w-full"
             preload="metadata"
           >
-            Votre navigateur ne prend pas en charge l'audio HTML5.
+            {"Votre navigateur ne prend pas en charge l'audio HTML5."}
           </audio>
         </div>
       )}
 
       <div className="rounded-[20px] border border-sky-200 bg-sky-50/80 px-4 py-3">
-        <div className="space-y-3">
-          <div className="flex items-start gap-3">
-            <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-xl bg-white shadow-sm">
-              <HardDriveDownload className="h-4.5 w-4.5 text-sky-700" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-sky-800">
-                Premier usage : le modèle de transcription est téléchargé dans votre navigateur.
-              </p>
-              <p className="mt-1 text-xs leading-5 text-sky-700/80">
-                La première transcription peut donc être plus lente et utiliser un peu d’espace local sur votre appareil.
-              </p>
-            </div>
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-xl bg-white shadow-sm">
+            <HardDriveDownload className="h-4.5 w-4.5 text-sky-700" />
           </div>
-
-          <div className="flex items-start gap-3">
-            <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-xl bg-white shadow-sm">
-              <GoogleDriveIcon className="h-4.5 w-4.5" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-sky-800">
-                Google Drive n’est utilisé que si vous choisissez d’enregistrer la session.
-              </p>
-              <p className="mt-1 text-xs leading-5 text-sky-700/80">
-                Dans ce cas, MemoMap crée un dossier dédié pour ranger l’audio et la transcription.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2 pt-1">
-            <Badge variant="secondary" className="gap-1.5 rounded-full bg-white text-sky-800 hover:bg-white">
-              <DownloadCloud className="h-3.5 w-3.5" />
-              Modèle local
-            </Badge>
-            <Badge variant="secondary" className="gap-1.5 rounded-full bg-white text-sky-800 hover:bg-white">
-              <GoogleDriveIcon className="h-3.5 w-3.5" />
-              Drive seulement au moment de la sauvegarde
-            </Badge>
+          <div>
+            <p className="text-sm font-medium text-sky-800">
+              {"Premier usage : le modèle IA se télécharge dans votre navigateur."}
+            </p>
+            <p className="mt-1 text-xs leading-5 text-sky-700/80">
+              La première transcription peut être un peu plus lente.
+            </p>
           </div>
         </div>
       </div>

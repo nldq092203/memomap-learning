@@ -13,13 +13,18 @@ import {
   ArrowLeft,
   Mic,
   List,
+  Lock,
 } from "lucide-react"
+import { GuestModeBadge } from "@/components/auth/guest-mode-badge"
+import { useGuest } from "@/lib/contexts/guest-context"
 
 interface NavItem {
   label: string
   href: string
   icon: React.ElementType
   description?: string
+  /** Whether this item is accessible to guests. Defaults to false. */
+  guestAllowed?: boolean
 }
 
 const primaryNavItems: NavItem[] = [
@@ -27,37 +32,40 @@ const primaryNavItems: NavItem[] = [
     label: "Dashboard", 
     href: "/learning", 
     icon: Home,
-    description: "Overview and progress"
+    description: "Overview and progress",
+    guestAllowed: true,
   },
   { 
     label: "Review Hub", 
     href: "/learning/review-hub", 
     icon: Target,
-    description: "Spaced repetition reviews"
+    description: "Spaced repetition reviews",
   },
   { 
     label: "Vocabulary", 
     href: "/learning/vocab", 
     icon: BookOpen,
-    description: "Browse and manage cards"
+    description: "Browse and manage cards",
   },
   { 
     label: "Training", 
     href: "/learning/workspace", 
     icon: Layers,
-    description: "Guided practice activities"
+    description: "Guided practice activities",
+    guestAllowed: true,
   },
   { 
     label: "Numbers", 
     href: "/learning/numbers-dictation", 
     icon: List,
-    description: "Numbers Dictation practice"
+    description: "Numbers Dictation practice",
+    guestAllowed: true,
   },
   { 
     label: "Transcribe", 
     href: "/learning/transcribe", 
     icon: Mic, 
-    description: "Record and transcribe audio"
+    description: "Record and transcribe audio",
   },
 ]
 
@@ -82,6 +90,7 @@ export const LearningNav = ({
 }: LearningNavProps) => {
   const pathname = usePathname()
   const router = useRouter()
+  const { isGuest, setShowSyncModal } = useGuest()
 
   const handleBack = () => {
     if (customBackAction) {
@@ -156,30 +165,40 @@ export const LearningNav = ({
           </div>
         )}
 
-        {/* Primary Navigation - Hidden on session detail pages or when
-            a dedicated top-level nav already provides these links (e.g. Numbers Dictation). */}
+        {/* Primary Navigation */}
         {!hidePrimaryNav && (
           <div className="flex items-center justify-between gap-4">
             <nav className="flex items-center gap-1">
               {primaryNavItems.map((item) => {
                 const Icon = item.icon
                 const isActive = pathname === item.href
+                const isLocked = isGuest && !item.guestAllowed
+
                 return (
                   <button
                     key={item.href}
-                    onClick={() => router.push(item.href)}
+                    onClick={() => {
+                      if (isLocked) {
+                        setShowSyncModal(true)
+                      } else {
+                        router.push(item.href)
+                      }
+                    }}
                     className={cn(
                       "relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
-                      "hover:bg-muted/50",
-                      isActive 
+                      isLocked
+                        ? "opacity-40 cursor-not-allowed hover:opacity-50"
+                        : "hover:bg-muted/50",
+                      isActive && !isLocked
                         ? "text-primary bg-primary/10" 
                         : "text-muted-foreground"
                     )}
-                    title={item.description}
+                    title={isLocked ? "Connectez-vous pour débloquer" : item.description}
                   >
                     <Icon className="h-4 w-4" />
                     <span className="hidden sm:inline">{item.label}</span>
-                    {isActive && (
+                    {isLocked && <Lock className="h-3 w-3 ml-0.5 hidden sm:inline" />}
+                    {isActive && !isLocked && (
                       <div className="absolute inset-x-0 -bottom-3 h-0.5 bg-primary" />
                     )}
                   </button>
@@ -187,30 +206,34 @@ export const LearningNav = ({
               })}
             </nav>
 
-            {/* Right controls: Secondary Navigation */}
+            {/* Right controls: Secondary Navigation + Guest Badge */}
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1">
-                {secondaryNavItems.map((item) => {
-                  const Icon = item.icon
-                  const isActive = pathname === item.href
-                  return (
-                    <button
-                      key={item.href}
-                      onClick={() => router.push(item.href)}
-                      className={cn(
-                        "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all",
-                        "hover:bg-muted/50",
-                        isActive 
-                          ? "text-primary bg-primary/10" 
-                          : "text-muted-foreground"
-                      )}
-                    >
-                      <Icon className="h-4 w-4" />
-                      <span className="hidden md:inline">{item.label}</span>
-                    </button>
-                  )
-                })}
-              </div>
+              <GuestModeBadge />
+              {/* Hide secondary nav (Sync) for guests */}
+              {!isGuest && (
+                <div className="flex items-center gap-1">
+                  {secondaryNavItems.map((item) => {
+                    const Icon = item.icon
+                    const isActive = pathname === item.href
+                    return (
+                      <button
+                        key={item.href}
+                        onClick={() => router.push(item.href)}
+                        className={cn(
+                          "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all",
+                          "hover:bg-muted/50",
+                          isActive 
+                            ? "text-primary bg-primary/10" 
+                            : "text-muted-foreground"
+                        )}
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span className="hidden md:inline">{item.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           </div>
         )}

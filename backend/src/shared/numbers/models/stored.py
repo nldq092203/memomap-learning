@@ -23,6 +23,7 @@ class NumberDictationExercise(BaseModel):
     audio_ref: str  # Drive file ID or storage key
     blueprint_id: str  # Sentence blueprint ID
     version_tag: str  # e.g. "2025-W37"
+    guest_preview: bool = False  # Whether this exercise can be used in guest mode
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     voice: FrenchVoice | str
 

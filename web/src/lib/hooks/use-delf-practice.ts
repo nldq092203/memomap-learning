@@ -36,7 +36,11 @@ export function useDelfPractice() {
 
   // Load test papers list
   const loadTests = useCallback(
-    async (selectedLevel: DelfLevel, selectedSection?: DelfSection | null) => {
+    async (
+      selectedLevel: DelfLevel,
+      selectedSection?: DelfSection | null,
+      guestMode = false,
+    ) => {
       setLoading(true)
       
       const derivedVariant = `tout-public-${selectedLevel.toLowerCase()}`
@@ -45,7 +49,8 @@ export function useDelfPractice() {
         const data = await learningDelfApi.listTests(
           selectedLevel,
           selectedSection || undefined,
-          derivedVariant
+          derivedVariant,
+          guestMode,
         )
         setTests(data)
         setLevel(selectedLevel)
@@ -63,19 +68,33 @@ export function useDelfPractice() {
 
   // Load a specific test paper
   const loadTest = useCallback(
-    async (testId: string, testLevel: DelfLevel, testVariant: string, testSection: string) => {
+    async (
+      testId: string,
+      testLevel: DelfLevel,
+      testVariant: string,
+      testSection: string,
+      guestMode = false,
+    ) => {
       setLoading(true)
       try {
-        const data = await learningDelfApi.getTest(testId, testLevel, testVariant, testSection)
+        const data = await learningDelfApi.getTest(
+          testId,
+          testLevel,
+          testVariant,
+          testSection,
+          guestMode,
+        )
         setCurrentTest(data)
         setMode("intro")
         setUserAnswers([])
         setMatchingAnswers([])
         setSubQuestionAnswers({})
         setShowResults(false)
+        return true
       } catch (error) {
         console.error("Failed to load test paper:", error)
         notificationService.error("Impossible de charger le sujet")
+        return false
       } finally {
         setLoading(false)
       }
@@ -203,7 +222,7 @@ export function useDelfPractice() {
       total,
       percentage: total > 0 ? Math.round((correct / total) * 100) : 0,
     }
-  }, [currentTest, userAnswers, matchingAnswers, showResults])
+  }, [currentTest, userAnswers, matchingAnswers, subQuestionAnswers, showResults])
 
   // Check if a specific MCQ answer is correct
   const isAnswerCorrect = useCallback(

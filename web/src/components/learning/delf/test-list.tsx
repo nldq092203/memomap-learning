@@ -4,6 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import type { DelfLevel, DelfSection, DelfTestPaperResponse } from "@/lib/types/api/delf"
 import { ArrowLeft, BookOpen, Clock3, Headphones, Loader2, PlayCircle } from "lucide-react"
 import { TrainingChoiceCard, TrainingSectionHeader, TrainingSurface } from "@/components/learning/ui"
+import { GuestUpgradeHint } from "@/components/auth/guest-upgrade-hint"
 
 interface TestListProps {
   level: DelfLevel
@@ -58,6 +59,8 @@ export function TestList({
         }
       />
 
+      <GuestUpgradeHint description="Connectez-vous pour accéder à plus de sujets, davantage de niveaux et reprendre vos entrainements DELF à tout moment." />
+
       {loading ? (
         <TrainingSurface className="flex h-[420px] flex-col items-center justify-center space-y-4 text-slate-500">
           <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
@@ -71,7 +74,7 @@ export function TestList({
           <div>
             <h3 className="text-lg font-medium text-slate-950">Aucun sujet disponible</h3>
             <p className="mt-1 max-w-sm text-sm text-slate-500">
-              Aucun sujet d'entrainement n'est visible pour ce niveau et cette section.
+              Aucun sujet d&apos;entrainement n&apos;est visible pour ce niveau et cette section.
             </p>
           </div>
           <Button variant="outline" onClick={onBack} className="mt-4 rounded-full">

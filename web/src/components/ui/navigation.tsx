@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname, useSearchParams } from "next/navigation"
+import { usePathname, useSearchParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import {
   BookOpen,
@@ -15,19 +15,21 @@ import {
   Mic,
   Target,
   X,
+  Lock,
 } from "lucide-react"
 import { UserProfile } from "@/components/auth/user-profile"
 import { LoginButton } from "@/components/auth/login-button"
 import { LogoutButton } from "@/components/auth/logout-button"
 import { useIsAuthenticated, useAuthLoading } from "@/lib/hooks/use-auth"
+import { useGuest } from "@/lib/contexts/guest-context"
 import { cn } from "@/lib/utils"
 
 const primaryNavItems = [
-  { label: "Accueil", href: "/learning", icon: Home },
-  { label: "Révisions", href: "/learning/review-hub", icon: Target },
-  { label: "Vocabulaire", href: "/learning/vocab", icon: BookOpen },
-  { label: "Entraînement", href: "/learning/workspace", icon: Layers },
-  { label: "Transcrire", href: "/learning/transcribe", icon: Mic },
+  { label: "Accueil", href: "/learning", icon: Home, guestAllowed: true },
+  { label: "Révisions", href: "/learning/review-hub", icon: Target, guestAllowed: false },
+  { label: "Vocabulaire", href: "/learning/vocab", icon: BookOpen, guestAllowed: false },
+  { label: "Entraînement", href: "/learning/workspace", icon: Layers, guestAllowed: true },
+  { label: "Transcrire", href: "/learning/transcribe", icon: Mic, guestAllowed: false },
 ] as const
 
 function isNavItemActive(pathname: string, href: string) {
@@ -45,10 +47,13 @@ function isNavItemActive(pathname: string, href: string) {
 }
 
 export function Navigation() {
+  const router = useRouter()
   const isAuthenticated = useIsAuthenticated()
   const isLoading = useAuthLoading()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const { isGuest, setShowSyncModal } = useGuest()
+  
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [isReviewOpen, setIsReviewOpen] = useState(false)
@@ -106,7 +111,7 @@ export function Navigation() {
           </div>
           <div>
             <p className="text-sm font-semibold">MemoMap</p>
-            <p className="text-xs text-muted-foreground">Espace d&apos;apprentissage</p>
+            <p className="text-xs text-muted-foreground">Espace d'apprentissage</p>
           </div>
         </Link>
 
@@ -149,7 +154,7 @@ export function Navigation() {
             <div className={cn("min-w-0", isCollapsed && "lg:hidden")}>
               <p className="font-semibold tracking-tight">MemoMap</p>
               <p className="text-xs text-muted-foreground">
-                Espace d&apos;apprentissage
+                Espace d'apprentissage
               </p>
             </div>
           </Link>
@@ -186,8 +191,47 @@ export function Navigation() {
           </div>
 
           <nav className="space-y-1.5">
-            {primaryNavItems.map(({ label, href, icon: Icon }) => {
+            {primaryNavItems.map(({ label, href, icon: Icon, guestAllowed }) => {
               const isActive = isNavItemActive(pathname, href)
+              const isLocked = isGuest && !guestAllowed
+
+              if (isLocked) {
+                return (
+                  <button
+                    key={href}
+                    onClick={() => setShowSyncModal(true)}
+                    className={cn(
+                      "w-full group flex items-center gap-3 rounded-2xl px-3 py-3 transition-all",
+                      "opacity-40 cursor-not-allowed hover:opacity-50",
+                      isCollapsed && "lg:justify-center lg:px-2",
+                    )}
+                    title="Connectez-vous pour débloquer"
+                  >
+                    <div
+                      className={cn(
+                        "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl",
+                        "bg-muted/80 text-muted-foreground group-hover:text-foreground",
+                      )}
+                    >
+                      <Icon className="h-5 w-5" />
+                    </div>
+
+                    <div className={cn("min-w-0 flex-1 text-left", isCollapsed && "lg:hidden")}>
+                      <p className="font-medium flex items-center gap-2 text-muted-foreground">
+                        {label}
+                        <Lock className="h-3 w-3" />
+                      </p>
+                    </div>
+
+                    <ChevronRight
+                      className={cn(
+                        "h-4 w-4 shrink-0 text-muted-foreground/60",
+                        isCollapsed && "lg:hidden",
+                      )}
+                    />
+                  </button>
+                )
+              }
 
               return (
                 <Link
@@ -213,7 +257,7 @@ export function Navigation() {
                     <Icon className="h-5 w-5" />
                   </div>
 
-                  <div className={cn("min-w-0 flex-1", isCollapsed && "lg:hidden")}>
+                  <div className={cn("min-w-0 flex-1 text-left", isCollapsed && "lg:hidden")}>
                     <p className="font-medium">{label}</p>
                   </div>
 

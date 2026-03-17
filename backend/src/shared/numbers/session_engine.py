@@ -78,6 +78,8 @@ class NumbersSessionGenerator:
         self,
         types: Iterable[NumberType],
         count: int,
+        *,
+        guest_mode: bool = False,
     ) -> list[NumberDictationExercise]:
         if count <= 0:
             raise ValueError("count must be positive")
@@ -87,7 +89,7 @@ class NumbersSessionGenerator:
             raise ValueError("At least one number type is required")
 
         repo = _get_repo()
-        available = repo.list_by_types(type_list)
+        available = repo.list_by_types(type_list, guest_preview_only=guest_mode)
 
         if not available:
             raise ValueError(
@@ -108,8 +110,10 @@ class NumbersSessionGenerator:
         self,
         types: Iterable[NumberType],
         count: int,
+        *,
+        guest_mode: bool = False,
     ) -> NumberDictationSession:
-        exercises = self.generate_exercises(types, count)
+        exercises = self.generate_exercises(types, count, guest_mode=guest_mode)
 
         states = [NumberExerciseState(exercise=exercise) for exercise in exercises]
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useRef, useState } from "react"
-import { ArrowLeft, CheckCircle2, Info, RefreshCw, Settings } from "lucide-react"
+import { ArrowLeft, CheckCircle2, Info, RefreshCw } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 import {
@@ -9,7 +9,6 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useConfirmationDialog } from "@/components/ui/confirmation-dialog"
@@ -24,7 +23,6 @@ import { TranscribeRunSection } from "@/components/learning/transcribe/transcrib
 import { TranscribeTranscriptSection } from "@/components/learning/transcribe/transcribe-transcript-section"
 import { TranscribeManualSection } from "@/components/learning/transcribe/transcribe-manual-section"
 import { DebugLogSection } from "@/components/learning/transcribe/debug-log-section"
-import { StorageInfoPanel } from "@/components/learning/transcribe/storage-info-panel"
 import { useLearningLang } from "@/lib/contexts/learning-lang-context"
 import { useTranscription } from "@/lib/hooks/use-transcription"
 import {
@@ -78,7 +76,6 @@ const LearningTranscribePage = () => {
 
   // UI state
   const [showDebugLog, setShowDebugLog] = useState(false)
-  const [showStoragePanel, setShowStoragePanel] = useState(false)
   const [debugLines, setDebugLines] = useState<string[]>([])
   const [lessonName, setLessonName] = useState("")
   const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">(
@@ -399,7 +396,7 @@ const LearningTranscribePage = () => {
         onClick={() => router.push("/learning/workspace")}
       >
         <ArrowLeft className="mr-1.5 h-4 w-4" />
-        Retour à l'espace d'entrainement
+        {"Retour à l'espace d'entrainement"}
       </Button>
 
       <div className="rounded-[32px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_45%,#eef7f6_100%)] p-8 shadow-sm">
@@ -407,10 +404,7 @@ const LearningTranscribePage = () => {
           <div className="max-w-3xl space-y-4">
             <div className="flex flex-wrap items-center gap-2">
               <Badge className="rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700 hover:bg-teal-50">
-                Learning Studio
-              </Badge>
-              <Badge className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100">
-                100% privé dans le navigateur
+                IA locale et privée
               </Badge>
             </div>
             <div>
@@ -418,30 +412,13 @@ const LearningTranscribePage = () => {
                 Studio de transcription audio
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-                Importez un audio, choisissez votre mode de travail, puis lancez une dictée guidée
-                ou une transcription instantanée sans quitter votre navigateur.
+                {"Importez un audio, laissez l'IA proposer un brouillon ou écrivez-le vous-même, puis réutilisez-le en dictée."}
               </p>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-3">
-              {[
-                { step: "1", title: "Importez", desc: "Ajoutez votre audio" },
-                { step: "2", title: "Choisissez", desc: "Dictée ou IA" },
-                { step: "3", title: "Transcrivez", desc: "Travaillez ou générez" },
-              ].map((item) => (
-                <div key={item.step} className="rounded-[22px] border border-slate-200 bg-white/80 px-4 py-3">
-                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-teal-700">
-                    {item.step}
-                  </div>
-                  <div className="mt-1 text-sm font-semibold text-slate-900">{item.title}</div>
-                  <div className="text-xs text-slate-500">{item.desc}</div>
-                </div>
-              ))}
             </div>
 
             <div className="max-w-sm">
               <label className="block text-xs font-medium text-slate-500">
-                Nom de l'audio
+                {"Nom de l'audio"}
               </label>
               <Input
                 value={lessonName}
@@ -477,17 +454,11 @@ const LearningTranscribePage = () => {
                 "Enregistrer dans Drive"
               )}
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowStoragePanel(!showStoragePanel)}
-              className="h-10 rounded-full border-slate-200 bg-white"
-            >
-              <Settings className="h-4 w-4" />
-            </Button>
           </div>
         </div>
       </div>
+
+      <TranscribeStorageTransparency />
 
       <Card className="rounded-[32px] border border-slate-200 bg-white shadow-sm">
         <CardHeader className="space-y-4 pb-4">
@@ -554,14 +525,6 @@ const LearningTranscribePage = () => {
           )}
         </CardContent>
       </Card>
-
-      <TranscribeStorageTransparency />
-
-      {showStoragePanel && (
-        <div className="animate-in slide-in-from-top-4 duration-300">
-          <StorageInfoPanel />
-        </div>
-      )}
 
       {debugLines.length > 0 && (
         <div className="flex justify-end">

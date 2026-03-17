@@ -132,7 +132,7 @@ export function UsageChallenge({ card, language }: UsageChallengeProps) {
                    <FormattedAiText text={feedback} />
                  ) : (
                    <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground py-4">
-                     <p>I&apos;m ready to review your sentence.</p>
+                     <p>I'm ready to review your sentence.</p>
                      <p className="text-xs opacity-70 mt-1">Focus on natural usage!</p>
                    </div>
                  )}

@@ -30,8 +30,7 @@ from src.shared.numbers.session_engine import (
 from src.utils.response_builder import ResponseBuilder
 
 
-@require_auth
-def numbers_create_session(user_id: str):
+def numbers_create_session():
     """POST /web/numbers/sessions
 
     Preferred body:
@@ -44,11 +43,17 @@ def numbers_create_session(user_id: str):
 
     raw_types = payload.get("types")
     count_raw = payload.get("count", 5)
+    guest_mode = bool(payload.get("guest_mode"))
 
     try:
         count = int(count_raw)
     except Exception:
         raise BadRequestError("count must be an integer")
+
+    if guest_mode:
+        count = min(count, 2)
+        if count <= 0:
+            raise BadRequestError("guest_mode requires count to be at least 1")
 
     if isinstance(raw_types, list) and raw_types:
         try:
@@ -64,7 +69,7 @@ def numbers_create_session(user_id: str):
 
     try:
         generator = get_generator()
-        session = generator.create_session(types, count)
+        session = generator.create_session(types, count, guest_mode=guest_mode)
         save_session(session)
     except Exception as e:
         raise BadRequestError(str(e))
@@ -76,6 +81,7 @@ def numbers_create_session(user_id: str):
                 "session_id": session.id,
                 "types": [t.value for t in types],
                 "count": count,
+                "guest_mode": guest_mode,
             },
             status_code=201,
         )
@@ -83,8 +89,7 @@ def numbers_create_session(user_id: str):
     )
 
 
-@require_auth
-def numbers_get_next_exercise(session_id: str, user_id: str):
+def numbers_get_next_exercise(session_id: str):
     """GET /web/numbers/sessions/{session_id}/next"""
     session = get_session(session_id)
     if not session:
@@ -116,8 +121,7 @@ def numbers_get_next_exercise(session_id: str, user_id: str):
     )
 
 
-@require_auth
-def numbers_submit_answer(session_id: str, user_id: str):
+def numbers_submit_answer(session_id: str):
     """POST /web/numbers/sessions/{session_id}/answer
 
     Body:
@@ -153,8 +157,7 @@ def numbers_submit_answer(session_id: str, user_id: str):
     )
 
 
-@require_auth
-def numbers_get_summary(session_id: str, user_id: str):
+def numbers_get_summary(session_id: str):
     """GET /web/numbers/sessions/{session_id}/summary"""
     session = get_session(session_id)
     if not session:

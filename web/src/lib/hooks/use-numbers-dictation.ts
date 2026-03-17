@@ -83,7 +83,7 @@ export function useNumbersDictation() {
   )
 
   const startSession = useCallback(
-    async (types: NumbersType[], count: number) => {
+    async (types: NumbersType[], count: number, guestMode = false) => {
       if (!types.length) {
         notificationService.error("Select at least one number type")
         return
@@ -92,7 +92,11 @@ export function useNumbersDictation() {
       setSummary(null)
       setHistory([])
       try {
-        const res = await learningNumbersApi.createSession({ types, count })
+        const res = await learningNumbersApi.createSession({
+          types,
+          count,
+          guest_mode: guestMode,
+        })
         const totalExercises = res.total_exercises ?? res.count ?? count
         const state: SessionState = {
           sessionId: res.session_id,
@@ -101,9 +105,11 @@ export function useNumbersDictation() {
         }
         setSession(state)
         await loadNext(res.session_id)
+        return true
       } catch (e) {
         console.error("Failed to start Numbers session", e)
         notificationService.error("Unable to start Numbers Dictation session")
+        return false
       } finally {
         setPending(false)
       }
@@ -156,7 +162,7 @@ export function useNumbersDictation() {
     } finally {
       setPending(false)
     }
-  }, [session, current, loadNext])
+  }, [session, current])
 
   const advanceToNextExercise = useCallback(async () => {
     if (!session) return

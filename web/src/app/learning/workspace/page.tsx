@@ -8,6 +8,8 @@ import { useRecentSessions } from "@/lib/hooks/use-recent-sessions"
 import { StartSessionModal } from "@/components/learning/session/start-session-modal"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { useAuth } from "@/lib/contexts/auth-context"
+import { GuestLockedOverlay } from "@/components/auth/guest-locked-overlay"
 import {
   Clock,
   Layers,
@@ -134,6 +136,7 @@ export default function WorkspacePage() {
       iconBg: "bg-teal-50",
       borderTone: "hover:border-teal-200",
       tags: ["#Écoute", "#Orthographe"],
+      guestAllowed: false,
     },
     {
       id: "numbers",
@@ -145,6 +148,7 @@ export default function WorkspacePage() {
       iconBg: "bg-indigo-50",
       borderTone: "hover:border-indigo-200",
       tags: ["#Listening", "#Speed"],
+      guestAllowed: true,
     },
     {
       id: "coce",
@@ -156,6 +160,7 @@ export default function WorkspacePage() {
       iconBg: "bg-slate-100",
       borderTone: "hover:border-slate-300",
       tags: ["Niveaux A2-B2", "#Compréhension"],
+      guestAllowed: true,
     },
     {
       id: "speaking",
@@ -167,6 +172,7 @@ export default function WorkspacePage() {
       iconBg: "bg-teal-50",
       borderTone: "hover:border-teal-200",
       tags: ["#Oral", "#Guidé"],
+      guestAllowed: true,
     },
     {
       id: "delf",
@@ -178,6 +184,7 @@ export default function WorkspacePage() {
       iconBg: "bg-indigo-50",
       borderTone: "hover:border-indigo-200",
       tags: ["Niveaux A2-B2", "#Examen"],
+      guestAllowed: true,
     },
   ]
 
@@ -220,8 +227,7 @@ export default function WorkspacePage() {
   }
 
   return (
-    <ProtectedRoute>
-      <div className="min-h-[calc(100vh-56px)] bg-gradient-to-b from-background via-background to-muted/20">
+    <div className="min-h-[calc(100vh-56px)] bg-gradient-to-b from-background via-background to-muted/20">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="mb-6 space-y-1.5">
             <p className="text-[10px] uppercase tracking-[0.24em] text-muted-foreground/70">
@@ -256,57 +262,57 @@ export default function WorkspacePage() {
             {workspaceModules.map((module) => {
               const progress = moduleProgress[module.id] || 10
               return (
-                <button
-                  key={module.id}
-                  onClick={() => handleOpenModule(module.id, module.path)}
-                  className={cn(
-                    "group relative overflow-hidden rounded-[26px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] p-5 text-left shadow-sm transition-all duration-200",
-                    "hover:-translate-y-1 hover:shadow-[0_18px_40px_-28px_rgba(15,23,42,0.3)] active:scale-[0.99]",
-                    module.borderTone
-                  )}
-                >
-                  <div className="pointer-events-none absolute right-3 top-3 opacity-[0.08] transition group-hover:opacity-[0.14]">
-                    <module.icon className={cn("h-24 w-24", module.iconTone)} />
-                  </div>
-
-                  <div className="relative flex h-full min-h-[220px] flex-col">
-                    <div className="mb-5 flex items-start justify-between gap-3">
-                      <div className={cn("rounded-[18px] p-3", module.iconBg, module.iconTone)}>
-                        <module.icon className="h-5 w-5" />
-                      </div>
-                      <div className="flex flex-wrap justify-end gap-2">
-                        {module.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-[11px] font-medium text-slate-500"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
+                <GuestLockedOverlay key={module.id} allowed={module.guestAllowed}>
+                  <button
+                    onClick={() => handleOpenModule(module.id, module.path)}
+                    className={cn(
+                      "group relative overflow-hidden rounded-[26px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] p-5 text-left shadow-sm transition-all duration-200 w-full",
+                      "hover:-translate-y-1 hover:shadow-[0_18px_40px_-28px_rgba(15,23,42,0.3)] active:scale-[0.99]",
+                      module.borderTone
+                    )}
+                  >
+                    <div className="pointer-events-none absolute right-3 top-3 opacity-[0.08] transition group-hover:opacity-[0.14]">
+                      <module.icon className={cn("h-24 w-24", module.iconTone)} />
                     </div>
 
-                    <div className="space-y-2">
-                      <h2 className="text-lg font-bold tracking-tight text-slate-900">
-                        {module.title}
-                      </h2>
-                      <p className="max-w-[36ch] text-sm leading-6 text-slate-500">
-                        {module.description}
-                      </p>
-                    </div>
+                    <div className="relative flex h-full min-h-[220px] flex-col">
+                      <div className="mb-5 flex items-start justify-between gap-3">
+                        <div className={cn("rounded-[18px] p-3", module.iconBg, module.iconTone)}>
+                          <module.icon className="h-5 w-5" />
+                        </div>
+                        <div className="flex flex-wrap justify-end gap-2">
+                          {module.tags.map((tag) => (
+                            <span
+                              key={tag}
+                              className="rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-[11px] font-medium text-slate-500"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
 
-                    <div className="mt-auto pt-6" />
-                  </div>
-                </button>
+                      <div className="space-y-2">
+                        <h2 className="text-lg font-bold tracking-tight text-slate-900">
+                          {module.title}
+                        </h2>
+                        <p className="max-w-[36ch] text-sm leading-6 text-slate-500">
+                          {module.description}
+                        </p>
+                      </div>
+
+                      <div className="mt-auto pt-6" />
+                    </div>
+                  </button>
+                </GuestLockedOverlay>
               )
             })}
           </div>
-        </div>
+      </div>
 
         <StartSessionModal open={isStartOpen} onOpenChange={setIsStartOpen} />
         {dialog}
-      </div>
-    </ProtectedRoute>
+    </div>
   )
 }
 

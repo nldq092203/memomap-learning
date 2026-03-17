@@ -14,6 +14,7 @@ export type NumbersType =
 export interface NumbersSessionCreateRequest {
   types: NumbersType[]
   count: number
+  guest_mode?: boolean
   // Optional here; backend provides defaults when omitted
   language?: string
   difficulty?: "easy" | "medium" | "hard"
@@ -22,6 +23,7 @@ export interface NumbersSessionCreateRequest {
 export interface NumbersSessionCreateResponse {
   session_id: string
   types: NumbersType[]
+  guest_mode?: boolean
   // New DB-backed API field
   total_exercises?: number
   // Backwards compat with older shape

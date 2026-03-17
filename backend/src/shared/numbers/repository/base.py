@@ -19,6 +19,8 @@ class NumbersExerciseRepository(ABC):
     def list_by_types(
         self,
         types: Iterable[NumberType],
+        *,
+        guest_preview_only: bool = False,
     ) -> list[NumberDictationExercise]:
         """
         Return all available exercises matching the given number types.

@@ -16,11 +16,13 @@ export const learningDelfApi = {
   async listTests(
     level: DelfLevel,
     section?: string,
-    variant?: string
+    variant?: string,
+    guestMode = false,
   ): Promise<DelfTestListResponse["items"]> {
     const params: Record<string, string> = { level }
     if (section) params.section = section
     if (variant) params.variant = variant
+    if (guestMode) params.guest_mode = "true"
 
     const response = await apiClient.get<DelfTestListResponse>(
       `${BASE}/tests`,
@@ -37,11 +39,12 @@ export const learningDelfApi = {
     testId: string,
     level: DelfLevel,
     variant: string,
-    section: string
+    section: string,
+    guestMode = false,
   ): Promise<DelfTestPaperDetailResponse> {
     return apiClient.get<DelfTestPaperDetailResponse>(
       `${BASE}/tests/${testId}`,
-      { level, variant, section }
+      { level, variant, section, guest_mode: guestMode }
     )
   },
 

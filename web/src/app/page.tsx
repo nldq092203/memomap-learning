@@ -21,7 +21,7 @@ const featureCards = [
     href: "/learning/review-hub",
     icon: Target,
     label: "Révisions",
-    description: "Pratiquez ce que vous avez appris aujourd&apos;hui.",
+    description: "Pratiquez ce que vous avez appris aujourd'hui.",
     accent: "bg-blue-50",
     iconClassName: "bg-blue-100/80 text-blue-600",
   },
@@ -78,14 +78,27 @@ export default function HomePage() {
             {isAuthenticated ? (
               <Button asChild size="lg" className="h-12 rounded-full px-6 text-base">
                 <Link href="/learning">
-                  Continuer l&apos;apprentissage
+                  Continuer l'apprentissage
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
             ) : (
-              <LoginButton size="lg" className="h-12 rounded-full px-6 text-base">
-                Login
-              </LoginButton>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <LoginButton size="lg" className="h-12 rounded-full px-6 text-base">
+                  Login
+                </LoginButton>
+                <Button
+                  asChild
+                  variant="outline"
+                  size="lg"
+                  className="h-12 rounded-full border-teal-200 px-6 text-base text-teal-700 hover:bg-teal-50 hover:border-teal-300"
+                >
+                  <Link href="/learning">
+                    Essayer en mode invité
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
             )}
           </div>
 
@@ -97,7 +110,7 @@ export default function HomePage() {
                     Accueil
                   </p>
                   <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
-                    Espace d&apos;apprentissage
+                    Espace d'apprentissage
                   </h2>
                 </div>
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">

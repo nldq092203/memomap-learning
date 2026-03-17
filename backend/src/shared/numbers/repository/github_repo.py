@@ -96,10 +96,16 @@ class GitHubNumbersExerciseRepository(NumbersExerciseRepository):
     def list_by_types(
         self,
         types: Iterable[NumberType],
+        *,
+        guest_preview_only: bool = False,
     ) -> list[NumberDictationExercise]:
         wanted = set(types)
         all_exercises = self._load_all_exercises()
-        return [ex for ex in all_exercises if ex.number_type in wanted]
+        return [
+            ex
+            for ex in all_exercises
+            if ex.number_type in wanted and (not guest_preview_only or ex.guest_preview)
+        ]
 
 
 __all__ = ["GitHubNumbersExerciseRepository"]

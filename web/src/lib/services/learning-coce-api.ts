@@ -15,10 +15,14 @@ export const learningCoCeApi = {
    * List all exercises for a given level
    * GET /web/coce/exercises?level=B2
    */
-  async listExercises(level: CEFRLevel, topic?: string): Promise<CoCeExercise[]> {
+  async listExercises(
+    level: CEFRLevel,
+    topic?: string,
+    guestMode = false,
+  ): Promise<CoCeExercise[]> {
     const response = await apiClient.get<CoCeExerciseListResponse>(
       `${BASE}/exercises`,
-      { level, topic }
+      { level, topic, guest_mode: guestMode }
     )
     return response.items
   },
@@ -28,9 +32,14 @@ export const learningCoCeApi = {
    * GET /web/coce/exercises/{exerciseId}
    * Note: Level is removed from query params as backend provides full exercise data
    */
-  async getExercise(exerciseId: string): Promise<CoCeExercise> {
+  async getExercise(
+    exerciseId: string,
+    guestMode = false,
+    topic?: string,
+  ): Promise<CoCeExercise> {
     return apiClient.get<CoCeExercise>(
-      `${BASE}/exercises/${exerciseId}`
+      `${BASE}/exercises/${exerciseId}`,
+      { guest_mode: guestMode, topic }
     )
   },
 
@@ -38,9 +47,14 @@ export const learningCoCeApi = {
    * Get transcript for an exercise
    * GET /web/coce/exercises/{exerciseId}/transcript
    */
-  async getTranscript(exerciseId: string): Promise<CoCeTranscript> {
+  async getTranscript(
+    exerciseId: string,
+    guestMode = false,
+    topic?: string,
+  ): Promise<CoCeTranscript> {
     return apiClient.get<CoCeTranscript>(
-      `${BASE}/exercises/${exerciseId}/transcript`
+      `${BASE}/exercises/${exerciseId}/transcript`,
+      { guest_mode: guestMode, topic }
     )
   },
 
@@ -50,11 +64,13 @@ export const learningCoCeApi = {
    */
   async getQuestions(
     exerciseId: string,
-    type: "co" | "ce"
+    type: "co" | "ce",
+    guestMode = false,
+    topic?: string,
   ): Promise<CoCeQuestions> {
     return apiClient.get<CoCeQuestions>(
       `${BASE}/exercises/${exerciseId}/questions`,
-      { type }
+      { type, guest_mode: guestMode, topic }
     )
   },
 }

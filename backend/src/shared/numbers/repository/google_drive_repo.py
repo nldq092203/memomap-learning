@@ -58,9 +58,24 @@ class GoogleDriveNumbersExerciseRepository(NumbersExerciseRepository):
     # Repository API
     # -------------------------------------------------
 
+    def list_versions(self) -> list[str]:
+        root_id = self._get_root_folder_id()
+        versions_result = self.drive.list_items(
+            parent_id=root_id,
+            page_size=100,
+            order_by="name desc",
+        )
+        return [
+            item.get("name")
+            for item in versions_result.get("files", [])
+            if isinstance(item.get("name"), str) and item.get("name")
+        ]
+
     def list_by_types(
         self,
         types: Iterable[NumberType],
+        *,
+        guest_preview_only: bool = False,
     ) -> list[NumberDictationExercise]:
         root_id = self._get_root_folder_id()
 
@@ -79,7 +94,7 @@ class GoogleDriveNumbersExerciseRepository(NumbersExerciseRepository):
             version_exercises = self._load_manifest(version_folder_id)
 
             for ex in version_exercises:
-                if ex.number_type in wanted:
+                if ex.number_type in wanted and (not guest_preview_only or ex.guest_preview):
                     exercises.append(ex)
 
         return exercises

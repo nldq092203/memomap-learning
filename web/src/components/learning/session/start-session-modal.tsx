@@ -71,7 +71,7 @@ export function StartSessionModal({ open, onOpenChange }: { open: boolean; onOpe
           <div className="border-b border-border/60 px-5 py-5 sm:px-6">
             <div className="mb-1 text-xl font-semibold sm:text-2xl">Nouvelle session</div>
             <div className="text-sm text-muted-foreground">
-              Choisissez votre rythme puis lancez votre temps d&apos;apprentissage.
+              Choisissez votre rythme puis lancez votre temps d'apprentissage.
             </div>
           </div>
           <div className="px-5 pb-6 pt-5 sm:px-6">
@@ -94,7 +94,7 @@ export function StartSessionModal({ open, onOpenChange }: { open: boolean; onOpe
                   <div className="mt-5 space-y-2">
                     <div className="text-base font-semibold">Chrono libre</div>
                     <div className="text-sm leading-6 text-muted-foreground">
-                      Démarrez maintenant. Le temps s&apos;enregistre au fil de votre session.
+                      Démarrez maintenant. Le temps s'enregistre au fil de votre session.
                     </div>
                   </div>
                 </div>

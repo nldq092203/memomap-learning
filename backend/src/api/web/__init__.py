@@ -43,6 +43,7 @@ from src.api.web.numbers_admin import (
     numbers_admin_generate,
     numbers_admin_list,
     numbers_admin_cleanup_manifest,
+    numbers_admin_mark_guest_preview_manifest,
 )
 from src.api.web.audio_lessons import (
     audio_lessons_list,
@@ -59,6 +60,7 @@ from src.api.web.speaking_practice import (
     speaking_practice_get_manifest,
     speaking_practice_get_content,
     speaking_practice_stream_audio,
+    speaking_practice_admin_mark_guest_preview,
 )
 from src.api.web.coce_practice import (
     # User endpoints
@@ -73,6 +75,7 @@ from src.api.web.coce_practice import (
     admin_save_qcm,
     admin_save_transcript,
     admin_generate_youtube_transcript,
+    admin_mark_guest_preview as coce_admin_mark_guest_preview,
 )
 from src.api.web.delf_practice import (
     # User endpoints
@@ -86,6 +89,7 @@ from src.api.web.delf_practice import (
     delf_admin_delete_test,
     delf_admin_save_test_content,
     delf_admin_upload_file,
+    delf_admin_mark_guest_preview,
 )
 from src.api.errors import register_error_handlers
 
@@ -237,6 +241,11 @@ web_bp.add_url_rule(
     view_func=numbers_admin_cleanup_manifest,
     methods=["POST"],
 )
+web_bp.add_url_rule(
+    "/numbers/admin/manifests:guest-preview",
+    view_func=numbers_admin_mark_guest_preview_manifest,
+    methods=["POST"],
+)
 
 # ==================== Audio Lessons (Drive-backed) ====================
 web_bp.add_url_rule(
@@ -304,6 +313,11 @@ web_bp.add_url_rule(
     view_func=speaking_practice_stream_audio,
     methods=["GET"],
 )
+web_bp.add_url_rule(
+    "/speaking-practice/admin/topics:guest-preview",
+    view_func=speaking_practice_admin_mark_guest_preview,
+    methods=["POST"],
+)
 
 # ==================== CO/CE Practice (GitHub + DB backed) ====================
 # User endpoints
@@ -359,6 +373,11 @@ web_bp.add_url_rule(
     view_func=admin_generate_youtube_transcript,
     methods=["POST"],
 )
+web_bp.add_url_rule(
+    "/coce/admin/exercises:guest-preview",
+    view_func=coce_admin_mark_guest_preview,
+    methods=["POST"],
+)
 
 __all__ = ["web_bp"]
 
@@ -409,5 +428,10 @@ web_bp.add_url_rule(
 web_bp.add_url_rule(
     "/delf/admin/files",
     view_func=delf_admin_upload_file,
+    methods=["POST"],
+)
+web_bp.add_url_rule(
+    "/delf/admin/tests:guest-preview",
+    view_func=delf_admin_mark_guest_preview,
     methods=["POST"],
 )

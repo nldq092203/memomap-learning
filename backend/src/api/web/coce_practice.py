@@ -15,6 +15,7 @@ Layout (example):
 from __future__ import annotations
 
 import json
+from typing import Any
 
 from flask import request
 
@@ -40,13 +41,45 @@ def _get_level() -> str:
     return level or "B2"
 
 
+def _is_guest_mode() -> bool:
+    raw = (request.args.get("guest_mode") or "").strip().lower()
+    return raw in ("1", "true", "yes")
+
+
+def _is_guest_preview_record(record: Any) -> bool:
+    extra = getattr(record, "extra", None) or {}
+    return bool(extra.get("guest_preview"))
+
+
+def _filter_guest_preview_records(records: list[Any], limit: int = 2) -> list[Any]:
+    flagged = [record for record in records if _is_guest_preview_record(record)]
+    if flagged:
+        return flagged[:limit]
+    return records[:limit]
+
+
+def _get_topic() -> str | None:
+    return request.args.get("topic", "").strip() or None
+
+
+def _is_guest_accessible_exercise(
+    repo: CoCeExerciseRepository,
+    *,
+    exercise: Any,
+    topic: str | None,
+    limit: int = 2,
+) -> bool:
+    exercises = repo.get_by_level(exercise.level, topic=topic)
+    allowed_ids = {candidate.id for candidate in _filter_guest_preview_records(exercises, limit=limit)}
+    return exercise.id in allowed_ids
+
+
 # ============================================================================
 # USER APIs - Exercise Listing & Retrieval
 # ============================================================================
 
 
-@require_auth
-def coce_list_exercises(user_id: str):
+def coce_list_exercises():
     """
     GET /web/coce/exercises?level=B2&topic=health
 
@@ -54,11 +87,14 @@ def coce_list_exercises(user_id: str):
     Optionally filter by topic.
     """
     level = _get_level()
-    topic = request.args.get("topic", "").strip() or None
+    topic = _get_topic()
+    guest_mode = _is_guest_mode()
 
     # Get exercises from DATABASE
     exercise_repo = CoCeExerciseRepository()
     exercises = exercise_repo.get_by_level(level, topic=topic)
+    if guest_mode:
+        exercises = _filter_guest_preview_records(exercises)
 
     github_repo = GitHubCoCePracticeRepository(level=level)
 
@@ -86,8 +122,7 @@ def coce_list_exercises(user_id: str):
     return ResponseBuilder().success(data={"items": items, "level": level}).build()
 
 
-@require_auth
-def coce_get_exercise(user_id: str, exercise_id: str):
+def coce_get_exercise(exercise_id: str):
     """
     GET /web/coce/exercises/<exercise_id>
 
@@ -95,13 +130,18 @@ def coce_get_exercise(user_id: str, exercise_id: str):
     """
     exercise_repo = CoCeExerciseRepository()
     ex = exercise_repo.get_by_id(exercise_id)
+    topic = _get_topic()
 
     if not ex:
         raise NotFoundError("Exercise not found")
+    if _is_guest_mode() and not _is_guest_accessible_exercise(
+        exercise_repo,
+        exercise=ex,
+        topic=topic,
+    ):
+        raise NotFoundError("Exercise not available in guest mode")
 
     github_repo = GitHubCoCePracticeRepository(level=ex.level)
-    base_url = github_repo._root_prefix()
-
     base_url = github_repo._root_prefix()
     
     # Construct computed fields
@@ -135,8 +175,7 @@ def coce_get_exercise(user_id: str, exercise_id: str):
     return ResponseBuilder().success(data=result.model_dump(mode="json")).build()
 
 
-@require_auth
-def coce_get_transcript(user_id: str, exercise_id: str):
+def coce_get_transcript(exercise_id: str):
     """
     GET /web/coce/exercises/<exercise_id>/transcript
 
@@ -144,9 +183,16 @@ def coce_get_transcript(user_id: str, exercise_id: str):
     """
     exercise_repo = CoCeExerciseRepository()
     ex = exercise_repo.get_by_id(exercise_id)
+    topic = _get_topic()
 
     if not ex:
         raise NotFoundError("Exercise not found")
+    if _is_guest_mode() and not _is_guest_accessible_exercise(
+        exercise_repo,
+        exercise=ex,
+        topic=topic,
+    ):
+        raise NotFoundError("Transcript not available in guest mode")
 
     github_repo = GitHubCoCePracticeRepository(level=ex.level)
 
@@ -158,8 +204,7 @@ def coce_get_transcript(user_id: str, exercise_id: str):
     return ResponseBuilder().success(data=transcript.model_dump(mode="json")).build()
 
 
-@require_auth
-def coce_get_questions(user_id: str, exercise_id: str):
+def coce_get_questions(exercise_id: str):
     """
     GET /web/coce/exercises/<exercise_id>/questions?type=co|ce
 
@@ -173,9 +218,16 @@ def coce_get_questions(user_id: str, exercise_id: str):
 
     exercise_repo = CoCeExerciseRepository()
     ex = exercise_repo.get_by_id(exercise_id)
+    topic = _get_topic()
 
     if not ex:
         raise NotFoundError("Exercise not found")
+    if _is_guest_mode() and not _is_guest_accessible_exercise(
+        exercise_repo,
+        exercise=ex,
+        topic=topic,
+    ):
+        raise NotFoundError("Questions not available in guest mode")
 
     github_repo = GitHubCoCePracticeRepository(level=ex.level)
 
@@ -503,6 +555,49 @@ def admin_generate_youtube_transcript(user_id: str):
     )
 
 
+@require_auth  # TODO: Change to @require_admin when ready
+def admin_mark_guest_preview(user_id: str):
+    """
+    POST /web/coce/admin/exercises:guest-preview
+    """
+    body = request.get_json(silent=True) or {}
+    level = str(body.get("level") or "").strip().upper()
+    topic = str(body.get("topic") or "").strip() or None
+    count_raw = body.get("count", 2)
+
+    if not level:
+        raise BadRequestError("level is required")
+
+    try:
+        count = int(count_raw)
+    except (TypeError, ValueError):
+        raise BadRequestError("count must be an integer")
+
+    if count < 0:
+        raise BadRequestError("count must be zero or greater")
+
+    repo = CoCeExerciseRepository()
+    exercises = repo.get_by_level(level, topic=topic)
+    selected_ids = {exercise.id for exercise in exercises[:count]}
+
+    updated_ids: list[str] = []
+    for exercise in exercises:
+        extra = dict(exercise.extra or {})
+        extra["guest_preview"] = exercise.id in selected_ids
+        if repo.update_exercise(exercise.id, extra=extra):
+            updated_ids.append(exercise.id)
+
+    return ResponseBuilder().success(
+        data={
+            "level": level,
+            "topic": topic,
+            "count": count,
+            "selected_ids": list(selected_ids),
+            "updated_ids": updated_ids,
+        }
+    ).build()
+
+
 # Export all endpoints
 __all__ = [
     # User endpoints
@@ -517,4 +612,5 @@ __all__ = [
     "admin_save_qcm",
     "admin_save_transcript",
     "admin_generate_youtube_transcript",
+    "admin_mark_guest_preview",
 ]

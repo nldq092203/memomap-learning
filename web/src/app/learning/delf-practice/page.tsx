@@ -9,9 +9,12 @@ import {
   TestList,
   TestPlayer,
 } from "@/components/learning/delf"
+import { useGuest, GUEST_ALLOWED_LEVEL } from "@/lib/contexts/guest-context"
+import type { DelfLevel, DelfSection } from "@/lib/types/api/delf"
 
 export default function DelfPracticePage() {
   const router = useRouter()
+  const { isGuest, setShowSyncModal } = useGuest()
   const {
     level,
     section,
@@ -33,6 +36,22 @@ export default function DelfPracticePage() {
     resetAll,
   } = useDelfPractice()
 
+  const handleLevelSectionSelect = (lvl: DelfLevel, sec: DelfSection) => {
+    // Guest: only allow A2
+    if (isGuest && lvl !== GUEST_ALLOWED_LEVEL) {
+      setShowSyncModal(true)
+      return
+    }
+    loadTests(lvl, sec, isGuest)
+  }
+
+  const handleTestSelect = (testId: string, testLevel: DelfLevel, variant: string, testSection: string) => {
+    void (async () => {
+      const loaded = await loadTest(testId, testLevel, variant, testSection, isGuest)
+      if (!loaded) return
+    })()
+  }
+
   const shellClassName = currentTest
     ? "min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef8f3_100%)]"
     : "min-h-screen bg-slate-50"
@@ -48,10 +67,10 @@ export default function DelfPracticePage() {
             onClick={() => router.push("/learning/workspace")}
           >
             <ArrowLeft className="mr-1.5 h-4 w-4" />
-            Retour à l'espace d'entrainement
+            Retour à l&apos;espace d&apos;entrainement
           </Button>
 
-          <LevelSectionSelector loading={loading} onSelect={(lvl, sec) => loadTests(lvl, sec)} />
+          <LevelSectionSelector loading={loading} onSelect={handleLevelSectionSelect} />
         </div>
       </div>
     )
@@ -68,7 +87,7 @@ export default function DelfPracticePage() {
             onClick={() => router.push("/learning/workspace")}
           >
             <ArrowLeft className="mr-1.5 h-4 w-4" />
-            Retour à l'espace d'entrainement
+            Retour à l&apos;espace d&apos;entrainement
           </Button>
 
           <TestList
@@ -76,7 +95,7 @@ export default function DelfPracticePage() {
             section={section}
             tests={tests}
             loading={loading}
-            onSelectTest={loadTest}
+            onSelectTest={handleTestSelect}
             onBack={resetAll}
           />
         </div>
@@ -94,7 +113,7 @@ export default function DelfPracticePage() {
           onClick={() => router.push("/learning/workspace")}
         >
           <ArrowLeft className="mr-1.5 h-4 w-4" />
-          Retour à l'espace d'entrainement
+          Retour à l&apos;espace d&apos;entrainement
         </Button>
 
         <TestPlayer

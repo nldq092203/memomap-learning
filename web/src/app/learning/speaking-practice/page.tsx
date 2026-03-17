@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useGuest } from "@/lib/contexts/guest-context"
 import { useSpeakingPractice } from "@/lib/hooks/use-speaking-practice"
 import {
   TopicList,
@@ -13,6 +14,7 @@ import {
 
 export default function SpeakingPracticePage() {
   const router = useRouter()
+  const { isGuest } = useGuest()
   const {
     topics,
     currentTopic,
@@ -31,16 +33,16 @@ export default function SpeakingPracticePage() {
 
   useEffect(() => {
     if (topics.length === 0 && !currentTopic) {
-      void loadTopics()
+      void loadTopics(isGuest)
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [currentTopic, isGuest, loadTopics, topics.length])
 
   const handleTopicSelect = (topicId: string) => {
-    void loadTopicManifest(topicId)
+    void loadTopicManifest(topicId, isGuest)
   }
 
   const handleSubtopicSelect = (contentPath: string) => {
-    void loadContent(contentPath)
+    void loadContent(contentPath, isGuest)
   }
 
   const shellClassName = currentContent
@@ -57,7 +59,7 @@ export default function SpeakingPracticePage() {
           onClick={() => router.push("/learning/workspace")}
         >
           <ArrowLeft className="mr-1.5 h-4 w-4" />
-          Retour à l'espace d'entrainement
+          Retour à l&apos;espace d&apos;entrainement
         </Button>
 
         {!currentTopic && !currentContent && (

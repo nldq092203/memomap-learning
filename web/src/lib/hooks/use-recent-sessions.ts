@@ -194,9 +194,17 @@ export const useRecentSessions = (filterLanguage?: LearningLanguage): UseRecentS
     await loadBackendSessions(true, false)
   }, [loadBackendSessions])
 
-  // Initial load
+  // Initial load — skip if user is a guest (no auth token)
   useEffect(() => {
     let cancelled = false
+
+    // Guard: don't fetch sessions if no auth token (guest mode)
+    const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('auth_token')
+    if (!hasToken) {
+      setIsLoading(false)
+      return
+    }
+
     const initializeSessions = async () => {
       setIsLoading(true)
       await loadBackendSessions(false, false)

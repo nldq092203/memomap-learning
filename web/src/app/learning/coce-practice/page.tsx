@@ -14,6 +14,7 @@ import { MediaPlayer } from "@/components/learning/coce/media-player"
 import { TranscriptView } from "@/components/learning/coce/transcript-view"
 import { PracticeTypeSelector } from "@/components/learning/coce/practice-type-selector"
 import { QuestionsView } from "@/components/learning/coce/questions-view"
+import { useGuest, GUEST_ALLOWED_LEVEL } from "@/lib/contexts/guest-context"
 
 function matchesQuestionMode(
   questionType: string | undefined,
@@ -29,6 +30,7 @@ function matchesQuestionMode(
 
 export default function CoCePracticePage() {
   const router = useRouter()
+  const { isGuest, setShowSyncModal } = useGuest()
   const {
     level,
     topic,
@@ -58,21 +60,29 @@ export default function CoCePracticePage() {
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0)
 
   const handleLevelSelect = (selectedLevel: CEFRLevel) => {
+    // Guest: only allow A2
+    if (isGuest && selectedLevel !== GUEST_ALLOWED_LEVEL) {
+      setShowSyncModal(true)
+      return
+    }
     setHasChosenLevel(true)
-    void loadExercises(selectedLevel)
+    void loadExercises(selectedLevel, undefined, isGuest)
   }
 
   const handleExerciseSelect = (exerciseId: string) => {
-    void loadExercise(exerciseId)
-    setShowTranscript(false)
-    setActiveQuestionType(null)
-    setActiveQuestionIndex(0)
-    setIsMediaPaneCollapsed(false)
+    void (async () => {
+      const loaded = await loadExercise(exerciseId, isGuest, topic)
+      if (!loaded) return
+      setShowTranscript(false)
+      setActiveQuestionType(null)
+      setActiveQuestionIndex(0)
+      setIsMediaPaneCollapsed(false)
+    })()
   }
 
   const handleTranscriptToggle = () => {
     if (!transcript && !loading) {
-      void loadTranscript()
+      void loadTranscript(isGuest)
     }
     setShowTranscript((current) => !current)
   }
@@ -82,7 +92,7 @@ export default function CoCePracticePage() {
     setActiveQuestionIndex(0)
 
     if (!questions || !matchesQuestionMode(questions.meta.type, type)) {
-      void loadQuestions(type)
+      void loadQuestions(type, isGuest)
     }
   }
 
@@ -149,7 +159,7 @@ export default function CoCePracticePage() {
               onClick={() => router.push("/learning/workspace")}
             >
               <ArrowLeft className="mr-1.5 h-4 w-4" />
-              Retour à l'espace d'entrainement
+              Retour à l&apos;espace d&apos;entrainement
             </Button>
 
             <div className="mx-auto max-w-3xl rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-sm">
@@ -160,7 +170,7 @@ export default function CoCePracticePage() {
                 Aucun exercice disponible
               </h1>
               <p className="mt-3 text-sm text-slate-500">
-                Aucun contenu n'est actuellement visible pour ce niveau.
+                Aucun contenu n&apos;est actuellement visible pour ce niveau.
               </p>
               <div className="mt-6">
                 <Button
@@ -191,7 +201,7 @@ export default function CoCePracticePage() {
             onClick={() => router.push("/learning/workspace")}
           >
             <ArrowLeft className="mr-1.5 h-4 w-4" />
-            Retour à l'espace d'entrainement
+            Retour à l&apos;espace d&apos;entrainement
           </Button>
           <LevelSelection onSelectLevel={handleLevelSelect} />
         </div>
@@ -210,7 +220,7 @@ export default function CoCePracticePage() {
             onClick={() => router.push("/learning/workspace")}
           >
             <ArrowLeft className="mr-1.5 h-4 w-4" />
-            Retour à l'espace d'entrainement
+            Retour à l&apos;espace d&apos;entrainement
           </Button>
           <ExerciseList
             level={level}
@@ -222,7 +232,7 @@ export default function CoCePracticePage() {
               backToLevelSelection()
             }}
             currentTopic={topic}
-            onSelectTopic={(selectedTopic) => void loadExercises(level, selectedTopic)}
+            onSelectTopic={(selectedTopic) => void loadExercises(level, selectedTopic, isGuest)}
           />
         </div>
       </div>
@@ -243,7 +253,7 @@ export default function CoCePracticePage() {
           onClick={() => router.push("/learning/workspace")}
         >
           <ArrowLeft className="mr-1.5 h-4 w-4" />
-          Retour à l'espace d'entrainement
+          Retour à l&apos;espace d&apos;entrainement
         </Button>
 
         <div className="mb-6 rounded-[30px] border border-slate-200 bg-white/90 px-5 py-5 shadow-sm backdrop-blur">
@@ -262,7 +272,7 @@ export default function CoCePracticePage() {
               </h1>
               <p className="text-sm text-slate-500">
                 {Math.floor(currentExercise.duration_seconds / 60)}:
-                {String(currentExercise.duration_seconds % 60).padStart(2, "0")} d'écoute
+                {String(currentExercise.duration_seconds % 60).padStart(2, "0")} d&apos;ecoute
               </p>
             </div>
 
@@ -414,7 +424,7 @@ export default function CoCePracticePage() {
                         disabled={!questions || questionCount === 0 || answeredCount !== questionCount}
                         className="rounded-full bg-teal-500 px-5 text-white hover:bg-teal-500/90 disabled:bg-slate-200 disabled:text-slate-400"
                       >
-                        Valider l'exercice
+                        Valider l&apos;exercice
                       </Button>
                     )}
                   </div>
@@ -450,7 +460,7 @@ export default function CoCePracticePage() {
             {currentExercise.media_type === "audio" && currentExercise.audio_url ? (
               <div className="p-3">
                 <audio controls src={currentExercise.audio_url} preload="metadata" className="w-full">
-                  Votre navigateur ne prend pas en charge l'audio HTML5.
+                  Votre navigateur ne prend pas en charge l&apos;audio HTML5.
                 </audio>
               </div>
             ) : currentExercise.video_url ? (

@@ -143,7 +143,7 @@ export function DeepBreakdownResult({
             onClick={() => onGenerateExamples(data.word)}
           >
             <Sparkles className="mr-1 h-3 w-3" />
-            Plus d&apos;exemples
+            Plus d'exemples
           </Button>
         )}
         {onCreateMnemonic && (
