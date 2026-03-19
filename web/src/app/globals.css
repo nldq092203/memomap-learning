@@ -7,9 +7,9 @@
 /* ---------- THEME VARIABLES ---------- */
 /* Soft Jade Theme - Light Mode */
 :root {
-  --app-surface-hex: #fffbf1;
-  --app-surface-rgb: 255 251 241;
-  --app-surface-hsl: 43 100% 97%;
+  --app-surface-hex: #ffffff;
+  --app-surface-rgb: 255 255 255;
+  --app-surface-hsl: 0 0% 100%;
 
   --background: var(--app-surface-hsl);
   --foreground: 215 25% 27%;
