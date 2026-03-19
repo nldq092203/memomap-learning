@@ -42,7 +42,7 @@ export const learningNumbersApi = {
   },
 
   getAudioUrl(audioRef: string): string {
-    return `${apiClient.getBaseUrl()}${BASE}/audio/${audioRef}`
+    return `${apiClient.getBaseUrl()}/${BASE}/audio/${audioRef}`
   },
 }
 

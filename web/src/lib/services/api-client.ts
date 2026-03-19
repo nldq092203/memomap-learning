@@ -17,6 +17,31 @@ class ApiClient {
   // Track failures per method:endpoint (no params to aggregate variants)
   private circuitState = new Map<string, { failures: number; openUntil?: number; lastNotifiedAt?: number }>();
 
+  private resolveBaseUrl(overrideBaseUrl?: string): string {
+    const configuredBaseUrl = (overrideBaseUrl || process.env.NEXT_PUBLIC_API_URL || "").trim()
+
+    if (!configuredBaseUrl) {
+      return "/api"
+    }
+
+    if (typeof window !== "undefined") {
+      try {
+        const currentUrl = new URL(window.location.origin)
+        const configuredUrl = new URL(configuredBaseUrl, window.location.origin)
+
+        const isCurrentVercel = currentUrl.hostname.endsWith(".vercel.app")
+        const isConfiguredVercel = configuredUrl.hostname.endsWith(".vercel.app")
+
+        // Prevent production builds from calling a stale preview deployment URL.
+        if (isCurrentVercel && isConfiguredVercel && currentUrl.hostname !== configuredUrl.hostname) {
+          return `${currentUrl.origin}/api`
+        }
+      } catch {}
+    }
+
+    return configuredBaseUrl.replace(/\/+$/, "")
+  }
+
   /**
    * Create a unique key for request deduplication
    */
@@ -25,7 +50,14 @@ class ApiClient {
       return true;
     }
 
-    return !endpoint.startsWith('/auth/token');
+    const publicPrefixes = [
+      "/auth/token",
+      "auth/token",
+      "/web/numbers",
+      "web/numbers",
+    ]
+
+    return !publicPrefixes.some((prefix) => endpoint.startsWith(prefix));
   }
 
   private createRequestKey(method: string, endpoint: string, params?: Record<string, unknown>): string {
@@ -38,7 +70,7 @@ class ApiClient {
   }
 
   constructor(options?: { baseURL?: string; timeout?: number; headers?: Record<string, string> }) {
-    this.baseUrl = options?.baseURL || process.env.NEXT_PUBLIC_API_URL || '';
+    this.baseUrl = this.resolveBaseUrl(options?.baseURL);
     
     this.client = axios.create({
       baseURL: this.baseUrl,
