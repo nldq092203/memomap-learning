@@ -12,6 +12,7 @@ import {
   Layers,
   LineChart,
   Menu,
+  MessageSquare,
   Mic,
   Target,
   X,
@@ -31,6 +32,7 @@ const primaryNavItems = [
   { label: "Vocabulaire", href: "/learning/vocab", icon: BookOpen, guestAllowed: false },
   { label: "Entraînement", href: "/learning/workspace", icon: Layers, guestAllowed: true },
   { label: "Transcrire", href: "/learning/transcribe", icon: Mic, guestAllowed: false },
+  { label: "Communauté", href: "/learning/community", icon: MessageSquare, guestAllowed: false },
 ] as const
 
 function isNavItemActive(pathname: string, href: string) {

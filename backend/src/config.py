@@ -96,6 +96,9 @@ class LearningConfig:
     NUMBERS_DATA_LANG = os.getenv("NUMBERS_DATA_LANG", "fr")
     NUMBERS_DATA_VERSION = os.getenv("NUMBERS_DATA_VERSION", "2025-W50")
 
+    # MongoDB Configuration (Community Feedback)
+    MONGO_URI = os.getenv("MONGO_URI")
+
     # PostgreSQL Configuration
     POSTGRES_DSN = os.getenv("POSTGRES_DSN", None)
 

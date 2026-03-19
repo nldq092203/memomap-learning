@@ -191,7 +191,7 @@ export function Flashcard({
     <>
     <div className="relative flex-1 flex items-center justify-center min-h-0 w-full p-2 md:p-4">
       <Card
-        className={`w-full ${maxWidthClass} h-[520px] max-h-full cursor-pointer border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.98))]
+        className={`w-full ${maxWidthClass} h-[520px] max-h-full cursor-pointer border border-white/60 bg-surface-gradient-strong
           shadow-[0_20px_60px_-32px_rgba(15,23,42,0.28)] transition-all duration-300 hover:shadow-[0_24px_70px_-36px_rgba(15,23,42,0.32)]
           relative overflow-hidden rounded-[28px] backdrop-blur
         `}

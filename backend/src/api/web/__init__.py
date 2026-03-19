@@ -91,6 +91,7 @@ from src.api.web.delf_practice import (
     delf_admin_upload_file,
     delf_admin_mark_guest_preview,
 )
+from src.api.web.community import community_list_create, community_detail
 from src.api.errors import register_error_handlers
 
 
@@ -434,4 +435,16 @@ web_bp.add_url_rule(
     "/delf/admin/tests:guest-preview",
     view_func=delf_admin_mark_guest_preview,
     methods=["POST"],
+)
+
+# ==================== Community Feedback (MongoDB) ====================
+web_bp.add_url_rule(
+    "/community",
+    view_func=community_list_create,
+    methods=["GET", "POST"],
+)
+web_bp.add_url_rule(
+    "/community/<feedback_id>",
+    view_func=community_detail,
+    methods=["PUT", "DELETE"],
 )

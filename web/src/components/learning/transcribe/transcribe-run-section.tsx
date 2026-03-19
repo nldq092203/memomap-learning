@@ -34,7 +34,7 @@ export function TranscribeRunSection({
 
   return (
     <section className="space-y-4">
-      <div className="flex flex-col gap-4 rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-5">
+      <div className="flex flex-col gap-4 rounded-[28px] border border-slate-200 bg-surface-gradient-transcribe-panel p-5">
         <div className="flex flex-col gap-1">
           <h2 className="text-sm font-semibold tracking-wide text-slate-700">
             3. Lancez la transcription

@@ -18,7 +18,7 @@ export function TranscribeStorageTransparency() {
     A[Upload audio] --> B{Choisir}
     B --> C[IA transcrit]
     B --> D[Vous ecrivez]
-    C --> E[Enregistrer dans Drive]
+    C --> E[Enregistrer dans votre Drive]
     D --> E
     E --> F[MemoMap / AudioLessons / lesson_id]
     F --> G[Ouvrir en dictee]
@@ -59,7 +59,7 @@ export function TranscribeStorageTransparency() {
           {
             icon: FolderOpen,
             title: "3. Enregistrez",
-            description: "MemoMap range l'audio et le texte dans Drive.",
+            description: "MemoMap range l'audio et le texte dans votre Drive.",
             tone: "bg-amber-50 text-amber-700",
           },
           {
@@ -87,7 +87,7 @@ export function TranscribeStorageTransparency() {
       </div>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
-        <div className="rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-4">
+        <div className="rounded-[24px] border border-slate-200 bg-surface-gradient-transcribe-panel p-4">
           <div className="mb-3 flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-teal-600" />
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
@@ -108,7 +108,7 @@ export function TranscribeStorageTransparency() {
             <div className="mb-3 flex items-center gap-2">
               <GoogleDriveIcon className="h-4 w-4" />
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Structure créée dans Drive
+                Structure créée dans votre Drive
               </p>
             </div>
 
@@ -151,7 +151,7 @@ export function TranscribeStorageTransparency() {
             </div>
           </div>
 
-          <div className="rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,#ecfdf5_0%,#ffffff_100%)] p-4">
+          <div className="rounded-[24px] border border-slate-200 bg-surface-gradient-transcribe-accent p-4">
             <div className="flex items-start gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
                 <Headphones className="h-4.5 w-4.5" />

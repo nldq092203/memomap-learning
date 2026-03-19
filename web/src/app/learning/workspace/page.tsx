@@ -266,7 +266,7 @@ export default function WorkspacePage() {
                   <button
                     onClick={() => handleOpenModule(module.id, module.path)}
                     className={cn(
-                      "group relative overflow-hidden rounded-[26px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] p-5 text-left shadow-sm transition-all duration-200 w-full",
+                      "group relative overflow-hidden rounded-[26px] border border-slate-200/80 bg-surface-gradient-soft p-5 text-left shadow-sm transition-all duration-200 w-full",
                       "hover:-translate-y-1 hover:shadow-[0_18px_40px_-28px_rgba(15,23,42,0.3)] active:scale-[0.99]",
                       module.borderTone
                     )}

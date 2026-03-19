@@ -559,7 +559,7 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
       onPointerDown={handleActivate}
       className={`pointer-events-auto ${className ?? ""}`}
     >
-      <Card className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(248,250,252,0.92))] text-sm shadow-[0_18px_48px_-24px_rgba(15,23,42,0.45)] backdrop-blur-2xl backdrop-saturate-150 animate-in fade-in zoom-in-95 duration-200 md:rounded-[28px] md:text-base">
+      <Card className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/60 bg-surface-gradient-float text-sm shadow-[0_18px_48px_-24px_rgba(15,23,42,0.45)] backdrop-blur-2xl backdrop-saturate-150 animate-in fade-in zoom-in-95 duration-200 md:rounded-[28px] md:text-base">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top,rgba(52,211,153,0.12),transparent_70%)]" />
         <CardHeader
           className={`relative flex cursor-grab select-none items-center justify-between gap-2 border-b border-white/50 bg-white/45 px-3 py-2 ${

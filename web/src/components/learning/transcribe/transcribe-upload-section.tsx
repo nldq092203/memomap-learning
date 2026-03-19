@@ -82,7 +82,7 @@ export function TranscribeUploadSection({
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           isDragging
             ? "scale-[1.01] border-teal-400 bg-teal-50"
-            : "border-slate-200 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_35%,#eef7f6_100%)] hover:border-teal-300"
+            : "border-slate-200 bg-surface-gradient-transcribe-upload hover:border-teal-300"
         )}
       >
         <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#99f6e4_0%,#d1fae5_50%,#5eead4_100%)] opacity-90" />

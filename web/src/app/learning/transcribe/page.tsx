@@ -399,7 +399,7 @@ const LearningTranscribePage = () => {
         {"Retour à l'espace d'entrainement"}
       </Button>
 
-      <div className="rounded-[32px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_45%,#eef7f6_100%)] p-8 shadow-sm">
+      <div className="rounded-[32px] border border-slate-200 bg-surface-gradient-transcribe-hero p-8 shadow-sm">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-3xl space-y-4">
             <div className="flex flex-wrap items-center gap-2">

@@ -235,7 +235,7 @@ export function VocabCardModal({
       >
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_260px]">
           <div className="space-y-5">
-            <div className="rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.96))] p-6 shadow-sm">
+            <div className="rounded-[28px] border border-slate-200 bg-surface-gradient-card p-6 shadow-sm">
               <div className="mb-5 space-y-2">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
                   Carte rapide

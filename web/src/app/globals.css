@@ -7,13 +7,17 @@
 /* ---------- THEME VARIABLES ---------- */
 /* Soft Jade Theme - Light Mode */
 :root {
-  --background: 0 0% 100%;
+  --app-surface-hex: #fffbf1;
+  --app-surface-rgb: 255 251 241;
+  --app-surface-hsl: 43 100% 97%;
+
+  --background: var(--app-surface-hsl);
   --foreground: 215 25% 27%;
 
-  --card: 210 40% 95%;
+  --card: var(--app-surface-hsl);
   --card-foreground: 215 25% 27%;
 
-  --popover: 0 0% 100%;
+  --popover: var(--app-surface-hsl);
   --popover-foreground: 215 25% 27%;
 
   --primary: 156 56% 60%;           /* softer jade green */
@@ -104,5 +108,156 @@
 
   small {
     @apply text-xs;
+  }
+}
+
+@layer utilities {
+  .bg-white {
+    background-color: rgb(var(--app-surface-rgb)) !important;
+  }
+
+  .bg-white\/95 {
+    background-color: rgb(var(--app-surface-rgb) / 0.95) !important;
+  }
+
+  .bg-white\/90 {
+    background-color: rgb(var(--app-surface-rgb) / 0.9) !important;
+  }
+
+  .bg-white\/85 {
+    background-color: rgb(var(--app-surface-rgb) / 0.85) !important;
+  }
+
+  .bg-white\/80 {
+    background-color: rgb(var(--app-surface-rgb) / 0.8) !important;
+  }
+
+  .bg-white\/75 {
+    background-color: rgb(var(--app-surface-rgb) / 0.75) !important;
+  }
+
+  .bg-white\/70 {
+    background-color: rgb(var(--app-surface-rgb) / 0.7) !important;
+  }
+
+  .bg-white\/65 {
+    background-color: rgb(var(--app-surface-rgb) / 0.65) !important;
+  }
+
+  .bg-white\/55 {
+    background-color: rgb(var(--app-surface-rgb) / 0.55) !important;
+  }
+
+  .bg-white\/45 {
+    background-color: rgb(var(--app-surface-rgb) / 0.45) !important;
+  }
+
+  .bg-white\/20 {
+    background-color: rgb(var(--app-surface-rgb) / 0.2) !important;
+  }
+
+  .bg-white\/10 {
+    background-color: rgb(var(--app-surface-rgb) / 0.1) !important;
+  }
+
+  .hover\:bg-white:hover {
+    background-color: rgb(var(--app-surface-rgb)) !important;
+  }
+
+  .hover\:bg-white\/90:hover {
+    background-color: rgb(var(--app-surface-rgb) / 0.9) !important;
+  }
+
+  .hover\:bg-white\/60:hover {
+    background-color: rgb(var(--app-surface-rgb) / 0.6) !important;
+  }
+
+  .hover\:bg-white\/50:hover {
+    background-color: rgb(var(--app-surface-rgb) / 0.5) !important;
+  }
+
+  .focus\:bg-white:focus {
+    background-color: rgb(var(--app-surface-rgb)) !important;
+  }
+
+  .from-white {
+    --tw-gradient-from: rgb(var(--app-surface-rgb)) var(--tw-gradient-from-position);
+    --tw-gradient-to: rgb(var(--app-surface-rgb) / 0) var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+  }
+
+  .via-white {
+    --tw-gradient-to: rgb(var(--app-surface-rgb) / 0) var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-from), rgb(var(--app-surface-rgb)) var(--tw-gradient-via-position), var(--tw-gradient-to);
+  }
+
+  .to-white {
+    --tw-gradient-to: rgb(var(--app-surface-rgb)) var(--tw-gradient-to-position);
+  }
+
+  .bg-surface-gradient-soft {
+    background-image: linear-gradient(
+      180deg,
+      rgb(var(--app-surface-rgb) / 0.96),
+      rgb(248 250 252 / 0.92)
+    );
+  }
+
+  .bg-surface-gradient-strong {
+    background-image: linear-gradient(
+      180deg,
+      rgb(var(--app-surface-rgb) / 0.98),
+      rgb(248 250 252 / 0.98)
+    );
+  }
+
+  .bg-surface-gradient-card {
+    background-image: linear-gradient(
+      180deg,
+      rgb(var(--app-surface-rgb) / 0.98),
+      rgb(248 250 252 / 0.96)
+    );
+  }
+
+  .bg-surface-gradient-float {
+    background-image: linear-gradient(
+      180deg,
+      rgb(var(--app-surface-rgb) / 0.94),
+      rgb(248 250 252 / 0.92)
+    );
+  }
+
+  .bg-surface-gradient-transcribe-hero {
+    background-image: linear-gradient(
+      180deg,
+      rgb(var(--app-surface-rgb)) 0%,
+      #f8fafc 45%,
+      #eef7f6 100%
+    );
+  }
+
+  .bg-surface-gradient-transcribe-upload {
+    background-image: linear-gradient(
+      135deg,
+      rgb(var(--app-surface-rgb)) 0%,
+      #f8fafc 35%,
+      #eef7f6 100%
+    );
+  }
+
+  .bg-surface-gradient-transcribe-panel {
+    background-image: linear-gradient(
+      180deg,
+      rgb(var(--app-surface-rgb)) 0%,
+      #f8fafc 100%
+    );
+  }
+
+  .bg-surface-gradient-transcribe-accent {
+    background-image: linear-gradient(
+      135deg,
+      #ecfdf5 0%,
+      rgb(var(--app-surface-rgb)) 100%
+    );
   }
 }
