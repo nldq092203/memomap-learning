@@ -24,21 +24,6 @@ class ApiClient {
       return "/api"
     }
 
-    if (typeof window !== "undefined") {
-      try {
-        const currentUrl = new URL(window.location.origin)
-        const configuredUrl = new URL(configuredBaseUrl, window.location.origin)
-
-        const isCurrentVercel = currentUrl.hostname.endsWith(".vercel.app")
-        const isConfiguredVercel = configuredUrl.hostname.endsWith(".vercel.app")
-
-        // Prevent production builds from calling a stale preview deployment URL.
-        if (isCurrentVercel && isConfiguredVercel && currentUrl.hostname !== configuredUrl.hostname) {
-          return `${currentUrl.origin}/api`
-        }
-      } catch {}
-    }
-
     return configuredBaseUrl.replace(/\/+$/, "")
   }
 
