@@ -1,9 +1,10 @@
 """SQLAlchemy ORM models for Learning application."""
 
-import sqlalchemy as sa
-import sqlalchemy.orm as so
 from datetime import datetime
 from uuid import uuid4
+
+import sqlalchemy as sa
+import sqlalchemy.orm as so
 
 
 class Base(so.DeclarativeBase):
