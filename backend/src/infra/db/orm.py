@@ -94,7 +94,9 @@ class LearningSessionORM(Base):
 
     __table_args__ = (
         sa.Index("ix_learning_sessions_user_lang", "user_id", "language"),
-        sa.CheckConstraint("duration_seconds >= 0", name="ck_session_duration_positive"),
+        sa.CheckConstraint(
+            "duration_seconds >= 0", name="ck_session_duration_positive"
+        ),
     )
 
     def __repr__(self) -> str:
@@ -117,7 +119,9 @@ class LearningTranscriptORM(Base):
         sa.String, nullable=True
     )  # Google Drive folder ID (not a DB FK)
     transcript: so.Mapped[str | None] = so.mapped_column(sa.Text, nullable=True)
-    notes: so.Mapped[list[str]] = so.mapped_column(sa.JSON, default=list, nullable=False)
+    notes: so.Mapped[list[str]] = so.mapped_column(
+        sa.JSON, default=list, nullable=False
+    )
     tags: so.Mapped[list[str]] = so.mapped_column(sa.JSON, default=list, nullable=False)
 
     # Relationship
@@ -143,9 +147,13 @@ class LearningAudioLessonORM(Base):
     )
     language: so.Mapped[str | None] = so.mapped_column(sa.String(16), nullable=True)
     name: so.Mapped[str] = so.mapped_column(sa.String(200), nullable=False)
-    duration_seconds: so.Mapped[float | None] = so.mapped_column(sa.Float, nullable=True)
+    duration_seconds: so.Mapped[float | None] = so.mapped_column(
+        sa.Float, nullable=True
+    )
     transcript: so.Mapped[str] = so.mapped_column(sa.Text, nullable=False)
-    segments: so.Mapped[list[dict]] = so.mapped_column(sa.JSON, default=list, nullable=False)
+    segments: so.Mapped[list[dict]] = so.mapped_column(
+        sa.JSON, default=list, nullable=False
+    )
     audio_filename: so.Mapped[str] = so.mapped_column(sa.String, nullable=False)
     audio_mime_type: so.Mapped[str] = so.mapped_column(sa.String(120), nullable=False)
 
@@ -154,7 +162,10 @@ class LearningAudioLessonORM(Base):
 
     __table_args__ = (
         sa.Index("ix_learning_audio_lessons_user_lang", "user_id", "language"),
-        sa.CheckConstraint("duration_seconds IS NULL OR duration_seconds >= 0", name="ck_audio_duration_positive"),
+        sa.CheckConstraint(
+            "duration_seconds IS NULL OR duration_seconds >= 0",
+            name="ck_audio_duration_positive",
+        ),
     )
 
     def __repr__(self) -> str:
@@ -174,12 +185,14 @@ class VocabularyCardORM(Base):
     language: so.Mapped[str] = so.mapped_column(sa.String(16), nullable=False)
     word: so.Mapped[str] = so.mapped_column(sa.String(100), nullable=False)
     translation: so.Mapped[str | None] = so.mapped_column(sa.Text, nullable=True)
-    notes: so.Mapped[list[str]] = so.mapped_column(sa.JSON, default=list, nullable=False)
+    notes: so.Mapped[list[str]] = so.mapped_column(
+        sa.JSON, default=list, nullable=False
+    )
     tags: so.Mapped[list[str]] = so.mapped_column(sa.JSON, default=list, nullable=False)
 
     # SRS state
     status: so.Mapped[str] = so.mapped_column(
-        sa.String(16), 
+        sa.String(16),
         default="new",
         nullable=False,
     )
@@ -191,11 +204,15 @@ class VocabularyCardORM(Base):
         sa.DateTime(timezone=True),
         nullable=True,
     )
-    interval_days: so.Mapped[int] = so.mapped_column(sa.Integer, default=0, nullable=False)
+    interval_days: so.Mapped[int] = so.mapped_column(
+        sa.Integer, default=0, nullable=False
+    )
     ease: so.Mapped[int] = so.mapped_column(sa.Integer, default=250, nullable=False)
     reps: so.Mapped[int] = so.mapped_column(sa.Integer, default=0, nullable=False)
     lapses: so.Mapped[int] = so.mapped_column(sa.Integer, default=0, nullable=False)
-    streak_correct: so.Mapped[int] = so.mapped_column(sa.Integer, default=0, nullable=False)
+    streak_correct: so.Mapped[int] = so.mapped_column(
+        sa.Integer, default=0, nullable=False
+    )
     last_grade: so.Mapped[str | None] = so.mapped_column(sa.String(8), nullable=True)
 
     # Relationship
@@ -211,7 +228,7 @@ class VocabularyCardORM(Base):
         sa.CheckConstraint("streak_correct >= 0", name="ck_vocab_streak_positive"),
         sa.CheckConstraint(
             "status IN ('new', 'learning', 'review', 'suspended')",
-            name="ck_vocab_status_valid"
+            name="ck_vocab_status_valid",
         ),
     )
 
@@ -246,9 +263,7 @@ class CoCeExerciseORM(Base):
     __table_args__ = (
         sa.Index("ix_coce_exercises_level_topic", "level", "topic"),
         sa.Index("ix_coce_exercises_media_id", "media_id"),
-        sa.CheckConstraint(
-            "duration_seconds >= 0", name="ck_coce_duration_positive"
-        ),
+        sa.CheckConstraint("duration_seconds >= 0", name="ck_coce_duration_positive"),
         sa.CheckConstraint(
             "level IN ('A1', 'A2', 'B1', 'B2', 'C1', 'C2')", name="ck_coce_level"
         ),
@@ -279,14 +294,24 @@ class DelfTestPaperORM(Base):
     level: so.Mapped[str] = so.mapped_column(sa.String(16), nullable=False)
     variant: so.Mapped[str] = so.mapped_column(sa.String(100), nullable=False)
     section: so.Mapped[str] = so.mapped_column(sa.String(100), nullable=False)
-    exercise_count: so.Mapped[int] = so.mapped_column(sa.Integer, default=0, nullable=False)
-    audio_filename: so.Mapped[str | None] = so.mapped_column(sa.String(255), nullable=True)
-    status: so.Mapped[str] = so.mapped_column(sa.String(16), default="active", nullable=False)
+    exercise_count: so.Mapped[int] = so.mapped_column(
+        sa.Integer, default=0, nullable=False
+    )
+    audio_filename: so.Mapped[str | None] = so.mapped_column(
+        sa.String(255), nullable=True
+    )
+    status: so.Mapped[str] = so.mapped_column(
+        sa.String(16), default="active", nullable=False
+    )
     github_path: so.Mapped[str] = so.mapped_column(sa.String(500), nullable=False)
 
     __table_args__ = (
-        sa.Index("ix_delf_test_papers_level_section_status", "level", "section", "status"),
-        sa.UniqueConstraint("test_id", "level", "variant", "section", name="uq_delf_test_paper"),
+        sa.Index(
+            "ix_delf_test_papers_level_section_status", "level", "section", "status"
+        ),
+        sa.UniqueConstraint(
+            "test_id", "level", "variant", "section", name="uq_delf_test_paper"
+        ),
         sa.CheckConstraint(
             "level IN ('A1', 'A2', 'B1', 'B2', 'C1', 'C2')", name="ck_delf_level"
         ),
