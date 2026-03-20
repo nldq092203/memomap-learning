@@ -16,6 +16,7 @@ import {
   communityApi,
   type CommunityFeedback,
 } from "@/lib/services/learning-community-api"
+import { useAsyncAction } from "@/lib/hooks/use-async-action"
 
 const STATUS_STYLES: Record<string, { chip: string; dot: string; label: string }> = {
   planned: {
@@ -59,11 +60,15 @@ function FeedbackCard({
   isOwn,
   onDelete,
   onEdit,
+  isDeleting,
+  isEditingPending,
 }: {
   fb: CommunityFeedback
   isOwn: boolean
   onDelete: (id: string) => void
   onEdit: (id: string, content: string) => void
+  isDeleting: boolean
+  isEditingPending: boolean
 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(fb.content)
@@ -102,21 +107,24 @@ function FeedbackCard({
             rows={4}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
+            disabled={isEditingPending}
             autoFocus
           />
           <div className="flex items-center gap-2">
             <button
               onClick={handleSave}
-              className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-slate-800"
+              disabled={isEditingPending}
+              className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Save changes
+              {isEditingPending ? "Saving..." : "Save changes"}
             </button>
             <button
               onClick={() => {
                 setEditing(false)
                 setDraft(fb.content)
               }}
-              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+              disabled={isEditingPending}
+              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
             >
               Cancel
             </button>
@@ -132,6 +140,7 @@ function FeedbackCard({
         <div className="relative mt-5 flex justify-end gap-2 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100">
           <button
             onClick={() => setEditing(true)}
+            disabled={isDeleting || isEditingPending}
             className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
           >
             <PencilLine className="h-3.5 w-3.5" />
@@ -139,10 +148,11 @@ function FeedbackCard({
           </button>
           <button
             onClick={() => onDelete(fb._id)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-600 transition hover:border-rose-300 hover:bg-rose-100"
+            disabled={isDeleting || isEditingPending}
+            className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-600 transition hover:border-rose-300 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Trash2 className="h-3.5 w-3.5" />
-            Delete
+            {isDeleting ? "Deleting..." : "Delete"}
           </button>
         </div>
       ) : null}
@@ -155,8 +165,9 @@ export default function CommunityPage() {
   const [feedbacks, setFeedbacks] = useState<CommunityFeedback[]>([])
   const [content, setContent] = useState("")
   const [loading, setLoading] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   const fetchFeedbacks = useCallback(async () => {
     try {
@@ -175,39 +186,47 @@ export default function CommunityPage() {
     fetchFeedbacks()
   }, [fetchFeedbacks])
 
+  const { isPending: submitting, run: submitFeedback } = useAsyncAction(async () => {
+    const trimmed = content.trim()
+    if (!trimmed) return
+
+    setErrorMessage(null)
+    const newFeedback = await communityApi.postFeedback(trimmed)
+    setFeedbacks((prev) => [newFeedback, ...prev])
+    setContent("")
+  })
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const trimmed = content.trim()
-    if (!trimmed || submitting) return
-
-    setSubmitting(true)
-    setErrorMessage(null)
+    if (!content.trim() || submitting) return
 
     try {
-      const newFeedback = await communityApi.postFeedback(trimmed)
-      setFeedbacks((prev) => [newFeedback, ...prev])
-      setContent("")
+      await submitFeedback()
     } catch (err) {
       console.error("Failed to post feedback:", err)
       setErrorMessage("Votre message n'a pas pu être envoyé. Réessayez dans un instant.")
-    } finally {
-      setSubmitting(false)
     }
   }
 
   const handleDelete = async (id: string) => {
     try {
+      if (deletingId === id) return
+      setDeletingId(id)
       setErrorMessage(null)
       await communityApi.deleteFeedback(id)
       setFeedbacks((prev) => prev.filter((fb) => fb._id !== id))
     } catch (err) {
       console.error("Failed to delete feedback:", err)
       setErrorMessage("Suppression impossible pour le moment.")
+    } finally {
+      setDeletingId(null)
     }
   }
 
   const handleEdit = async (id: string, newContent: string) => {
     try {
+      if (editingId === id) return
+      setEditingId(id)
       setErrorMessage(null)
       const updated = await communityApi.updateFeedback(id, { content: newContent })
       setFeedbacks((prev) =>
@@ -216,6 +235,8 @@ export default function CommunityPage() {
     } catch (err) {
       console.error("Failed to update feedback:", err)
       setErrorMessage("Modification impossible pour le moment.")
+    } finally {
+      setEditingId(null)
     }
   }
 
@@ -268,7 +289,7 @@ export default function CommunityPage() {
             </div>
           </div>
 
-          <aside className="grid gap-3 self-start">
+          <aside className="grid grid-cols-2 gap-3 self-start lg:grid-cols-1">
             <div className="rounded-[26px] border border-slate-200 bg-white/90 p-4 shadow-sm">
               <div className="flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
@@ -297,7 +318,7 @@ export default function CommunityPage() {
               </div>
             </div>
 
-            <div className="rounded-[26px] border border-slate-200 bg-white/80 p-4 text-sm leading-6 text-slate-600 shadow-sm">
+            <div className="col-span-2 rounded-[26px] border border-slate-200 bg-white/80 p-4 text-sm leading-6 text-slate-600 shadow-sm lg:col-span-1">
               Les suggestions les plus claires sont plus simples à transformer en roadmap.
             </div>
           </aside>
@@ -329,7 +350,7 @@ export default function CommunityPage() {
                 onChange={(e) => setContent(e.target.value)}
               />
 
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs text-slate-500">
                   {content.trim().length > 0
                     ? `${content.trim().length} caractères prêts à être envoyés`
@@ -338,7 +359,7 @@ export default function CommunityPage() {
                 <button
                   type="submit"
                   disabled={!content.trim() || submitting}
-                  className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                 >
                   <Rocket className="h-4 w-4" />
                   {submitting ? "Sending..." : "Send feedback"}
@@ -387,6 +408,8 @@ export default function CommunityPage() {
                   isOwn={user?.sub === fb.user_id}
                   onDelete={handleDelete}
                   onEdit={handleEdit}
+                  isDeleting={deletingId === fb._id}
+                  isEditingPending={editingId === fb._id}
                 />
               ))}
             </div>

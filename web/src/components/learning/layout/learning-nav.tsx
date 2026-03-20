@@ -167,8 +167,8 @@ export const LearningNav = ({
 
         {/* Primary Navigation */}
         {!hidePrimaryNav && (
-          <div className="flex items-center justify-between gap-4">
-            <nav className="flex items-center gap-1">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <nav className="-mx-3 flex items-center gap-1 overflow-x-auto px-3 pb-1 sm:mx-0 sm:px-0">
               {primaryNavItems.map((item) => {
                 const Icon = item.icon
                 const isActive = pathname === item.href
@@ -177,6 +177,7 @@ export const LearningNav = ({
                 return (
                   <button
                     key={item.href}
+                    type="button"
                     onClick={() => {
                       if (isLocked) {
                         setShowSyncModal(true)
@@ -185,7 +186,7 @@ export const LearningNav = ({
                       }
                     }}
                     className={cn(
-                      "relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                      "relative shrink-0 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all sm:px-4",
                       isLocked
                         ? "opacity-40 cursor-not-allowed hover:opacity-50"
                         : "hover:bg-muted/50",
@@ -194,6 +195,7 @@ export const LearningNav = ({
                         : "text-muted-foreground"
                     )}
                     title={isLocked ? "Connectez-vous pour débloquer" : item.description}
+                    aria-label={item.label}
                   >
                     <Icon className="h-4 w-4" />
                     <span className="hidden sm:inline">{item.label}</span>
@@ -207,7 +209,7 @@ export const LearningNav = ({
             </nav>
 
             {/* Right controls: Secondary Navigation + Guest Badge */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between gap-3 sm:justify-end">
               <GuestModeBadge />
               {/* Hide secondary nav (Sync) for guests */}
               {!isGuest && (
@@ -218,14 +220,16 @@ export const LearningNav = ({
                     return (
                       <button
                         key={item.href}
+                        type="button"
                         onClick={() => router.push(item.href)}
                         className={cn(
-                          "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all",
+                          "flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all",
                           "hover:bg-muted/50",
                           isActive 
                             ? "text-primary bg-primary/10" 
                             : "text-muted-foreground"
                         )}
+                        aria-label={item.label}
                       >
                         <Icon className="h-4 w-4" />
                         <span className="hidden md:inline">{item.label}</span>

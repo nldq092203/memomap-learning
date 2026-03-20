@@ -193,11 +193,11 @@ export function TestPlayer({
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="space-y-3">
-        <div className="flex items-center gap-2 text-sm text-slate-500">
+        <div className="flex flex-wrap items-center gap-1 text-sm text-slate-500 sm:gap-2">
           <button
             type="button"
             onClick={onBackToRoot}
-            className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 transition-colors hover:bg-white hover:text-slate-900"
+            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 transition-colors hover:bg-white hover:text-slate-900 sm:gap-2 sm:px-3 sm:py-1.5"
           >
             DELF
           </button>
@@ -247,46 +247,48 @@ export function TestPlayer({
             </div>
 
             {section === "CO" && audioUrl && (
-              <div className="w-full max-w-[560px] rounded-[22px] border border-slate-200 bg-[linear-gradient(135deg,#f8fafc_0%,#eef7f6_100%)] p-4">
-                <div className="flex items-center gap-3">
-                  <Button
-                    size="icon"
-                    onClick={togglePlay}
-                    className="h-11 w-11 shrink-0 rounded-full bg-teal-500 text-white hover:bg-teal-600"
-                  >
-                    {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="ml-0.5 h-5 w-5" />}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={handleRestart}
-                    className="h-10 w-10 shrink-0 rounded-full border-slate-200 text-slate-600 hover:bg-white"
-                  >
-                    <RotateCcw className="h-4.5 w-4.5" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleSkip(-5)}
-                    className="h-10 w-10 shrink-0 rounded-full border-slate-200 text-slate-600 hover:bg-white"
-                  >
-                    <SkipBack className="h-4.5 w-4.5" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleSkip(5)}
-                    className="h-10 w-10 shrink-0 rounded-full border-slate-200 text-slate-600 hover:bg-white"
-                  >
-                    <SkipForward className="h-4.5 w-4.5" />
-                  </Button>
-                  <div className="min-w-0 flex-1 space-y-2">
+              <div className="w-full rounded-[22px] border border-slate-200 bg-[linear-gradient(135deg,#f8fafc_0%,#eef7f6_100%)] p-3 sm:p-4 lg:max-w-[560px]">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <Button
+                      size="icon"
+                      onClick={togglePlay}
+                      className="h-10 w-10 shrink-0 rounded-full bg-teal-500 text-white hover:bg-teal-600 sm:h-11 sm:w-11"
+                    >
+                      {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="ml-0.5 h-5 w-5" />}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={handleRestart}
+                      className="h-9 w-9 shrink-0 rounded-full border-slate-200 text-slate-600 hover:bg-white sm:h-10 sm:w-10"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleSkip(-5)}
+                      className="h-9 w-9 shrink-0 rounded-full border-slate-200 text-slate-600 hover:bg-white sm:h-10 sm:w-10"
+                    >
+                      <SkipBack className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleSkip(5)}
+                      className="h-9 w-9 shrink-0 rounded-full border-slate-200 text-slate-600 hover:bg-white sm:h-10 sm:w-10"
+                    >
+                      <SkipForward className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="min-w-0 flex-1 space-y-1.5">
                     <button
                       ref={progressBarRef}
                       type="button"
                       onClick={handleSeek}
                       className="block w-full cursor-pointer"
-                      aria-label="Tuer la piste audio"
+                      aria-label="Seek audio"
                     >
                       <Progress value={progress} className="h-2" />
                     </button>
@@ -393,15 +395,15 @@ export function TestPlayer({
       </div>
 
       <div className="sticky bottom-4 z-20">
-        <div className="flex flex-col items-center justify-between gap-4 rounded-[30px] border border-slate-200 bg-white/95 px-5 py-4 shadow-lg shadow-slate-200/60 backdrop-blur sm:flex-row">
-          <div className="text-sm text-slate-500">
+        <div className="flex flex-col items-center gap-3 rounded-[24px] border border-slate-200 bg-white/95 px-4 py-3 shadow-lg shadow-slate-200/60 backdrop-blur sm:flex-row sm:justify-between sm:rounded-[30px] sm:px-5 sm:py-4">
+          <div className="text-center text-sm text-slate-500 sm:text-left">
             {!showResults
               ? `${answeredExerciseCount} element${answeredExerciseCount > 1 ? "s" : ""} complete${answeredExerciseCount > 1 ? "s" : ""} sur ${totalExerciseCount}.`
               : "Votre correction est affichee ci-dessus."}
           </div>
 
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-            <Button variant="outline" onClick={onBackToRoot} className="rounded-full">
+            <Button variant="outline" onClick={onBackToRoot} className="w-full rounded-full sm:w-auto">
               Quitter
             </Button>
 
@@ -418,12 +420,12 @@ export function TestPlayer({
                   Valider le sujet
                 </Button>
                 {!allAnswered && (
-                  <p className="text-xs text-slate-500">Répondez à toutes les questions pour valider.</p>
+                  <p className="text-center text-xs text-slate-500">Répondez à toutes les questions pour valider.</p>
                 )}
               </div>
             ) : (
               <>
-                <div className="w-full min-w-0 sm:min-w-[320px]">
+                <div className="w-full min-w-0 sm:min-w-[280px]">
                   <SupportProjectTrigger variant="result" />
                 </div>
                 <Button

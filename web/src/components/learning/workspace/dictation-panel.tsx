@@ -68,7 +68,7 @@ export const DictationPanel = memo(function DictationPanel({
                 Transcription
               </p>
               <p className="mt-1 text-sm text-slate-500">
-                Tapez ce que vous entendez. La mise en page reste nette pendant l'ecriture.
+                Tapez ce que vous entendez. La mise en page reste nette pendant l&apos;ecriture.
               </p>
             </div>
             <div className="hidden md:block">
@@ -85,12 +85,12 @@ export const DictationPanel = memo(function DictationPanel({
         </div>
       </div>
 
-      <div className="fixed bottom-8 right-8 flex flex-col gap-3 bg-white/80 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-black/[0.04] rounded-[1.25rem] p-3 z-50">
+      <div className="fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+1rem)] z-50 flex flex-col gap-3 rounded-[1.25rem] border border-black/[0.04] bg-white/80 p-3 shadow-[0_8px_30px_rgb(0,0,0,0.08)] backdrop-blur-xl sm:inset-x-auto sm:right-6 sm:w-auto md:bottom-8 md:right-8">
         <Button
           type="button"
           size="sm"
           variant="secondary"
-          className="h-9 gap-1.5 rounded-xl border border-slate-200 bg-white px-4 text-xs font-medium text-slate-700 shadow-sm transition-transform active:scale-95"
+          className="h-10 w-full gap-1.5 rounded-xl border border-slate-200 bg-white px-4 text-xs font-medium text-slate-700 shadow-sm transition-transform active:scale-95 sm:h-9 sm:w-auto"
           onClick={onToggleFocusMode}
         >
           <Focus className="h-4 w-4" />
@@ -101,7 +101,7 @@ export const DictationPanel = memo(function DictationPanel({
           size="sm"
           variant="secondary"
           className={cn(
-            "h-9 gap-1.5 rounded-xl px-4 text-xs font-medium text-emerald-600 active:scale-95 transition-transform shadow-sm",
+            "h-10 w-full gap-1.5 rounded-xl px-4 text-xs font-medium text-emerald-600 shadow-sm transition-transform active:scale-95 sm:h-9 sm:w-auto",
             lessonDetail
               ? "border border-emerald-200 bg-emerald-50 hover:bg-emerald-100"
               : "border border-dashed border-emerald-200 bg-white"

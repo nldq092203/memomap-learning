@@ -22,24 +22,24 @@ export function GuestUpgradeHint({
   return (
     <div
       className={[
-        "flex flex-col gap-3 rounded-[24px] border border-emerald-200/80 bg-[linear-gradient(135deg,rgba(236,253,245,0.95),rgba(240,249,255,0.92))] px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between",
+        "flex flex-col gap-3 overflow-hidden rounded-[24px] border border-emerald-200/80 bg-[linear-gradient(135deg,rgba(236,253,245,0.95),rgba(240,249,255,0.92))] px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between",
         className,
       ]
         .filter(Boolean)
         .join(" ")}
     >
-      <div className="space-y-1">
+      <div className="min-w-0 space-y-1">
         <div className="inline-flex items-center gap-2 rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">
           <Sparkles className="h-3.5 w-3.5" />
           Mode invité
         </div>
         <p className="text-sm font-semibold text-slate-900">{title}</p>
-        <p className="text-sm leading-relaxed text-slate-600">{description}</p>
+        <p className="break-words text-sm leading-relaxed text-slate-600">{description}</p>
       </div>
 
       <Button
         type="button"
-        className="shrink-0 rounded-full bg-emerald-600 text-white hover:bg-emerald-700"
+        className="w-full rounded-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto sm:shrink-0"
         onClick={() => setShowSyncModal(true)}
       >
         Se connecter

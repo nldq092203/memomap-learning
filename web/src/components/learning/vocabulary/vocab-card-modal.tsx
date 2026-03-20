@@ -12,6 +12,7 @@ import type { ExplainResponse } from "@/lib/types/api/ai"
 import type { LocalVocabCard } from "@/lib/types/learning-session"
 import { FloatingWindow } from "@/components/ui/floating-windows"
 import { getModalZIndex } from "@/lib/utils/z-index-manager"
+import { useAsyncAction } from "@/lib/hooks/use-async-action"
 
 interface VocabCardModalProps {
   isOpen: boolean
@@ -54,8 +55,6 @@ export function VocabCardModal({
   const [newNote, setNewNote] = useState("")
   const [tags, setTags] = useState<string[]>([])
   const [newTag, setNewTag] = useState("")
-  const [isSaving, setIsSaving] = useState(false)
-  const [isAutofilling, setIsAutofilling] = useState(false)
   const [showMoreDetails, setShowMoreDetails] = useState(false)
 
   useEffect(() => {
@@ -78,20 +77,6 @@ export function VocabCardModal({
     setNewTag("")
     setShowMoreDetails(false)
   }, [isOpen])
-
-  useEffect(() => {
-    if (!isOpen) return
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault()
-        onClose()
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [isOpen, onClose])
 
   const parseExplainPayload = (response: ExplainResponse): ExplainPayload | null => {
     const raw = response.content
@@ -139,13 +124,12 @@ export function VocabCardModal({
     setTags((prev) => prev.filter((tag) => tag !== tagToRemove))
   }
 
-  const handleAutoFill = async () => {
+  const { isPending: isAutofilling, run: handleAutoFill } = useAsyncAction(async () => {
     if (!word.trim()) {
       notificationService.info("Saisissez d'abord un mot à analyser")
       return
     }
 
-    setIsAutofilling(true)
     try {
       const res = await aiService.explain({
         text: word.trim(),
@@ -184,18 +168,15 @@ export function VocabCardModal({
     } catch (error) {
       console.error("Failed to auto-fill translation:", error)
       notificationService.error("L'IA n'a pas pu suggérer de définition")
-    } finally {
-      setIsAutofilling(false)
     }
-  }
+  })
 
-  const handleSave = async () => {
+  const { isPending: isSaving, run: handleSave } = useAsyncAction(async () => {
     if (!word.trim()) {
       notificationService.error("Le mot est requis")
       return
     }
 
-    setIsSaving(true)
     try {
       const savedCard = await addVocabCard({
         word: word.trim(),
@@ -210,10 +191,22 @@ export function VocabCardModal({
     } catch (error) {
       console.error("Failed to save vocabulary card:", error)
       notificationService.error("Impossible d'enregistrer la carte")
-    } finally {
-      setIsSaving(false)
     }
-  }
+  })
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !isSaving) {
+        e.preventDefault()
+        onClose()
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [isOpen, isSaving, onClose])
 
   if (!isOpen) return null
 
@@ -233,7 +226,7 @@ export function VocabCardModal({
         forceZIndex={modalZIndex.content}
         onClose={onClose}
       >
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_260px]">
+        <div className="grid gap-5 md:grid-cols-[minmax(0,1.25fr)_240px]">
           <div className="space-y-5">
             <div className="rounded-[28px] border border-slate-200 bg-surface-gradient-card p-6 shadow-sm">
               <div className="mb-5 space-y-2">
@@ -281,7 +274,7 @@ export function VocabCardModal({
                     <button
                       type="button"
                       onClick={handleAutoFill}
-                      disabled={isAutofilling}
+                      disabled={isAutofilling || isSaving}
                       className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-primary/8 text-primary transition hover:bg-primary/12 disabled:opacity-50"
                       aria-label="Suggestion IA"
                       title="Suggestion IA"
@@ -350,6 +343,7 @@ export function VocabCardModal({
               <Button
                 onClick={handleSave}
                 disabled={isSaving || !word.trim()}
+                loading={isSaving}
                 className="rounded-2xl bg-primary px-6 text-primary-foreground shadow-sm hover:bg-primary/90"
               >
                 {isSaving ? "Enregistrement..." : "Enregistrer la carte"}

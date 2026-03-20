@@ -50,6 +50,10 @@ function getViewportSize() {
   };
 }
 
+function getViewportMargin(width: number) {
+  return width < 640 ? 8 : 20;
+}
+
 function clampAndSnapPosition(
   x: number,
   y: number,
@@ -404,6 +408,64 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
     activePointerId,
   ]);
 
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleResize = () => {
+      const { width: vw, height: vh } = getViewportSize();
+      if (!vw || !vh) return;
+
+      const margin = getViewportMargin(vw);
+
+      if (isDocked) {
+        const dockedWidth = Math.max(
+          Math.min(DOCKED_WIDTH, Math.max(vw - margin * 2, 180)),
+          Math.min(vw - margin * 2, DOCKED_WIDTH),
+        );
+        const dockedHeight = Math.min(DOCKED_HEIGHT, Math.max(vh - margin * 2, 56));
+        setPosition({
+          x: Math.max(vw - dockedWidth - margin, 0),
+          y: Math.max(vh - dockedHeight - margin, 0),
+        });
+        setSize({
+          width: dockedWidth,
+          height: dockedHeight,
+        });
+        return;
+      }
+
+      const nextMinWidth = Math.min(minWidth, Math.max(vw - margin * 2, 240));
+      const nextMinHeight = Math.min(minHeight, Math.max(vh - margin * 2, 160));
+
+      const constrained = constrainLayout(
+        {
+          x: positionRef.current.x,
+          y: positionRef.current.y,
+          width: Math.min(sizeRef.current.width, Math.max(vw - margin * 2, nextMinWidth)),
+          height: Math.min(sizeRef.current.height, Math.max(vh - margin * 2, nextMinHeight)),
+        },
+        nextMinWidth,
+        nextMinHeight,
+      );
+
+      const maxX = Math.max(vw - constrained.width - margin, 0);
+      const maxY = Math.max(vh - constrained.height - margin, 0);
+
+      setPosition({
+        x: Math.min(Math.max(constrained.x, margin), maxX),
+        y: Math.min(Math.max(constrained.y, margin), maxY),
+      });
+      setSize({
+        width: constrained.width,
+        height: constrained.height,
+      });
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [isDocked, minHeight, minWidth]);
+
   const handleActivate = React.useCallback(() => {
     if (forceZIndex != null) return;
     setZIndex(getNextFloatingWindowZIndex());
@@ -433,6 +495,7 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
   const handleToggleDock = React.useCallback(() => {
     const { width: vw, height: vh } = getViewportSize();
     if (!vw || !vh) return;
+    const margin = getViewportMargin(vw);
 
     // If already docked, restore previous position and size (if any)
     if (dockedPositionRef.current && dockedSizeRef.current) {
@@ -463,11 +526,10 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
 
     // Dock to bottom-right with compact "title-only" size
     const width = Math.max(
-      minWidth,
-      Math.min(DOCKED_WIDTH, vw)
+      Math.min(DOCKED_WIDTH, Math.max(vw - margin * 2, 180)),
+      Math.min(vw - margin * 2, DOCKED_WIDTH),
     );
-    const height = Math.min(DOCKED_HEIGHT, vh);
-    const margin = 16;
+    const height = Math.min(DOCKED_HEIGHT, Math.max(vh - margin * 2, 56));
     const targetX = Math.max(vw - width - margin, 0);
     const targetY = Math.max(vh - height - margin, 0);
 
@@ -552,6 +614,19 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
     zIndex: forceZIndex ?? zIndex,
   };
 
+  const viewport = getViewportSize();
+  const isMobileViewport = viewport.width > 0 && viewport.width < 640;
+  const mobileMargin = getViewportMargin(viewport.width);
+  const mobileWidth = Math.max(viewport.width - mobileMargin * 2, 0);
+  const mobileHeight = Math.max(viewport.height - mobileMargin * 2, 0);
+
+  if (isMobileViewport) {
+    style.left = mobileMargin;
+    style.top = mobileMargin;
+    style.width = mobileWidth;
+    style.height = mobileHeight;
+  }
+
   return createPortal(
     <div
       id={id}
@@ -565,8 +640,8 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
           className={`relative flex cursor-grab select-none items-center justify-between gap-2 border-b border-white/50 bg-white/45 px-3 py-2 ${
             isDocked ? "h-10" : ""
           }`}
-          style={{ touchAction: "none" }}
-          onPointerDown={handleHeaderPointerDown}
+          style={{ touchAction: isMobileViewport ? "auto" : "none" }}
+          onPointerDown={isMobileViewport ? undefined : handleHeaderPointerDown}
         >
           <div className="flex min-w-0 items-center gap-2">
             <span className="inline-flex h-8 w-8 flex-none items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm">
@@ -586,7 +661,7 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
             )}
           </div>
           <div className="flex items-center gap-1">
-            {!isDocked && (
+            {!isDocked && !isMobileViewport && (
               <>
                 <button
                   type="button"
@@ -603,15 +678,17 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
                 </button>
               </>
             )}
-            <button
-              type="button"
-              aria-label="Dock window"
-              onClick={handleToggleDock}
-              onPointerDown={(event) => event.stopPropagation()}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-xs text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
-            >
-              <Minus className="h-3.5 w-3.5" />
-            </button>
+            {!isMobileViewport && (
+              <button
+                type="button"
+                aria-label="Dock window"
+                onClick={handleToggleDock}
+                onPointerDown={(event) => event.stopPropagation()}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-xs text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
+              >
+                <Minus className="h-3.5 w-3.5" />
+              </button>
+            )}
             {onClose && (
               <button
                 type="button"
@@ -631,21 +708,25 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
           </div>
         </CardContent>
 
-        <div
-          className="absolute bottom-0 right-0 h-3 w-3 cursor-se-resize rounded-tl-md border-l border-t border-border/70 bg-background/60"
-          style={{ touchAction: "none" }}
-          onPointerDown={(event) => handleResizePointerDown(event, "bottom-right")}
-        />
-        <div
-          className="absolute bottom-0 left-2 right-4 h-1.5 cursor-s-resize bg-transparent hover:bg-muted/60"
-          style={{ touchAction: "none" }}
-          onPointerDown={(event) => handleResizePointerDown(event, "bottom")}
-        />
-        <div
-          className="absolute bottom-4 right-0 top-2 w-1.5 cursor-e-resize bg-transparent hover:bg-muted/60"
-          style={{ touchAction: "none" }}
-          onPointerDown={(event) => handleResizePointerDown(event, "right")}
-        />
+        {!isMobileViewport && (
+          <>
+            <div
+              className="absolute bottom-0 right-0 h-3 w-3 cursor-se-resize rounded-tl-md border-l border-t border-border/70 bg-background/60"
+              style={{ touchAction: "none" }}
+              onPointerDown={(event) => handleResizePointerDown(event, "bottom-right")}
+            />
+            <div
+              className="absolute bottom-0 left-2 right-4 h-1.5 cursor-s-resize bg-transparent hover:bg-muted/60"
+              style={{ touchAction: "none" }}
+              onPointerDown={(event) => handleResizePointerDown(event, "bottom")}
+            />
+            <div
+              className="absolute bottom-4 right-0 top-2 w-1.5 cursor-e-resize bg-transparent hover:bg-muted/60"
+              style={{ touchAction: "none" }}
+              onPointerDown={(event) => handleResizePointerDown(event, "right")}
+            />
+          </>
+        )}
       </Card>
     </div>,
     portalContainer

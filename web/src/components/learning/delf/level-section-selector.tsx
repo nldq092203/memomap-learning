@@ -44,7 +44,7 @@ export function LevelSectionSelector({ onSelect, loading }: LevelSectionSelector
         }
       />
 
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {DELF_LEVELS.map((level) => {
           const isLockedForGuest = isGuest && level.id !== GUEST_ALLOWED_LEVEL
 

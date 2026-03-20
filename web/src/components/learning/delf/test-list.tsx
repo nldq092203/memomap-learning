@@ -28,7 +28,7 @@ export function TestList({
 
   return (
     <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-      <div className="flex items-center gap-2 text-sm text-slate-500">
+      <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm text-slate-500">
         <button
           type="button"
           onClick={onBack}
@@ -38,7 +38,7 @@ export function TestList({
           Niveaux
         </button>
         <span>/</span>
-        <span className="font-medium text-slate-700">
+        <span className="min-w-0 break-words font-medium text-slate-700">
           {level} {section}
         </span>
       </div>
@@ -57,6 +57,7 @@ export function TestList({
             {tests.length} {tests.length === 1 ? "sujet" : "sujets"}
           </Badge>
         }
+        className="overflow-hidden"
       />
 
       <GuestUpgradeHint description="Connectez-vous pour accéder à plus de sujets, davantage de niveaux et reprendre vos entrainements DELF à tout moment." />
@@ -82,7 +83,7 @@ export function TestList({
           </Button>
         </TrainingSurface>
       ) : (
-        <ScrollArea className="h-[620px] pr-4">
+        <ScrollArea className="pr-2 sm:pr-4 md:h-[620px]">
           <div className="grid gap-4 sm:grid-cols-2">
             {tests.map((test) => (
               <TrainingChoiceCard
@@ -100,14 +101,15 @@ export function TestList({
                   ) : null
                 }
                 footer={
-                  <div className="flex items-center gap-1.5 text-sm text-slate-500">
+                  <div className="flex min-w-0 items-center gap-1.5 text-sm text-slate-500">
                     <Clock3 className="h-4 w-4" />
                     <span>{test.exercise_count} exercice{test.exercise_count > 1 ? "s" : ""}</span>
                   </div>
                 }
                 action={
                   <Button
-                    className="w-full justify-between rounded-full bg-emerald-100 text-emerald-700 hover:bg-emerald-200 sm:w-auto"
+                    size="sm"
+                    className="h-10 w-full justify-between rounded-full bg-emerald-100 px-4 text-emerald-700 hover:bg-emerald-200 sm:w-auto sm:min-w-[168px]"
                     onClick={(event) => {
                       event.stopPropagation()
                       onSelectTest(test.test_id, test.level, test.variant, test.section)

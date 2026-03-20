@@ -86,7 +86,7 @@ export function TranscribeStorageTransparency() {
         ))}
       </div>
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
+      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
         <div className="rounded-[24px] border border-slate-200 bg-surface-gradient-transcribe-panel p-4">
           <div className="mb-3 flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-teal-600" />
@@ -96,10 +96,18 @@ export function TranscribeStorageTransparency() {
           </div>
 
           <div className="rounded-[20px] border border-slate-200 bg-white p-3 shadow-inner">
-            <MermaidDiagram
-              chart={workflowSource}
-              className="mermaid-diagram overflow-x-auto rounded-[16px] bg-white text-slate-700 [&_svg]:mx-auto [&_svg]:h-auto [&_svg]:min-w-[640px] [&_svg]:max-w-none [&_svg]:overflow-visible"
-            />
+            <div className="space-y-3">
+              <MermaidDiagram
+                chart={workflowSource}
+                className="mermaid-diagram hidden overflow-x-auto rounded-[16px] bg-white text-slate-700 sm:block [&_svg]:mx-auto [&_svg]:h-auto [&_svg]:min-w-[640px] [&_svg]:max-w-none [&_svg]:overflow-visible"
+              />
+              <ol className="space-y-2 text-sm text-slate-600 sm:hidden">
+                <li className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">1. Importez un audio.</li>
+                <li className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">2. Choisissez l&apos;IA ou la saisie manuelle.</li>
+                <li className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">3. Enregistrez le tout dans Google Drive.</li>
+                <li className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">4. Réouvrez l&apos;audio dans l&apos;éditeur de dictée.</li>
+              </ol>
+            </div>
           </div>
         </div>
 

@@ -95,14 +95,14 @@ export default function LearningPage() {
   return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 md:py-8 pb-24 md:pb-28">
         {/* Header — compact, non-distracting */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground/70 mb-0.5">
               Tableau de bord
             </p>
             <h1 className="text-xl md:text-2xl font-semibold tracking-tight">Votre parcours</h1>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 self-start sm:self-auto">
             <Button
               variant="ghost"
               size="sm"
@@ -210,7 +210,7 @@ export default function LearningPage() {
               </div>
 
               {/* ── Row 2: Shortcut Cards (3 cols) ── */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 lg:gap-4">
                 {[
                   { label: "Vocabulaire", icon: BookOpen, path: "/learning/vocab", color: "text-emerald-500", borderHover: "hover:border-emerald-500/40", guestAllowed: false },
                   { label: "Entraînement", icon: Layers, path: "/learning/workspace", color: "text-purple-500", borderHover: "hover:border-purple-500/40", guestAllowed: true },
@@ -221,7 +221,7 @@ export default function LearningPage() {
                       onClick={() => router.push(action.path)}
                       className={cn(
                         "group flex items-center gap-3 rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm w-full",
-                        "px-4 py-4 text-left transition-all duration-200",
+                        "min-w-0 px-4 py-4 text-left transition-all duration-200",
                         "hover:bg-card/80 hover:shadow-sm active:scale-[0.98]",
                         action.borderHover,
                       )}
@@ -229,7 +229,7 @@ export default function LearningPage() {
                       <div className={cn("p-2 rounded-xl bg-muted/50", action.color, "group-hover:scale-110 transition-transform")}>
                         <action.icon className="h-5 w-5" />
                       </div>
-                      <span className="text-sm font-medium">{action.label}</span>
+                      <span className="min-w-0 text-sm font-medium leading-5">{action.label}</span>
                     </button>
                   </GuestLockedOverlay>
                 ))}

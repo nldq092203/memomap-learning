@@ -50,26 +50,28 @@ export function VocabControlBar({
   
   if (selectedCount > 0) {
     return (
-      <div className="animate-in slide-in-from-top-2 duration-200 flex items-center justify-between rounded-[20px] border border-primary/20 bg-primary/5 p-2">
-        <div className="flex items-center gap-4 px-2">
+      <div className="animate-in slide-in-from-top-2 duration-200 rounded-[20px] border border-primary/20 bg-primary/5 p-2">
+        <div className="flex flex-col gap-3 px-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
            <Button variant="ghost" size="icon" onClick={onClearSelection} className="h-8 w-8">
              <X className="h-4 w-4" />
            </Button>
            <span className="text-sm font-medium text-primary">
              {selectedCount} sélectionné{selectedCount > 1 ? "s" : ""}
            </span>
-           <Separator orientation="vertical" className="h-4" />
-           <div className="flex items-center gap-2">
-              <Button size="sm" variant="secondary" onClick={() => onBulkAction("review")} className="h-8 text-xs">
-                 Ajouter à la révision
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => onBulkAction("suspend")} className="h-8 text-xs">
-                 Suspendre
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => onBulkAction("delete")} className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10">
-                 Supprimer
-              </Button>
-           </div>
+            <Separator orientation="vertical" className="hidden h-4 sm:block" />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button size="sm" variant="secondary" onClick={() => onBulkAction("review")} className="h-8 text-xs">
+               Ajouter à la révision
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => onBulkAction("suspend")} className="h-8 text-xs">
+               Suspendre
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => onBulkAction("delete")} className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10">
+               Supprimer
+            </Button>
+          </div>
         </div>
       </div>
     )
@@ -78,7 +80,7 @@ export function VocabControlBar({
   return (
     <div className="flex flex-col gap-4 p-1 md:flex-row md:items-center">
       {/* Search - Wide on left */}
-      <div className="relative flex-1 min-w-[240px]">
+      <div className="relative min-w-0 flex-1 md:min-w-[240px]">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input 
           placeholder={`Rechercher parmi ${totalCount} mots...`} 
@@ -92,7 +94,7 @@ export function VocabControlBar({
       <div className="no-scrollbar flex items-center gap-3 overflow-x-auto pb-1 md:pb-0">
         {/* Filters */}
         <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-          <SelectTrigger className="h-11 w-[170px] rounded-2xl border border-white/60 bg-white/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+          <SelectTrigger className="h-11 w-[150px] shrink-0 rounded-2xl border border-white/60 bg-white/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:w-[170px]">
              <div className="flex items-center gap-2 text-muted-foreground">
                <SlidersHorizontal className="h-3.5 w-3.5" />
                <span className="text-sm truncate">

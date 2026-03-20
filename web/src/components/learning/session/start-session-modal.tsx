@@ -8,6 +8,7 @@ import { Clock3, Play, TimerReset } from "lucide-react"
 import { notificationService } from "@/lib/services/notification-service"
 import { motion } from "framer-motion"
 import { useLearningTimeSession } from "@/lib/contexts/learning-time-session-context"
+import { useAsyncAction } from "@/lib/hooks/use-async-action"
 
 const Motion = { div: motion.div }
 
@@ -16,7 +17,6 @@ export function StartSessionModal({ open, onOpenChange }: { open: boolean; onOpe
   const [title, setTitle] = useState("")
   const [mode, setMode] = useState<"timer" | "planned">("timer")
   const [planned, setPlanned] = useState<number>(25)
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -28,11 +28,9 @@ export function StartSessionModal({ open, onOpenChange }: { open: boolean; onOpe
     }
   }, [open])
 
-  const handleStart = async () => {
-    setIsSubmitting(true)
+  const { isPending: isSubmitting, run: handleStart } = useAsyncAction(async () => {
     setError(null)
     try {
-      // Start global learning time session (floating timer) with French language
       startGlobalSession(
         title,
         mode === "planned" ? Math.max(1, planned) * 60 : null,
@@ -42,22 +40,19 @@ export function StartSessionModal({ open, onOpenChange }: { open: boolean; onOpe
       // Close modal; user stays on current page.
       onOpenChange(false)
     } catch (e: unknown) {
-      // Keep modal open on failure so user can try again
       const errorMessage = e instanceof Error ? e.message : "Impossible de démarrer la session. Réessayez."
       setError(errorMessage)
-    } finally {
-      setIsSubmitting(false)
     }
-  }
+  })
 
   if (!open) return null
 
   return (
     <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15 }} className="fixed inset-0 z-50">
-      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => onOpenChange(false)} />
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => { if (!isSubmitting) onOpenChange(false) }} />
       <div
         className="absolute inset-0 flex items-center justify-center p-4"
-        onClick={() => onOpenChange(false)}
+        onClick={() => { if (!isSubmitting) onOpenChange(false) }}
       >
         <Motion.div
           initial={{ y: 12, opacity: 0 }}
@@ -71,7 +66,7 @@ export function StartSessionModal({ open, onOpenChange }: { open: boolean; onOpe
           <div className="border-b border-border/60 px-5 py-5 sm:px-6">
             <div className="mb-1 text-xl font-semibold sm:text-2xl">Nouvelle session</div>
             <div className="text-sm text-muted-foreground">
-              Choisissez votre rythme puis lancez votre temps d'apprentissage.
+              Choisissez votre rythme puis lancez votre temps d&apos;apprentissage.
             </div>
           </div>
           <div className="px-5 pb-6 pt-5 sm:px-6">
@@ -94,7 +89,7 @@ export function StartSessionModal({ open, onOpenChange }: { open: boolean; onOpe
                   <div className="mt-5 space-y-2">
                     <div className="text-base font-semibold">Chrono libre</div>
                     <div className="text-sm leading-6 text-muted-foreground">
-                      Démarrez maintenant. Le temps s'enregistre au fil de votre session.
+                      Démarrez maintenant. Le temps s&apos;enregistre au fil de votre session.
                     </div>
                   </div>
                 </div>
@@ -159,10 +154,10 @@ export function StartSessionModal({ open, onOpenChange }: { open: boolean; onOpe
             <div className="mt-6">
               <Button
                 onClick={handleStart}
-                disabled={isSubmitting}
+                loading={isSubmitting}
                 className="h-13 min-h-[56px] w-full rounded-full px-6 text-base font-semibold shadow-[0_18px_40px_-24px_rgba(41,171,135,0.7)] transition-shadow hover:shadow-[0_22px_45px_-22px_rgba(41,171,135,0.8)]"
               >
-                <Play className="mr-2 h-4 w-4" />
+                {!isSubmitting && <Play className="mr-2 h-4 w-4" />}
                 {isSubmitting ? "Démarrage..." : "Démarrer la session"}
               </Button>
             </div>
@@ -184,7 +179,7 @@ export function StartSessionModal({ open, onOpenChange }: { open: boolean; onOpe
             </div>
 
             <div className="mt-5 flex justify-center">
-              <Button variant="ghost" onClick={() => onOpenChange(false)} className="px-6 text-muted-foreground">
+              <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isSubmitting} className="px-6 text-muted-foreground">
                 Annuler
               </Button>
             </div>

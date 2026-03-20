@@ -1,7 +1,9 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/hooks/use-auth"
+import { useGuest } from "@/lib/contexts/guest-context"
 import { LoginButton } from "@/components/auth/login-button"
 import {
   ArrowRight,
@@ -9,6 +11,7 @@ import {
   ChevronRight,
   Layers,
   LineChart,
+  Lock,
   Mic,
   Target,
 } from "lucide-react"
@@ -24,6 +27,7 @@ const featureCards = [
     description: "Pratiquez ce que vous avez appris aujourd'hui.",
     accent: "bg-blue-50",
     iconClassName: "bg-blue-100/80 text-blue-600",
+    guestAllowed: false,
   },
   {
     href: "/learning/vocab",
@@ -32,6 +36,7 @@ const featureCards = [
     description: "Gérez et révisez votre liste de mots.",
     accent: "bg-emerald-50",
     iconClassName: "bg-emerald-100/80 text-emerald-600",
+    guestAllowed: false,
   },
   {
     href: "/learning/workspace",
@@ -40,6 +45,7 @@ const featureCards = [
     description: "Exercices quotidiens de langue et dictée.",
     accent: "bg-amber-50",
     iconClassName: "bg-amber-100/80 text-amber-600",
+    guestAllowed: true,
   },
   {
     href: "/learning/transcribe",
@@ -48,11 +54,14 @@ const featureCards = [
     description: "Convertissez la voix en texte et retravaillez-la.",
     accent: "bg-violet-50",
     iconClassName: "bg-violet-100/80 text-violet-600",
+    guestAllowed: false,
   },
 ] as const
 
 export default function HomePage() {
+  const router = useRouter()
   const { isAuthenticated, isLoading } = useAuth()
+  const { isGuest } = useGuest()
 
   if (isLoading) {
     return (
@@ -78,7 +87,7 @@ export default function HomePage() {
             {isAuthenticated ? (
               <Button asChild size="lg" className="h-12 rounded-full px-6 text-base">
                 <Link href="/learning">
-                  Continuer l'apprentissage
+                  Continuer l&apos;apprentissage
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
@@ -110,7 +119,7 @@ export default function HomePage() {
                     Accueil
                   </p>
                   <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
-                    Espace d'apprentissage
+                    Espace d&apos;apprentissage
                   </h2>
                 </div>
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
@@ -120,7 +129,12 @@ export default function HomePage() {
 
               <div className="space-y-3">
                 {featureCards.map(item => (
-                  <HomeRow key={item.href} {...item} />
+                  <HomeRow
+                    key={item.href}
+                    {...item}
+                    locked={isGuest && !item.guestAllowed}
+                    onNavigate={(target) => router.push(target)}
+                  />
                 ))}
               </div>
 
@@ -130,8 +144,8 @@ export default function HomePage() {
                   variant="outline"
                   className="h-12 w-full rounded-2xl border-dashed border-slate-300 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-50"
                 >
-                  <Link href="/learning">
-                    Explorer toutes les fonctionnalités
+                  <Link href={isGuest ? "/learning/workspace" : "/learning"}>
+                    {isGuest ? "Accéder à l'entraînement invité" : "Explorer toutes les fonctionnalités"}
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
@@ -151,6 +165,9 @@ type HomeRowProps = {
   description: string
   accent: string
   iconClassName: string
+  guestAllowed?: boolean
+  locked?: boolean
+  onNavigate?: (href: string) => void
 }
 
 function HomeRow({
@@ -160,11 +177,23 @@ function HomeRow({
   description,
   accent,
   iconClassName,
+  locked = false,
+  onNavigate,
 }: HomeRowProps) {
   return (
-    <Link
-      href={href}
-      className="group block rounded-[1.75rem] border border-slate-200/80 bg-white p-2 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+    <button
+      type="button"
+      disabled={locked}
+      aria-disabled={locked}
+      onClick={() => {
+        onNavigate?.(href)
+      }}
+      className={cn(
+        "group block w-full rounded-[1.75rem] border border-slate-200/80 bg-white p-2 text-left shadow-sm transition-all duration-200",
+        locked
+          ? "cursor-not-allowed opacity-40"
+          : "hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+      )}
     >
       <div className={cn("rounded-[1.2rem] p-0", accent)}>
         <div className="flex items-center gap-4 rounded-[1.15rem] border border-white/80 bg-white/90 px-4 py-4">
@@ -177,18 +206,26 @@ function HomeRow({
             <Icon className="h-6 w-6" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-xl font-semibold tracking-tight text-slate-950">
+            <p className="flex items-center gap-2 text-xl font-semibold tracking-tight text-slate-950">
               {label}
+              {locked && <Lock className="h-4 w-4 text-slate-400" />}
             </p>
             <p className="mt-1 max-w-xs text-sm leading-6 text-slate-500">
               {description}
             </p>
           </div>
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-300 transition-colors group-hover:border-slate-300 group-hover:text-slate-600">
-            <ChevronRight className="h-5 w-5" />
+          <div
+            className={cn(
+              "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-300 transition-colors",
+              locked
+                ? "border-slate-200/70 text-slate-300"
+                : "group-hover:border-slate-300 group-hover:text-slate-600",
+            )}
+          >
+            {locked ? <Lock className="h-4 w-4" /> : <ChevronRight className="h-5 w-5" />}
           </div>
         </div>
       </div>
-    </Link>
+    </button>
   )
 }

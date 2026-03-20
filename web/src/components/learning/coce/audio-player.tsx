@@ -40,12 +40,12 @@ export function AudioPlayer({
             size="lg"
             onClick={onTranscriptToggle}
             disabled={isLoadingTranscript}
-            className="gap-2 shrink-0 min-w-[180px] transition-all hover:scale-105"
+            className="w-full gap-2 transition-all hover:scale-105 sm:w-auto sm:shrink-0 sm:min-w-[180px]"
           >
             {isLoadingTranscript ? (
               <>
                 <RefreshCw className="h-4 w-4 animate-spin" />
-                Loading...
+                Loading…
               </>
             ) : showTranscript ? (
               <>
