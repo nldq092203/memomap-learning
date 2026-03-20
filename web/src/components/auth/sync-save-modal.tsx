@@ -8,7 +8,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import { LoginButton } from "@/components/auth/login-button"
-import { Cloud, BookMarked, TrendingUp, Shield } from "lucide-react"
+import { Cloud, BookMarked, TrendingUp, Shield, X } from "lucide-react"
 
 interface SyncSaveModalProps {
   open: boolean
@@ -42,13 +42,25 @@ const benefits = [
 export function SyncSaveModal({ open, onOpenChange }: SyncSaveModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md rounded-[28px] border-none bg-gradient-to-b from-white via-white to-slate-50 p-0 shadow-2xl sm:max-w-[440px]">
-        <div className="relative overflow-hidden rounded-t-[28px] bg-gradient-to-br from-primary via-primary/90 to-primary/80 px-6 pb-8 pt-10">
+      <DialogContent
+        showCloseButton={false}
+        overlayClassName="bg-slate-950/55 backdrop-blur-sm"
+        className="w-[calc(100vw-1rem)] max-w-[440px] overflow-hidden rounded-[28px] border border-white/70 bg-white p-0 shadow-[0_32px_90px_-42px_rgba(15,23,42,0.55)]"
+      >
+        <div className="relative overflow-hidden bg-gradient-to-br from-primary via-primary/90 to-primary/80 px-5 pb-8 pt-10 sm:px-6">
           <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
           <div className="absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-white/10 blur-xl" />
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="absolute right-4 top-4 z-20 flex h-12 w-12 items-center justify-center rounded-full border border-slate-900/5 bg-white/18 text-primary-foreground/80 shadow-[0_8px_20px_rgba(15,23,42,0.08)] backdrop-blur-sm transition-colors hover:bg-white/24 hover:text-primary-foreground"
+            aria-label="Fermer"
+          >
+            <X className="h-5 w-5" />
+          </button>
 
-          <DialogHeader className="relative z-10">
-            <DialogTitle className="text-2xl font-bold tracking-tight text-primary-foreground">
+          <DialogHeader className="relative z-10 pr-14 text-left">
+            <DialogTitle className="text-balance text-2xl font-bold tracking-tight text-primary-foreground">
               Gardez votre progression !
             </DialogTitle>
             <DialogDescription className="mt-2 text-sm leading-relaxed text-primary-foreground/90">
@@ -57,7 +69,7 @@ export function SyncSaveModal({ open, onOpenChange }: SyncSaveModalProps) {
           </DialogHeader>
         </div>
 
-        <div className="space-y-3 px-6 pt-5 pb-2">
+        <div className="space-y-3 bg-white px-5 pb-2 pt-5 sm:px-6">
           {benefits.map((b) => (
             <div
               key={b.label}
@@ -74,8 +86,8 @@ export function SyncSaveModal({ open, onOpenChange }: SyncSaveModalProps) {
           ))}
         </div>
 
-        <div className="space-y-4 px-6 pb-6 pt-3">
-          <div className="flex items-start gap-2 rounded-xl bg-slate-50 px-3 py-2.5">
+        <div className="space-y-4 bg-white px-5 pb-6 pt-3 sm:px-6">
+          <div className="flex items-start gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5">
             <Shield className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
             <p className="text-[11px] leading-relaxed text-slate-500">
               MemoMap est 100% gratuit. La connexion sert uniquement à sécuriser vos données.
@@ -96,7 +108,7 @@ export function SyncSaveModal({ open, onOpenChange }: SyncSaveModalProps) {
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="w-full py-2 text-center text-xs font-medium text-slate-400 transition-colors hover:text-slate-600"
+            className="w-full rounded-xl bg-white py-2 text-center text-xs font-medium text-slate-400 transition-colors hover:text-slate-600"
           >
             Continuer en mode invité
           </button>
