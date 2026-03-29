@@ -11,7 +11,7 @@ interface TestListProps {
   section: DelfSection
   tests: DelfTestPaperResponse[]
   loading: boolean
-  onSelectTest: (testId: string, level: DelfLevel, variant: string, section: string) => void
+  onSelectTest: (testId: string, level: DelfLevel, variant: string, section: DelfSection) => void
   onBack: () => void
 }
 

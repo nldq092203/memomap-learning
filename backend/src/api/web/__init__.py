@@ -395,6 +395,11 @@ web_bp.add_url_rule(
     methods=["GET"],
 )
 web_bp.add_url_rule(
+    "/delf/<level>/<variant>/<section>/<test_id>",
+    view_func=delf_get_test,
+    methods=["GET"],
+)
+web_bp.add_url_rule(
     "/delf/audio/<path:audio_path>",
     view_func=delf_proxy_audio,
     methods=["GET"],

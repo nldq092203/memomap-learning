@@ -240,14 +240,19 @@ export function useDelfPractice() {
   )
 
   // Reset current test state
-  const resetTest = useCallback(() => {
-    setCurrentTest(null)
+  const restartCurrentTest = useCallback(() => {
     setUserAnswers([])
     setMatchingAnswers([])
     setSubQuestionAnswers({})
     setShowResults(false)
     setMode("intro")
   }, [])
+
+  // Reset current test state
+  const resetTest = useCallback(() => {
+    setCurrentTest(null)
+    restartCurrentTest()
+  }, [restartCurrentTest])
 
   // Complete reset to selection screen
   const resetAll = useCallback(() => {
@@ -281,6 +286,7 @@ export function useDelfPractice() {
     submitTest,
     isAnswerCorrect,
     setMode,
+    restartCurrentTest,
     resetTest,
     resetAll,
   }

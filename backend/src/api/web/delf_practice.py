@@ -21,6 +21,10 @@ from flask import request, Response
 
 from src.api.decorators import require_auth
 from src.api.errors import BadRequestError, NotFoundError
+from src.shared.delf_practice.content_service import (
+    invalidate_delf_content_cache,
+    resolve_delf_content,
+)
 from src.shared.delf_practice.github_manager import GitHubDelfManager
 from src.shared.delf_practice.github_repository import GitHubDelfRepository
 from src.shared.delf_practice.test_paper_repository import DelfTestPaperRepository
@@ -33,6 +37,10 @@ from src.shared.delf_practice.schemas import (
     UploadDelfRepoFileRequest,
 )
 from src.utils.response_builder import ResponseBuilder
+
+
+def _normalize_delf_path_value(value: str) -> str:
+    return (value or "").strip()
 
 
 def _get_delf_params() -> tuple[str, str, str]:
@@ -123,13 +131,41 @@ def delf_list_tests():
     return ResponseBuilder().success(data={"items": items, "level": level}).build()
 
 
-def delf_get_test(test_id: str):
+def delf_get_test(
+    test_id: str,
+    level: str | None = None,
+    variant: str | None = None,
+    section: str | None = None,
+):
     """
     GET /web/delf/tests/<test_id>?level=A2&variant=tout-public-a2&section=CO
 
     Returns full test paper with content fetched from GitHub.
+    Supports both legacy query-param routing and canonical path routing.
     """
-    level, variant, section = _get_delf_params()
+    if level is None or variant is None or section is None:
+        level, variant, section = _get_delf_params()
+    else:
+        level = _normalize_delf_path_value(level).upper()
+        variant = _normalize_delf_path_value(variant)
+        section = _normalize_delf_path_value(section)
+
+    return _build_delf_test_detail(
+        test_id=test_id,
+        level=level,
+        variant=variant,
+        section=section,
+    )
+
+
+def _build_delf_test_detail(
+    *,
+    test_id: str,
+    level: str,
+    variant: str,
+    section: str,
+):
+    """Resolve a DELF paper from DB and fetch its JSON detail via cache."""
 
     if not variant or not section:
         raise BadRequestError("variant and section are required")
@@ -148,11 +184,10 @@ def delf_get_test(test_id: str):
     ):
         raise NotFoundError("Test paper not available in guest mode")
 
-    # Fetch content from GitHub
     github_repo = GitHubDelfRepository()
 
     try:
-        content = github_repo.fetch_test_paper(paper.github_path)
+        content = resolve_delf_content(paper=paper, github_repo=github_repo)
     except Exception as e:
         raise NotFoundError(f"Test paper content not found on GitHub: {e}")
 
@@ -339,10 +374,21 @@ def delf_admin_delete_test(user_id: str, test_paper_id: str):
     Delete test paper metadata.
     """
     repo = DelfTestPaperRepository()
+    paper = repo.get_by_id(test_paper_id)
+    if not paper:
+        raise NotFoundError("Test paper not found")
+
     success = repo.delete(test_paper_id)
 
     if not success:
         raise NotFoundError("Test paper not found")
+
+    invalidate_delf_content_cache(
+        level=paper.level,
+        variant=paper.variant,
+        section=paper.section,
+        test_id=paper.test_id,
+    )
 
     return (
         ResponseBuilder()
@@ -448,6 +494,13 @@ def delf_admin_save_test_content(user_id: str):
     else:
         repo.update(paper.id, **update_fields)
 
+    invalidate_delf_content_cache(
+        level=paper.level,
+        variant=paper.variant,
+        section=paper.section,
+        test_id=paper.test_id,
+    )
+
     return (
         ResponseBuilder()
         .success(
@@ -515,6 +568,13 @@ def delf_admin_upload_file(user_id: str):
 
     if req.folder == "audio" and req.update_audio_filename:
         repo.update(req.test_paper_id, audio_filename=filename)
+
+    invalidate_delf_content_cache(
+        level=paper.level,
+        variant=paper.variant,
+        section=paper.section,
+        test_id=paper.test_id,
+    )
 
     return (
         ResponseBuilder()

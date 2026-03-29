@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { AuthContextType, AuthState } from '@/lib/types/auth';
 import { authService } from '@/lib/services/auth';
 
@@ -11,6 +11,7 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
+  const hasInitializedRef = useRef(false);
   const [state, setState] = useState<AuthState>({
     user: null,
     isAuthenticated: false,
@@ -20,6 +21,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const clearError = useCallback(() => {
     setState(prev => ({ ...prev, error: null }));
+  }, []);
+
+  const clearLearningSettingsForUser = useCallback((userKey?: string | null) => {
+    if (!userKey) {
+      return;
+    }
+
+    const storageKey = `learning_settings:${userKey}`;
+    try {
+      localStorage.removeItem(storageKey);
+    } catch {
+      // ignore localStorage errors
+    }
   }, []);
 
   const login = useCallback(async (googleCode: string) => {
@@ -39,17 +53,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         isLoading: false,
         error: null,
       });
-
-      void authService.getCurrentUser().then(freshUser => {
-        if (!freshUser) return;
-        setState(prev => {
-          if (!prev.isAuthenticated) return prev;
-          return {
-            ...prev,
-            user: freshUser,
-          };
-        });
-      });
     } catch (error) {
       setState(prev => ({
         ...prev,
@@ -64,17 +67,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       await authService.logout();
-      
-      // Clear learning settings from localStorage on logout
-      const userKey = state.user?.sub || state.user?.email
-      if (userKey) {
-        const storageKey = `learning_settings:${userKey}`
-        try {
-          localStorage.removeItem(storageKey)
-        } catch {
-          // ignore localStorage errors
-        }
-      }
+      clearLearningSettingsForUser(state.user?.sub || state.user?.email);
       
       setState({
         user: null,
@@ -89,7 +82,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         error: error instanceof Error ? error.message : 'Logout failed',
       }));
     }
-  }, [state.user]);
+  }, [clearLearningSettingsForUser, state.user]);
 
   const refreshAuth = useCallback(async () => {
     try {
@@ -113,8 +106,69 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Check authentication status on mount
   useEffect(() => {
+    if (hasInitializedRef.current) {
+      return;
+    }
+    hasInitializedRef.current = true;
+
     const initializeAuth = async () => {
-      // Check current authentication status
+      if (!authService.hasToken()) {
+        setState({
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: null,
+        });
+        return;
+      }
+
+      const cachedUser = authService.getStoredUser();
+      if (cachedUser) {
+        setState({
+          user: cachedUser,
+          isAuthenticated: true,
+          isLoading: false,
+          error: null,
+        });
+
+        void authService.revalidateCurrentUser().then((result) => {
+          if (result.status === 'valid') {
+            setState(prev => {
+              if (!prev.isAuthenticated) {
+                return prev;
+              }
+
+              if (
+                prev.user?.sub === result.user.sub &&
+                prev.user?.email === result.user.email &&
+                prev.user?.name === result.user.name &&
+                prev.error === null
+              ) {
+                return prev;
+              }
+
+              return {
+                ...prev,
+                user: result.user,
+                error: null,
+              };
+            });
+            return;
+          }
+
+          if (result.status === 'invalid') {
+            clearLearningSettingsForUser(cachedUser.sub || cachedUser.email);
+            setState({
+              user: null,
+              isAuthenticated: false,
+              isLoading: false,
+              error: null,
+            });
+          }
+        });
+        return;
+      }
+
       try {
         await refreshAuth();
       } catch (error) {
@@ -126,7 +180,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     initializeAuth();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run on mount - refreshAuth is stable and doesn't need to be in deps
+  }, [clearLearningSettingsForUser, refreshAuth]); // initialization is explicitly guarded by ref
 
   const contextValue: AuthContextType = {
     ...state,

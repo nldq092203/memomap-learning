@@ -33,7 +33,7 @@ export const learningDelfApi = {
 
   /**
    * Get full test paper details including content from GitHub
-   * GET /web/delf/tests/{testId}?level=B2&variant=tout-public-b2&section=CO
+   * GET /web/delf/{level}/{variant}/{section}/{testId}
    */
   async getTest(
     testId: string,
@@ -43,8 +43,8 @@ export const learningDelfApi = {
     guestMode = false,
   ): Promise<DelfTestPaperDetailResponse> {
     return apiClient.get<DelfTestPaperDetailResponse>(
-      `${BASE}/tests/${testId}`,
-      { level, variant, section, guest_mode: guestMode }
+      `${BASE}/${level}/${variant}/${section}/${testId}`,
+      guestMode ? { guest_mode: "true" } : undefined
     )
   },
 
