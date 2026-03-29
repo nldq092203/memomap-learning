@@ -17,6 +17,13 @@ def serialize_feedback(doc: dict[str, Any]) -> dict[str, Any]:
     """Convert a Mongo document to a JSON-safe dict."""
     payload = dict(doc)
     payload["_id"] = str(payload["_id"])
+    payload["is_incognito"] = bool(payload.get("is_incognito"))
+    payload["display_name"] = CommunityFeedbackService.build_display_name(
+        display_name=payload.get("display_name"),
+        email=payload.get("email"),
+        is_incognito=payload["is_incognito"],
+    )
+    payload.pop("email", None)
 
     created_at = payload.get("created_at")
     if isinstance(created_at, datetime):
@@ -42,16 +49,22 @@ class CommunityFeedbackService:
     def create_feedback(
         *,
         user_id: str,
+        display_name: str | None,
         email: str,
         content: str,
+        is_incognito: bool = False,
     ) -> dict[str, Any]:
         normalized_content = CommunityFeedbackService._normalize_content(content)
 
         doc = {
             "user_id": user_id,
             "email": email,
+            "display_name": CommunityFeedbackService._normalize_display_name(
+                display_name, email
+            ),
             "content": normalized_content,
             "status": "planned",
+            "is_incognito": bool(is_incognito),
             "created_at": datetime.now(timezone.utc),
         }
 
@@ -68,6 +81,7 @@ class CommunityFeedbackService:
         actor_user_id: str,
         content: str | None = None,
         status: str | None = None,
+        is_incognito: bool | None = None,
         can_update_status: bool = False,
     ) -> dict[str, Any]:
         doc = CommunityFeedbackService._get_feedback_or_raise(feedback_id)
@@ -76,6 +90,10 @@ class CommunityFeedbackService:
         if content is not None:
             CommunityFeedbackService._require_owner(doc, actor_user_id)
             update_fields["content"] = CommunityFeedbackService._normalize_content(content)
+
+        if is_incognito is not None:
+            CommunityFeedbackService._require_owner(doc, actor_user_id)
+            update_fields["is_incognito"] = bool(is_incognito)
 
         if status is not None:
             if not can_update_status:
@@ -126,6 +144,32 @@ class CommunityFeedbackService:
         if not normalized_content:
             raise BadRequestError("content is required")
         return normalized_content
+
+    @staticmethod
+    def _normalize_display_name(display_name: str | None, email: str) -> str:
+        normalized_display_name = (display_name or "").strip()
+        if normalized_display_name:
+            return normalized_display_name
+
+        email_local_part = (email or "").split("@", 1)[0].strip()
+        if email_local_part:
+            return email_local_part
+
+        return "Member"
+
+    @staticmethod
+    def build_display_name(
+        *,
+        display_name: str | None,
+        email: str | None,
+        is_incognito: bool,
+    ) -> str:
+        if is_incognito:
+            return "Incognito"
+        return CommunityFeedbackService._normalize_display_name(
+            display_name,
+            email or "",
+        )
 
     @staticmethod
     def _normalize_status(status: str) -> str:

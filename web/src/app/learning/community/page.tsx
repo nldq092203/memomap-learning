@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 import {
+  EyeOff,
   Lightbulb,
   MessageSquareQuote,
   PencilLine,
@@ -91,7 +92,15 @@ function FeedbackCard({
 
       <div className="relative flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-slate-900">{fb.email}</p>
+          <div className="flex items-center gap-2">
+            <p className="truncate text-sm font-semibold text-slate-900">{fb.display_name}</p>
+            {fb.is_incognito ? (
+              <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-slate-500">
+                <EyeOff className="h-3 w-3" />
+                Incognito
+              </span>
+            ) : null}
+          </div>
           <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
             <MessageSquareQuote className="h-3.5 w-3.5" />
             <time>{feedbackDateFormatter.format(new Date(fb.created_at))}</time>
@@ -164,6 +173,7 @@ export default function CommunityPage() {
   const { user } = useAuth()
   const [feedbacks, setFeedbacks] = useState<CommunityFeedback[]>([])
   const [content, setContent] = useState("")
+  const [isIncognito, setIsIncognito] = useState(false)
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -191,9 +201,10 @@ export default function CommunityPage() {
     if (!trimmed) return
 
     setErrorMessage(null)
-    const newFeedback = await communityApi.postFeedback(trimmed)
+    const newFeedback = await communityApi.postFeedback(trimmed, isIncognito)
     setFeedbacks((prev) => [newFeedback, ...prev])
     setContent("")
+    setIsIncognito(false)
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -350,10 +361,25 @@ export default function CommunityPage() {
                 onChange={(e) => setContent(e.target.value)}
               />
 
+              <label className="flex items-start gap-3 rounded-[22px] border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={isIncognito}
+                  onChange={(e) => setIsIncognito(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-300"
+                />
+                <span>
+                  <span className="block font-medium text-slate-900">Post in incognito mode</span>
+                  <span className="block text-xs leading-5 text-slate-500">
+                    Your post stays linked to your account for editing and deletion, but the community only sees “Incognito”.
+                  </span>
+                </span>
+              </label>
+
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs text-slate-500">
                   {content.trim().length > 0
-                    ? `${content.trim().length} caractères prêts à être envoyés`
+                    ? `${content.trim().length} caractères prêts à être envoyés${isIncognito ? " en mode incognito" : ""}`
                     : "Plus c'est concret, plus c'est exploitable."}
                 </p>
                 <button
