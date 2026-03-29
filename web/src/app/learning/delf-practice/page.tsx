@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { LevelSectionSelector } from "@/components/learning/delf"
-import { useGuest, GUEST_ALLOWED_LEVEL } from "@/lib/contexts/guest-context"
+import { useGuest, GUEST_ALLOWED_DELF_LEVELS } from "@/lib/contexts/guest-context"
 import type { DelfLevel, DelfSection } from "@/lib/types/api/delf"
 import { buildDelfListRoute } from "@/lib/utils/delf-routes"
 
@@ -13,7 +13,7 @@ export default function DelfPracticePage() {
   const { isGuest, setShowSyncModal } = useGuest()
 
   const handleLevelSectionSelect = (lvl: DelfLevel, sec: DelfSection) => {
-    if (isGuest && lvl !== GUEST_ALLOWED_LEVEL) {
+    if (isGuest && !GUEST_ALLOWED_DELF_LEVELS.includes(lvl)) {
       setShowSyncModal(true)
       return
     }

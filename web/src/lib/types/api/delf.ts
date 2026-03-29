@@ -1,7 +1,7 @@
 // DELF Practice API Types
 
 // CEFR levels supported
-export type DelfLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2'
+export type DelfLevel = 'A2' | 'B1' | 'B2' | 'C1'
 
 // Exam Sections
 export type DelfSection = 'CO' | 'CE' | 'PE' | 'PO'

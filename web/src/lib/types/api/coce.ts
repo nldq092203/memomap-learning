@@ -4,7 +4,7 @@
 export type ExerciseMediaType = 'audio' | 'video'
 
 // CEFR levels supported (extended range)
-export type CEFRLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2'
+export type CEFRLevel = 'A2' | 'B1' | 'B2' | 'C1'
 
 // Backward compatibility alias
 export type CoCeLevel = CEFRLevel

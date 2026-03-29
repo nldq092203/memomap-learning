@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { TestList, TestPlayer } from "@/components/learning/delf"
-import { useGuest, GUEST_ALLOWED_LEVEL } from "@/lib/contexts/guest-context"
+import { useGuest, GUEST_ALLOWED_DELF_LEVELS } from "@/lib/contexts/guest-context"
 import { useDelfPractice } from "@/lib/hooks/use-delf-practice"
 import { learningDelfApi } from "@/lib/services/learning-delf-api"
 import { notificationService } from "@/lib/services/notification-service"
@@ -97,7 +97,7 @@ export default function DelfLevelRoutePage() {
       return
     }
 
-    if (isGuest && route.level !== GUEST_ALLOWED_LEVEL) {
+    if (isGuest && !GUEST_ALLOWED_DELF_LEVELS.includes(route.level)) {
       setShowSyncModal(true)
       router.replace(DELF_PRACTICE_ROOT)
     }

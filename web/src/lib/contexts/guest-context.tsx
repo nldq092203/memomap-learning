@@ -2,9 +2,13 @@
 
 import React, { createContext, useContext, useState, useCallback, useRef } from "react"
 import { useAuth } from "@/lib/contexts/auth-context"
+import type { DelfLevel } from "@/lib/types/api/delf"
 
-/** Only A2-level exercises are available to guests */
+/** Legacy single-level guest access used by features that still gate on one level only. */
 export const GUEST_ALLOWED_LEVEL = "A2" as const
+
+/** DELF guest access is enabled for both A2 and B1; backend still filters actual guest-visible tests. */
+export const GUEST_ALLOWED_DELF_LEVELS: readonly DelfLevel[] = ["A2", "B1"]
 
 interface GuestContextValue {
   isGuest: boolean

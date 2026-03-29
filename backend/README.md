@@ -91,7 +91,7 @@
 4. **Comprehension Practice (CO/CE)**
    - Listening (CO) and reading (CE) exercises
    - Multiple question types: single choice, inference, lexical
-   - Level-based organization (A1-C2)
+   - Level-based organization (A2-B2)
 
 5. **DELF Practice**
    - DELF exam-style test papers by level, variant, and section
@@ -495,7 +495,7 @@ The API is designed with clear separation between **Admin** and **User** roles. 
 | GET | `/web/coce/exercises/{id}/transcript?level={level}` | Get transcript |
 | GET | `/web/coce/exercises/{id}/questions?level={level}&type={co\|ce}` | Get questions |
 
-**Use Case:** Users practice listening (CO) or reading (CE) comprehension with level-appropriate exercises (A1-C2).
+**Use Case:** Users practice listening (CO) or reading (CE) comprehension with level-appropriate exercises (A2-B2).
 
 #### DELF Practice - User
 

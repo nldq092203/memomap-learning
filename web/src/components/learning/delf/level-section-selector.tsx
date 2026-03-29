@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button"
 import type { DelfLevel, DelfSection } from "@/lib/types/api/delf"
-import { GUEST_ALLOWED_LEVEL, useGuest } from "@/lib/contexts/guest-context"
+import { GUEST_ALLOWED_DELF_LEVELS, useGuest } from "@/lib/contexts/guest-context"
 import { BookOpen, Headphones, Lock, Mic, PenTool, Sparkles } from "lucide-react"
 import { TrainingChoiceCard, TrainingSectionHeader } from "@/components/learning/ui"
 
@@ -46,7 +46,7 @@ export function LevelSectionSelector({ onSelect, loading }: LevelSectionSelector
 
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {DELF_LEVELS.map((level) => {
-          const isLockedForGuest = isGuest && level.id !== GUEST_ALLOWED_LEVEL
+          const isLockedForGuest = isGuest && !GUEST_ALLOWED_DELF_LEVELS.includes(level.id)
 
           return (
             <TrainingChoiceCard
@@ -60,7 +60,7 @@ export function LevelSectionSelector({ onSelect, loading }: LevelSectionSelector
               }
               title={level.id}
               description={
-                isLockedForGuest ? "Disponible apres connexion. Le mode invite est limite au niveau A2." : level.description
+                isLockedForGuest ? "Disponible apres connexion. Le mode invite couvre A2 et B1." : level.description
               }
               footer={<p className="text-sm font-medium text-slate-700">{level.name}</p>}
             >
@@ -81,7 +81,7 @@ export function LevelSectionSelector({ onSelect, loading }: LevelSectionSelector
                       <div>
                         <p className="font-semibold">{section.name}</p>
                         <p className="text-xs text-slate-500">
-                          {isLockedForGuest ? "A2 seulement en mode invite" : section.description}
+                          {isLockedForGuest ? "A2 et B1 en mode invite" : section.description}
                         </p>
                       </div>
                     </Button>

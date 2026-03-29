@@ -6,12 +6,6 @@ import { cn } from "@/lib/utils"
 import { BookOpen, Lock } from "lucide-react"
 
 const LEVEL_INFO: Record<CEFRLevel, { name: string; description: string; color: string; enabled: boolean }> = {
-  A1: {
-    name: "A1 - Debutant",
-    description: "Temporairement indisponible",
-    color: "bg-slate-100 border-slate-200",
-    enabled: false,
-  },
   A2: {
     name: "A2 - Elementaire",
     description: "Comprendre des phrases simples et frequentes",
@@ -32,12 +26,6 @@ const LEVEL_INFO: Record<CEFRLevel, { name: string; description: string; color: 
   },
   C1: {
     name: "C1 - Avance",
-    description: "Temporairement indisponible",
-    color: "bg-slate-100 border-slate-200",
-    enabled: false,
-  },
-  C2: {
-    name: "C2 - Maitrise",
     description: "Temporairement indisponible",
     color: "bg-slate-100 border-slate-200",
     enabled: false,
