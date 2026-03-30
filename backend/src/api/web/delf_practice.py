@@ -15,18 +15,28 @@ from __future__ import annotations
 
 import base64
 import binascii
+import json
 from typing import Any
 
 from flask import request, Response
 
 from src.api.decorators import require_auth
-from src.api.errors import BadRequestError, NotFoundError
+from src.api.errors import BadRequestError, NotFoundError, ForbiddenError
+from src.config import Config
 from src.shared.delf_practice.content_service import (
     invalidate_delf_content_cache,
     resolve_delf_content,
 )
 from src.shared.delf_practice.github_manager import GitHubDelfManager
 from src.shared.delf_practice.github_repository import GitHubDelfRepository
+from src.shared.delf_practice.local_asset_service import (
+    build_asset_filename,
+    clamp_crop_box,
+    decode_image_bytes,
+    detect_option_boxes,
+    export_crop_to_webp,
+    parse_crop_box,
+)
 from src.shared.delf_practice.test_paper_repository import DelfTestPaperRepository
 from src.shared.delf_practice.schemas import (
     CreateDelfTestPaperRequest,
@@ -35,12 +45,75 @@ from src.shared.delf_practice.schemas import (
     DelfTestPaperDetailResponse,
     SaveDelfTestContentRequest,
     UploadDelfRepoFileRequest,
+    DelfLocalScreenshotUploadRequest,
 )
 from src.utils.response_builder import ResponseBuilder
 
 
 def _normalize_delf_path_value(value: str) -> str:
     return (value or "").strip()
+
+
+def _parse_json_form_field(field_name: str) -> Any:
+    raw = (request.form.get(field_name) or "").strip()
+    if not raw:
+        return None
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise BadRequestError(f"Invalid {field_name}: {exc}") from exc
+
+
+def _build_local_screenshot_payload_from_form() -> DelfLocalScreenshotUploadRequest:
+    """Build the screenshot-upload request from either payload or flat form fields."""
+    payload_raw = (request.form.get("payload") or "").strip()
+    if payload_raw:
+        try:
+            return DelfLocalScreenshotUploadRequest.model_validate_json(payload_raw)
+        except Exception as exc:
+            raise BadRequestError(f"Invalid payload: {exc}") from exc
+
+    test_paper_id = (request.form.get("test_paper_id") or "").strip()
+    question_number_raw = (request.form.get("question_number") or "").strip()
+    if not test_paper_id:
+        raise BadRequestError("test_paper_id is required when payload is omitted")
+    if not question_number_raw:
+        raise BadRequestError("question_number is required when payload is omitted")
+
+    try:
+        question_number = int(question_number_raw)
+    except ValueError as exc:
+        raise BadRequestError("question_number must be an integer") from exc
+
+    options = _parse_json_form_field("options")
+    if not isinstance(options, list) or not options:
+        raise BadRequestError(
+            "options is required when payload is omitted and must be a JSON array"
+        )
+
+    auto_detect = _parse_json_form_field("auto_detect")
+    webp_quality_raw = (request.form.get("webp_quality") or "").strip()
+    request_payload: dict[str, Any] = {
+        "test_paper_id": test_paper_id,
+        "questions": [
+            {
+                "question_number": question_number,
+                "options": options,
+            }
+        ],
+    }
+    if auto_detect is not None:
+        request_payload["questions"][0]["auto_detect"] = auto_detect
+    if webp_quality_raw:
+        try:
+            request_payload["webp_quality"] = int(webp_quality_raw)
+        except ValueError as exc:
+            raise BadRequestError("webp_quality must be an integer") from exc
+
+    try:
+        return DelfLocalScreenshotUploadRequest.model_validate(request_payload)
+    except Exception as exc:
+        raise BadRequestError(f"Invalid form fields: {exc}") from exc
 
 
 def _get_delf_params() -> tuple[str, str, str]:
@@ -591,6 +664,148 @@ def delf_admin_upload_file(user_id: str):
 
 
 @require_auth  # TODO: Change to @require_admin when ready
+def delf_admin_upload_screenshot_assets(user_id: str):
+    """
+    POST /web/delf/admin/assets:screenshot
+
+    Local-only multipart endpoint that crops image options from one screenshot,
+    converts them to WEBP, and uploads them to the DELF GitHub assets folder.
+
+    Multipart form-data:
+    - exercise_image: image file
+    - payload: optional JSON string
+
+    Or step-by-step fields:
+    - test_paper_id
+    - question_number
+    - options: JSON array string
+    - auto_detect: optional JSON object string
+    - webp_quality: optional integer
+
+    Payload example:
+    {
+      "test_paper_id": "uuid",
+      "webp_quality": 92,
+      "questions": [
+        {
+          "question_number": 6,
+          "auto_detect": {
+            "region": {"left": 40, "top": 820, "right": 530, "bottom": 970},
+            "padding": 12,
+            "min_area": 1800
+          },
+          "options": [
+            {"label": "a"},
+            {"label": "b"},
+            {"label": "c"}
+          ]
+        }
+      ]
+    }
+    """
+    if not getattr(Config, "DELF_LOCAL_ASSET_TOOL_ENABLED", False):
+        raise ForbiddenError("Local DELF asset tool is disabled")
+
+    payload = _build_local_screenshot_payload_from_form()
+
+    image_file = request.files.get("exercise_image")
+    if image_file is None:
+        raise BadRequestError("exercise_image file is required")
+
+    repo = DelfTestPaperRepository()
+    paper = repo.get_by_id(payload.test_paper_id)
+    if not paper:
+        raise NotFoundError("Test paper not found")
+
+    image_bgr = decode_image_bytes(image_file.read())
+    image_height, image_width = image_bgr.shape[:2]
+    github_mgr = GitHubDelfManager()
+    uploaded_assets: list[dict[str, Any]] = []
+
+    for question in payload.questions:
+        detected_boxes = None
+        if question.auto_detect is not None:
+            detected_boxes = detect_option_boxes(
+                image_bgr=image_bgr,
+                region=parse_crop_box(question.auto_detect.region),
+                expected_count=len(question.options),
+                min_area=question.auto_detect.min_area,
+                padding=question.auto_detect.padding,
+            )
+
+        for index, option in enumerate(question.options):
+            if option.crop is None and detected_boxes is None:
+                raise BadRequestError(
+                    f"Question {question.question_number} option {option.label} "
+                    "requires crop coordinates or auto_detect"
+                )
+
+            crop = (
+                detected_boxes[index]
+                if detected_boxes is not None
+                else parse_crop_box(option.crop or {})
+            )
+            crop = clamp_crop_box(crop, image_width, image_height)
+            filename = option.filename or build_asset_filename(
+                test_id=paper.test_id,
+                question_number=question.question_number,
+                label=option.label,
+            )
+            content_bytes = export_crop_to_webp(
+                image_bgr=image_bgr,
+                crop=crop,
+                quality=payload.webp_quality,
+            )
+            file_path = (
+                f"delf/{paper.level.lower()}/{paper.variant}/{paper.section}/assets/{filename}"
+            )
+            result = github_mgr.create_or_update_file(
+                file_path=file_path,
+                content=content_bytes,
+                commit_message=(
+                    f"chore: upload DELF asset for {paper.test_id} "
+                    f"(q{question.question_number} {option.label.lower()})"
+                ),
+            )
+            uploaded_assets.append(
+                {
+                    "question_number": question.question_number,
+                    "label": option.label.lower(),
+                    "filename": filename,
+                    "file_path": file_path,
+                    "github_url": result.get("content", {}).get("html_url"),
+                    "crop": {
+                        "left": crop.left,
+                        "top": crop.top,
+                        "right": crop.right,
+                        "bottom": crop.bottom,
+                    },
+                }
+            )
+
+    invalidate_delf_content_cache(
+        level=paper.level,
+        variant=paper.variant,
+        section=paper.section,
+        test_id=paper.test_id,
+    )
+
+    return (
+        ResponseBuilder()
+        .success(
+            data={
+                "message": "Screenshot assets processed and uploaded",
+                "test_paper_id": paper.id,
+                "test_id": paper.test_id,
+                "asset_count": len(uploaded_assets),
+                "items": uploaded_assets,
+            }
+        )
+        .build()
+    )
+
+
+@require_auth  # TODO: Change to @require_admin when ready
 def delf_admin_mark_guest_preview(user_id: str):
     """
     POST /web/delf/admin/tests:guest-preview
@@ -648,5 +863,6 @@ __all__ = [
     "delf_admin_delete_test",
     "delf_admin_save_test_content",
     "delf_admin_upload_file",
+    "delf_admin_upload_screenshot_assets",
     "delf_admin_mark_guest_preview",
 ]

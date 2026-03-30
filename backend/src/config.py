@@ -106,6 +106,9 @@ class LearningConfig:
     GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
     GITHUB_REPO_OWNER = os.getenv("GITHUB_REPO_OWNER", "nldq092203")
     GITHUB_REPO_NAME = os.getenv("GITHUB_REPO_NAME", "memomap-audio-fr")
+    DELF_LOCAL_ASSET_TOOL_ENABLED = (
+        os.getenv("DELF_LOCAL_ASSET_TOOL_ENABLED", "false").lower() == "true"
+    )
 
 
 

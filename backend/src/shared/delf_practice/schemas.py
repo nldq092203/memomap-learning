@@ -204,6 +204,38 @@ class UploadDelfRepoFileRequest(BaseModel):
     update_audio_filename: bool = False
 
 
+class DelfLocalImageOptionRequest(BaseModel):
+    """One image option to crop from a screenshot."""
+
+    label: str = Field(..., pattern="^[a-fA-F]$")
+    crop: dict[str, int] | None = None
+    filename: str | None = Field(default=None, min_length=1, max_length=255)
+
+
+class DelfLocalAutoDetectRequest(BaseModel):
+    """Auto-detection settings for a question region."""
+
+    region: dict[str, int]
+    min_area: int = Field(default=1500, ge=1)
+    padding: int = Field(default=10, ge=0)
+
+
+class DelfLocalScreenshotQuestionRequest(BaseModel):
+    """One question slice in a screenshot upload request."""
+
+    question_number: int = Field(..., ge=1)
+    options: list[DelfLocalImageOptionRequest] = Field(..., min_length=1)
+    auto_detect: DelfLocalAutoDetectRequest | None = None
+
+
+class DelfLocalScreenshotUploadRequest(BaseModel):
+    """Form field payload for local-only screenshot asset processing."""
+
+    test_paper_id: str = Field(..., min_length=1)
+    questions: list[DelfLocalScreenshotQuestionRequest] = Field(..., min_length=1)
+    webp_quality: int = Field(default=92, ge=1, le=100)
+
+
 __all__ = [
     # Content models
     "DelfImageOption",
@@ -224,4 +256,8 @@ __all__ = [
     "UpdateDelfTestPaperRequest",
     "SaveDelfTestContentRequest",
     "UploadDelfRepoFileRequest",
+    "DelfLocalImageOptionRequest",
+    "DelfLocalAutoDetectRequest",
+    "DelfLocalScreenshotQuestionRequest",
+    "DelfLocalScreenshotUploadRequest",
 ]

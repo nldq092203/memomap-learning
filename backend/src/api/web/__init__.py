@@ -89,6 +89,7 @@ from src.api.web.delf_practice import (
     delf_admin_delete_test,
     delf_admin_save_test_content,
     delf_admin_upload_file,
+    delf_admin_upload_screenshot_assets,
     delf_admin_mark_guest_preview,
 )
 from src.api.web.community import community_list_create, community_detail
@@ -434,6 +435,11 @@ web_bp.add_url_rule(
 web_bp.add_url_rule(
     "/delf/admin/files",
     view_func=delf_admin_upload_file,
+    methods=["POST"],
+)
+web_bp.add_url_rule(
+    "/delf/admin/assets:screenshot",
+    view_func=delf_admin_upload_screenshot_assets,
     methods=["POST"],
 )
 web_bp.add_url_rule(

@@ -119,7 +119,6 @@ export function SubQuestionView({
                           className="h-[140px] w-full rounded-xl border border-slate-200 bg-white object-contain p-2"
                           loading="lazy"
                         />
-                        {option.desc && <span className="text-sm font-medium leading-5 text-slate-700">{option.desc}</span>}
                       </div>
                     ) : (
                       <span className="font-medium text-sm leading-relaxed">{option}</span>
@@ -178,16 +177,11 @@ export function SubQuestionView({
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img 
                       src={getAssetUrl ? getAssetUrl(option.img_url) : option.img_url} 
-                      alt={option.desc || option.label}
+                      alt={option.label}
                       className="object-contain w-full h-full"
                       loading="lazy"
                     />
                   </div>
-                  {option.desc && (
-                    <div className="p-2 text-center text-xs font-medium border-t bg-muted/10 truncate">
-                      {option.desc}
-                    </div>
-                  )}
                   
                   {showResults && (
                     <div className="absolute top-2 right-8">

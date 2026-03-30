@@ -122,7 +122,6 @@ export function ExerciseView({
                           className="h-[150px] w-full rounded-xl border border-slate-200 bg-white object-contain p-2"
                           loading="lazy"
                         />
-                        {option.desc && <span className="line-clamp-2 text-sm font-medium leading-5 text-slate-700">{option.desc}</span>}
                       </div>
                     ) : (
                       <span className="font-medium text-sm leading-relaxed">{option}</span>
