@@ -136,9 +136,17 @@ export function Navigation() {
         onClick={() => setIsMobileOpen(false)}
       />
 
+      {/* Spacer to reserve sidebar width in the flex layout */}
+      <div
+        className={cn(
+          "hidden lg:block lg:shrink-0",
+          isCollapsed ? "lg:w-24" : "lg:w-72",
+        )}
+      />
+
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-[60] flex w-[84vw] max-w-[320px] flex-col border-r border-border/70 bg-background shadow-2xl transition-transform duration-300 lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:max-w-none lg:translate-x-0 lg:shadow-none",
+          "fixed inset-y-0 left-0 z-[60] flex w-[84vw] max-w-[320px] flex-col border-r border-border/70 bg-background shadow-2xl transition-transform duration-300 lg:z-auto lg:max-w-none lg:translate-x-0 lg:shadow-none",
           isMobileOpen ? "translate-x-0" : "-translate-x-full",
           isCollapsed ? "lg:w-24" : "lg:w-72",
         )}

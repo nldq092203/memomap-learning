@@ -47,9 +47,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <LearningLangProvider>
                 <OnboardingProvider>
                   <GuestProvider>
-                    <div className="min-h-screen lg:flex">
+                    <div className="min-h-screen lg:flex lg:h-screen lg:overflow-hidden">
                       <Navigation />
-                      <main className="min-w-0 flex-1 pt-16 lg:pt-0">
+                      <main className="min-w-0 flex-1 pt-16 lg:pt-0 lg:overflow-y-auto">
                         {children}
                       </main>
                       <ToastProvider />
