@@ -14,6 +14,7 @@ export type DelfExerciseType =
   | 'multiple_choice' 
   | 'multiple_choice_image' 
   | 'matching' 
+  | 'reading_comprehension'
   | 'document_comprehension' 
   | 'article_comprehension'
   | 'multi_document_comprehension'
@@ -142,6 +143,26 @@ export function isImageOption(option: string | DelfImageOption): option is DelfI
 export interface DelfTestListResponse {
   items: DelfTestPaperResponse[]
   level: DelfLevel
+}
+
+const DOCUMENT_COMPREHENSION_EXERCISE_TYPES = new Set<string>([
+  'reading_comprehension',
+  'document_comprehension',
+  'article_comprehension',
+  'multi_document_comprehension',
+])
+
+const NESTED_QUESTION_EXERCISE_TYPES = new Set<string>([
+  ...DOCUMENT_COMPREHENSION_EXERCISE_TYPES,
+  'multiple_choice_set',
+])
+
+export function isDocumentComprehensionExerciseType(type: string): type is DelfExerciseType {
+  return DOCUMENT_COMPREHENSION_EXERCISE_TYPES.has(type)
+}
+
+export function isNestedQuestionExerciseType(type: string): type is DelfExerciseType {
+  return NESTED_QUESTION_EXERCISE_TYPES.has(type)
 }
 
 // --- Matching answer types ---

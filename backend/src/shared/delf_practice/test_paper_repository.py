@@ -80,6 +80,50 @@ class DelfTestPaperRepository:
             stmt = stmt.order_by(DelfTestPaperORM.test_id)
             return list(db.execute(stmt).scalars().all())
 
+    def list_by_scope(
+        self,
+        level: str,
+        variant: str,
+        section: str,
+        status: str | None = None,
+    ) -> list[DelfTestPaperORM]:
+        """List test papers for an exact DELF scope, optionally by status."""
+        with db_session() as db:
+            stmt = (
+                select(DelfTestPaperORM)
+                .where(DelfTestPaperORM.level == level.upper())
+                .where(DelfTestPaperORM.variant == variant)
+                .where(DelfTestPaperORM.section == section)
+            )
+            if status:
+                stmt = stmt.where(DelfTestPaperORM.status == status)
+
+            stmt = stmt.order_by(DelfTestPaperORM.test_id)
+            return list(db.execute(stmt).scalars().all())
+
+    def list_by_status(
+        self,
+        status: str = "draft",
+        level: str | None = None,
+        section: str | None = None,
+        variant: str | None = None,
+        limit: int = 50,
+    ) -> list[DelfTestPaperORM]:
+        """List papers in a given status (newest first), with optional filters."""
+        with db_session() as db:
+            stmt = select(DelfTestPaperORM).where(
+                DelfTestPaperORM.status == status
+            )
+            if level:
+                stmt = stmt.where(DelfTestPaperORM.level == level.upper())
+            if section:
+                stmt = stmt.where(DelfTestPaperORM.section == section)
+            if variant:
+                stmt = stmt.where(DelfTestPaperORM.variant == variant)
+
+            stmt = stmt.order_by(DelfTestPaperORM.created_at.desc()).limit(limit)
+            return list(db.execute(stmt).scalars().all())
+
     def update(self, paper_id: str, **updates) -> DelfTestPaperORM | None:
         """Update test paper fields."""
         with db_session() as db:

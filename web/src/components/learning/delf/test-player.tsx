@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import type { DelfTestPaperDetailResponse, MatchingAnswer } from "@/lib/types/api/delf"
+import {
+  isDocumentComprehensionExerciseType,
+  isNestedQuestionExerciseType,
+  type DelfTestPaperDetailResponse,
+  type MatchingAnswer,
+} from "@/lib/types/api/delf"
 import { learningDelfApi } from "@/lib/services/learning-delf-api"
 import { SupportProjectTrigger } from "@/components/auth/support-project-trigger"
 import { ExerciseView } from "@/components/learning/delf/exercise-view"
@@ -51,12 +56,7 @@ export function TestPlayer({
       return exercise.documents?.every((doc) => matchAnswer?.selections[doc.id]) ?? false
     }
 
-    if (
-      exercise.type === "document_comprehension" ||
-      exercise.type === "article_comprehension" ||
-      exercise.type === "multi_document_comprehension" ||
-      exercise.type === "multiple_choice_set"
-    ) {
+    if (isNestedQuestionExerciseType(exercise.type)) {
       const questions = exercise.questions || []
       return questions.every((question) => {
         const answer = subQuestionAnswers[question.id]
@@ -82,12 +82,7 @@ export function TestPlayer({
       return exercise.documents?.every((doc) => matchAnswer?.selections[doc.id]) ?? false
     }
 
-    if (
-      exercise.type === "document_comprehension" ||
-      exercise.type === "article_comprehension" ||
-      exercise.type === "multi_document_comprehension" ||
-      exercise.type === "multiple_choice_set"
-    ) {
+    if (isNestedQuestionExerciseType(exercise.type)) {
       const questions = exercise.questions || []
       return questions.every((question) => subQuestionAnswers[question.id] !== undefined)
     }
@@ -344,11 +339,7 @@ export function TestPlayer({
             )
           }
 
-          if (
-            exercise.type === "document_comprehension" ||
-            exercise.type === "article_comprehension" ||
-            exercise.type === "multi_document_comprehension"
-          ) {
+          if (isDocumentComprehensionExerciseType(exercise.type)) {
             return (
               <DocumentComprehensionView
                 key={exercise.id}

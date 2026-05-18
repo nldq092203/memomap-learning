@@ -9,6 +9,7 @@ import type {
   DelfTestPaperDetailResponse,
   MatchingAnswer,
 } from "@/lib/types/api/delf"
+import { isNestedQuestionExerciseType } from "@/lib/types/api/delf"
 import { notificationService } from "@/lib/services/notification-service"
 
 type PracticeMode = "intro" | "test" | "review"
@@ -166,7 +167,7 @@ export function useDelfPractice() {
             }
           })
         }
-      } else if (ex.type === "document_comprehension" || ex.type === "article_comprehension" || ex.type === "multi_document_comprehension" || ex.type === "multiple_choice_set") {
+      } else if (isNestedQuestionExerciseType(ex.type)) {
         // Nested sub-questions
         ex.questions?.forEach(q => {
           if (q.type === "single_choice" || q.type === "multiple_choice" || q.type === "multiple_choice_image" || q.type === "true_false") {
