@@ -56,6 +56,8 @@ def get_draft(
             "valid": v["valid"],
             "errors": v.get("errors", []),
             "error_count": v.get("error_count", 0),
+            "quality_warnings": v.get("quality_warnings", []),
+            "quality_warning_count": v.get("quality_warning_count", 0),
         }
 
     response: dict[str, Any] = {

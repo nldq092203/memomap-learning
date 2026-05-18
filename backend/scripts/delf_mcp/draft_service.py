@@ -49,6 +49,8 @@ def save_draft(
             "valid": False,
             "errors": validation["errors"],
             "error_count": validation["error_count"],
+            "quality_warnings": validation.get("quality_warnings", []),
+            "quality_warning_count": validation.get("quality_warning_count", 0),
             "message": "Content failed validation; nothing was saved.",
         }
 
@@ -162,7 +164,7 @@ def save_draft(
             "[DELF-MCP] Cache invalidation failed for {}: {}", test_id, exc
         )
 
-    return {
+    result = {
         "success": True,
         "draft_id": db_row.id,
         "test_id": test_id,
@@ -171,6 +173,10 @@ def save_draft(
         "preview_url": _build_preview_url(level, variant, section, test_id),
         "message": "Draft saved successfully",
     }
+    if validation.get("quality_warnings"):
+        result["quality_warnings"] = validation["quality_warnings"]
+        result["quality_warning_count"] = validation["quality_warning_count"]
+    return result
 
 
 __all__ = ["save_draft"]

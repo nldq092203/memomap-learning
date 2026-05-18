@@ -139,6 +139,8 @@ def publish_draft(
             "valid": False,
             "errors": validation["errors"],
             "error_count": validation["error_count"],
+            "quality_warnings": validation.get("quality_warnings", []),
+            "quality_warning_count": validation.get("quality_warning_count", 0),
             "message": (
                 "Persisted JSON failed validation; refusing to publish. "
                 "Use update_delf_draft to fix the content first."
@@ -166,7 +168,7 @@ def publish_draft(
             "[DELF-MCP] Cache invalidation failed for {}: {}", row.test_id, exc
         )
 
-    return {
+    result = {
         "success": True,
         "draft_id": row.id,
         "test_id": row.test_id,
@@ -177,6 +179,10 @@ def publish_draft(
         "student_url": _build_student_url(row.level, row.variant, row.section),
         "message": "Exercise published successfully",
     }
+    if validation.get("quality_warnings"):
+        result["quality_warnings"] = validation["quality_warnings"]
+        result["quality_warning_count"] = validation["quality_warning_count"]
+    return result
 
 
 __all__ = ["publish_draft"]

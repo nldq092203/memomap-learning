@@ -123,6 +123,11 @@ It checks:
 - `correct_answer` indexes are inside the option list.
 - CE papers do not include `audio_filename`.
 - Nested-question exercises do not also use flat MCQ fields.
+- French text quality warnings for common missing accents, for example
+  `francais` -> `français`, `reponse` -> `réponse`, and `a la` -> `à la`.
+
+Text quality findings are returned as `quality_warnings`; they are advisory and
+do not block valid JSON from being saved.
 
 This tool does not read GitHub, write GitHub, or touch the database.
 

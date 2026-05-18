@@ -42,6 +42,8 @@ def update_draft(
             "valid": False,
             "errors": validation["errors"],
             "error_count": validation["error_count"],
+            "quality_warnings": validation.get("quality_warnings", []),
+            "quality_warning_count": validation.get("quality_warning_count", 0),
             "message": "Content failed validation; the draft was not updated.",
         }
 
@@ -113,7 +115,7 @@ def update_draft(
             "[DELF-MCP] Cache invalidation failed for {}: {}", db_row.test_id, exc
         )
 
-    return {
+    result = {
         "success": True,
         "draft_id": db_row.id,
         "test_id": db_row.test_id,
@@ -124,6 +126,10 @@ def update_draft(
         ),
         "message": "Draft updated successfully",
     }
+    if validation.get("quality_warnings"):
+        result["quality_warnings"] = validation["quality_warnings"]
+        result["quality_warning_count"] = validation["quality_warning_count"]
+    return result
 
 
 __all__ = ["update_draft"]

@@ -6,6 +6,7 @@ This module is pure logic — no DB, no network. Safe to import standalone.
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from pydantic import ValidationError
@@ -21,6 +22,94 @@ _FLAT_MCQ_FIELDS: tuple[tuple[str, Any], ...] = (
     ("correct_answers", None),
     ("points", None),
     ("transcript", None),
+)
+
+_FRENCH_ACCENT_PATTERNS: tuple[tuple[re.Pattern[str], str, str], ...] = (
+    (
+        re.compile(r"\bfrancais\b", re.IGNORECASE),
+        "fran\u00e7ais",
+        "Missing cedilla in French adjective",
+    ),
+    (
+        re.compile(r"\brepondre\b", re.IGNORECASE),
+        "r\u00e9pondre",
+        "Missing acute accent",
+    ),
+    (
+        re.compile(r"\breponse\b", re.IGNORECASE),
+        "r\u00e9ponse",
+        "Missing acute accent",
+    ),
+    (
+        re.compile(r"\bNadege\b"),
+        "Nad\u00e8ge",
+        "Missing grave accent in proper name",
+    ),
+    (
+        re.compile(r"\bdecid(?:e|es|ee|ees)\b", re.IGNORECASE),
+        "d\u00e9cid\u00e9",
+        "Missing acute accents",
+    ),
+    (
+        re.compile(r"\bregion\b", re.IGNORECASE),
+        "r\u00e9gion",
+        "Missing acute accent",
+    ),
+    (re.compile(r"Rhone", re.IGNORECASE), "Rh\u00f4ne", "Missing circumflex"),
+    (
+        re.compile(r"\bepicerie\b", re.IGNORECASE),
+        "\u00e9picerie",
+        "Missing acute accent",
+    ),
+    (
+        re.compile(r"\blegumes\b", re.IGNORECASE),
+        "l\u00e9gumes",
+        "Missing acute accent",
+    ),
+    (
+        re.compile(r"\becole\b", re.IGNORECASE),
+        "\u00e9cole",
+        "Missing acute accent",
+    ),
+    (
+        re.compile(r"\bprobleme\b", re.IGNORECASE),
+        "probl\u00e8me",
+        "Missing grave accent",
+    ),
+    (
+        re.compile(r"\bactivites\b", re.IGNORECASE),
+        "activit\u00e9s",
+        "Missing acute accent",
+    ),
+    (
+        re.compile(r"\bexterieur\b", re.IGNORECASE),
+        "ext\u00e9rieur",
+        "Missing acute accent",
+    ),
+    (
+        re.compile(r"\breussir\b", re.IGNORECASE),
+        "r\u00e9ussir",
+        "Missing acute accent",
+    ),
+    (
+        re.compile(r"\bdemenagent\b", re.IGNORECASE),
+        "d\u00e9m\u00e9nagent",
+        "Missing acute accents",
+    ),
+    (
+        re.compile(r"\bou\s+\?", re.IGNORECASE),
+        "o\u00f9 ?",
+        "Likely missing grave accent in question word",
+    ),
+    (re.compile(r"\bA\s+l'"), "\u00c0 l'", "Missing grave accent on preposition"),
+    (
+        re.compile(
+            r"\ba\s+(la|le|l'|cote|c\u00f4t\u00e9|campagne|Sancy)\b",
+            re.IGNORECASE,
+        ),
+        "\u00e0 ...",
+        "Likely missing grave accent on preposition",
+    ),
 )
 
 
@@ -47,6 +136,144 @@ def _pydantic_errors(exc: ValidationError) -> list[dict[str, str]]:
         }
         for err in exc.errors()
     ]
+
+
+def _quality_warning(
+    *,
+    field: str,
+    text: str,
+    suggestion: str,
+    reason: str,
+) -> dict[str, str]:
+    snippet = text.strip().replace("\n", " ")
+    if len(snippet) > 120:
+        snippet = f"{snippet[:117]}..."
+    return {
+        "field": field,
+        "message": f"{reason}. Check: \"{snippet}\"",
+        "type": "french_text_quality_warning",
+        "suggestion": suggestion,
+    }
+
+
+def _check_text_quality(field: str, text: str | None) -> list[dict[str, str]]:
+    if not text:
+        return []
+
+    warnings: list[dict[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for pattern, suggestion, reason in _FRENCH_ACCENT_PATTERNS:
+        if not pattern.search(text):
+            continue
+        key = (field, suggestion)
+        if key in seen:
+            continue
+        seen.add(key)
+        warnings.append(
+            _quality_warning(
+                field=field,
+                text=text,
+                suggestion=suggestion,
+                reason=reason,
+            )
+        )
+    return warnings
+
+
+def _collect_quality_warnings(paper: DelfTestPaper) -> list[dict[str, str]]:
+    warnings: list[dict[str, str]] = []
+
+    for ex_idx, exercise in enumerate(paper.exercises):
+        ex_path = f"exercises[{ex_idx}]"
+        warnings.extend(_check_text_quality(f"{ex_path}.title", exercise.title))
+        warnings.extend(
+            _check_text_quality(f"{ex_path}.question_text", exercise.question_text)
+        )
+        warnings.extend(
+            _check_text_quality(f"{ex_path}.instruction", exercise.instruction)
+        )
+        warnings.extend(
+            _check_text_quality(f"{ex_path}.transcript", exercise.transcript)
+        )
+        warnings.extend(
+            _check_text_quality(f"{ex_path}.explanation", exercise.explanation)
+        )
+
+        if exercise.document:
+            doc_path = f"{ex_path}.document"
+            warnings.extend(
+                _check_text_quality(f"{doc_path}.title", exercise.document.title)
+            )
+            warnings.extend(
+                _check_text_quality(f"{doc_path}.content", exercise.document.content)
+            )
+            warnings.extend(
+                _check_text_quality(f"{doc_path}.sender", exercise.document.sender)
+            )
+            warnings.extend(
+                _check_text_quality(f"{doc_path}.subject", exercise.document.subject)
+            )
+            warnings.extend(
+                _check_text_quality(f"{doc_path}.body", exercise.document.body)
+            )
+            for part_idx, part in enumerate(exercise.document.parts):
+                part_path = f"{doc_path}.parts[{part_idx}]"
+                warnings.extend(
+                    _check_text_quality(f"{part_path}.excerpt", part.excerpt)
+                )
+
+        for opt_idx, option in enumerate(exercise.options):
+            if isinstance(option, str):
+                warnings.extend(
+                    _check_text_quality(f"{ex_path}.options[{opt_idx}]", option)
+                )
+            else:
+                warnings.extend(
+                    _check_text_quality(
+                        f"{ex_path}.options[{opt_idx}].desc",
+                        option.desc,
+                    )
+                )
+
+        for doc_idx, doc in enumerate(exercise.documents):
+            doc_path = f"{ex_path}.documents[{doc_idx}]"
+            warnings.extend(_check_text_quality(f"{doc_path}.title", doc.title))
+            warnings.extend(_check_text_quality(f"{doc_path}.content", doc.content))
+
+        for person_idx, person in enumerate(exercise.persons):
+            person_path = f"{ex_path}.persons[{person_idx}]"
+            warnings.extend(
+                _check_text_quality(f"{person_path}.description", person.description)
+            )
+
+        for q_idx, question in enumerate(exercise.questions):
+            q_path = f"{ex_path}.questions[{q_idx}]"
+            warnings.extend(
+                _check_text_quality(f"{q_path}.question_text", question.question_text)
+            )
+            warnings.extend(
+                _check_text_quality(f"{q_path}.explanation", question.explanation)
+            )
+            for opt_idx, option in enumerate(question.options):
+                if isinstance(option, str):
+                    warnings.extend(
+                        _check_text_quality(f"{q_path}.options[{opt_idx}]", option)
+                    )
+                else:
+                    warnings.extend(
+                        _check_text_quality(
+                            f"{q_path}.options[{opt_idx}].desc", option.desc
+                        )
+                    )
+            for label_idx, label in enumerate(question.labels):
+                warnings.extend(
+                    _check_text_quality(
+                        f"{q_path}.labels[{label_idx}].description",
+                        label.description,
+                    )
+                )
+
+    return warnings
 
 
 def _parse_content(content: Any) -> tuple[dict | None, dict | None]:
@@ -231,12 +458,19 @@ def validate_content(content: Any) -> dict[str, Any]:
         errs = _pydantic_errors(exc)
         return {"valid": False, "errors": errs, "error_count": len(errs)}
 
+    quality_warnings = _collect_quality_warnings(paper)
+    quality_fields = {
+        "quality_warnings": quality_warnings,
+        "quality_warning_count": len(quality_warnings),
+    }
+
     biz_errors = _business_errors(paper)
     if biz_errors:
         return {
             "valid": False,
             "errors": biz_errors,
             "error_count": len(biz_errors),
+            **quality_fields,
         }
 
     return {
@@ -244,6 +478,7 @@ def validate_content(content: Any) -> dict[str, Any]:
         "message": "Content is valid",
         "summary": _summary(paper),
         "paper": paper,
+        **quality_fields,
     }
 
 

@@ -19,7 +19,10 @@ if _BACKEND_DIR not in sys.path:
     sys.path.insert(0, _BACKEND_DIR)
 
 from scripts.delf_mcp.tests import fixtures  # noqa: E402
-from scripts.delf_mcp.validation import validate_content  # noqa: E402
+from scripts.delf_mcp.validation import (  # noqa: E402
+    validate_content,
+    validate_content_for_tool,
+)
 
 
 def _errors_for_field(result, field_prefix: str):
@@ -133,6 +136,44 @@ def test_nested_plus_flat_mcq_is_rejected():
     fields = [e["field"] for e in result["errors"]]
     assert "exercises[1].options" in fields
     assert "exercises[1].correct_answer" in fields
+
+
+# ---------------------------------------------------------------------------
+# French text quality warnings
+# ---------------------------------------------------------------------------
+
+
+def test_unaccented_french_text_returns_quality_warning():
+    result = validate_content(fixtures.VALID_CE_PAPER)
+    assert result["valid"] is True
+    assert result["quality_warning_count"] >= 1
+    assert any(
+        warning["field"] == "exercises[0].question_text"
+        and warning["suggestion"] == "r\u00e9ponse"
+        for warning in result["quality_warnings"]
+    )
+
+
+def test_accented_french_text_has_no_warning_for_that_phrase():
+    payload = fixtures.clone(fixtures.VALID_CE_PAPER)
+    payload["exercises"][0]["question_text"] = (
+        "Lisez le texte et choisissez la bonne r\u00e9ponse."
+    )
+
+    result = validate_content(payload)
+
+    assert not any(
+        warning["field"] == "exercises[0].question_text"
+        and warning["suggestion"] == "r\u00e9ponse"
+        for warning in result["quality_warnings"]
+    )
+
+
+def test_validate_content_for_tool_exposes_quality_warnings_without_model():
+    result = validate_content_for_tool(fixtures.VALID_CE_PAPER)
+    assert "paper" not in result
+    assert "quality_warnings" in result
+    assert "quality_warning_count" in result
 
 
 # ---------------------------------------------------------------------------
