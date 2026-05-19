@@ -146,9 +146,15 @@ def export_crop_to_webp(
 
 
 def build_asset_filename(*, test_id: str, question_number: int, label: str) -> str:
-    """Build one DELF asset filename."""
+    """Build a legacy flat DELF asset filename.
+
+    New MCP/admin screenshot uploads should use
+    `src.shared.delf_practice.asset_paths.image_upload_path`, which places
+    generated option images under `assets/{test_id}/qNN/{label}.webp`.
+    This helper remains for backward compatibility with existing flat files.
+    """
     normalized_test = "".join(ch for ch in test_id.lower() if ch.isalnum() or ch == "-")
-    return f"{normalized_test}-{question_number}-{label.lower()}.webp"
+    return f"{normalized_test}-q{question_number}-{label.lower()}.webp"
 
 
 __all__ = [

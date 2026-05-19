@@ -12,7 +12,16 @@ Draft lifecycle:
 - get_delf_draft        (read full content)
 - update_delf_draft     (overwrite content)
 - delete_delf_draft     (remove)
-- publish_delf_draft    (status draft -> active)
+- publish_delf_draft    (status draft -> active, with asset verification)
+
+Asset pipeline (Phase 2):
+- crop_screenshot_to_webp        (local crop + WebP encode preview)
+- upload_delf_asset              (one image/audio file upload)
+- process_screenshot_options     (screenshot -> crops -> uploaded WebPs)
+- list_delf_assets               (list assets/ or audio/ for a scope)
+- verify_delf_asset_references   (cross-check JSON img_url / audio_filename)
+- resolve_delf_audio_filename    (track number -> canonical audio filename)
+- migrate_delf_legacy_assets     (copy flat image refs to structured paths)
 
 Run from the `backend/` directory:
 
@@ -32,6 +41,27 @@ if _BACKEND_DIR not in sys.path:
 
 from mcp.server.fastmcp import FastMCP  # noqa: E402
 
+from scripts.delf_mcp.assets.audio_naming import (  # noqa: E402
+    resolve_delf_audio_filename as resolve_audio_filename,
+)
+from scripts.delf_mcp.assets.image_pipeline import (  # noqa: E402
+    crop_screenshot_to_webp as do_crop_screenshot,
+)
+from scripts.delf_mcp.assets.listing_service import (  # noqa: E402
+    list_delf_assets as do_list_assets,
+)
+from scripts.delf_mcp.assets.migration_service import (  # noqa: E402
+    migrate_legacy_image_assets as do_migrate_legacy_assets,
+)
+from scripts.delf_mcp.assets.orchestration import (  # noqa: E402
+    process_screenshot_options as do_process_screenshot,
+)
+from scripts.delf_mcp.assets.upload_service import (  # noqa: E402
+    upload_delf_asset as do_upload_asset,
+)
+from scripts.delf_mcp.assets.verify_service import (  # noqa: E402
+    verify_delf_asset_references as do_verify_assets,
+)
 from scripts.delf_mcp.delete_service import delete_draft  # noqa: E402
 from scripts.delf_mcp.draft_service import save_draft  # noqa: E402
 from scripts.delf_mcp.get_service import get_draft  # noqa: E402
@@ -266,6 +296,219 @@ def publish_delf_draft(
         variant=variant,
         section=section,
         confirm_publish=confirm_publish,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Asset pipeline (Phase 2)
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+def crop_screenshot_to_webp(
+    screenshot_base64: str,
+    crops: list[dict[str, Any]] | None = None,
+    auto_detect: dict[str, Any] | None = None,
+    webp_quality: int = 92,
+) -> dict[str, Any]:
+    """Crop one or more regions out of a base64 screenshot and return WebP bytes.
+
+    Pure-local: no DB, GitHub, or network. Useful to preview a crop before
+    committing it through `upload_delf_asset` or `process_screenshot_options`.
+
+    Args:
+        screenshot_base64: Base64-encoded PNG/JPG/WEBP screenshot.
+        crops: List of `{label, left, top, right, bottom}` boxes.
+        auto_detect: Alternative — `{region, expected_count, min_area?,
+            padding?}`. When set, ignores `crops`.
+        webp_quality: 1-100, default 92.
+
+    Returns:
+        On success: `{success: true, mode, image_size, crops: [{label,
+        content_base64, width_px, height_px, byte_size}]}`.
+        On failure: `{success: false, error|errors, error_count?}`.
+    """
+    return do_crop_screenshot(
+        screenshot_base64=screenshot_base64,
+        crops=crops,
+        auto_detect=auto_detect,
+        webp_quality=webp_quality,
+    )
+
+
+@mcp.tool()
+def upload_delf_asset(
+    level: str,
+    variant: str,
+    section: str,
+    test_id: str,
+    filename: str,
+    content_base64: str,
+    kind: str,
+    overwrite: bool = False,
+    question_number: int | None = None,
+    label: str | None = None,
+) -> dict[str, Any]:
+    """Upload one image or audio file to GitHub for a DELF scope.
+
+    Args:
+        level: A1..C2.
+        variant: e.g. 'tout-public-a2'.
+        section: e.g. 'CE' or 'CO'.
+        test_id: Used for the commit message and structured image paths.
+        filename: Bare filename with the correct extension.
+        content_base64: File bytes encoded as base64.
+        kind: 'image' (→ assets/) or 'audio' (→ audio/).
+        overwrite: If false (default) refuses to replace an existing file.
+        question_number + label: When both are provided for image uploads,
+            writes to `assets/{test_id}/qNN/{label}.ext`. Without them,
+            preserves the legacy flat `assets/{filename}` upload path.
+
+    Returns:
+        `{success, github_path, relative_path, kind, byte_size, overwritten}`.
+        `relative_path` is what should appear in the JSON
+        (`assets/<filename>` for images, bare `<filename>` for audio).
+    """
+    return do_upload_asset(
+        level=level,
+        variant=variant,
+        section=section,
+        test_id=test_id,
+        filename=filename,
+        content_base64=content_base64,
+        kind=kind,
+        overwrite=overwrite,
+        question_number=question_number,
+        label=label,
+    )
+
+
+@mcp.tool()
+def process_screenshot_options(
+    level: str,
+    variant: str,
+    section: str,
+    test_id: str,
+    screenshot_base64: str,
+    questions: list[dict[str, Any]],
+    webp_quality: int = 92,
+    overwrite: bool = False,
+) -> dict[str, Any]:
+    """One-shot: crop screenshot → WebP → upload → return `img_url` strings.
+
+    Image assets use the structured convention
+    `assets/{test_id}/qNN/{label}.webp`. Partial failures are reported
+    per-option in `failures`; successful uploads still appear in `results`.
+
+    Args:
+        questions: `[{question_number, options: [{label, crop?}],
+            auto_detect?}, ...]`.
+    """
+    return do_process_screenshot(
+        level=level,
+        variant=variant,
+        section=section,
+        test_id=test_id,
+        screenshot_base64=screenshot_base64,
+        questions=questions,
+        webp_quality=webp_quality,
+        overwrite=overwrite,
+    )
+
+
+@mcp.tool()
+def list_delf_assets(
+    level: str,
+    variant: str,
+    section: str,
+    kind: str = "image",
+) -> dict[str, Any]:
+    """List existing image (or audio) filenames for a scope.
+
+    A missing directory yields an empty list (not an error).
+    """
+    return do_list_assets(
+        level=level,
+        variant=variant,
+        section=section,
+        kind=kind,
+    )
+
+
+@mcp.tool()
+def verify_delf_asset_references(
+    level: str,
+    variant: str,
+    section: str,
+    content: Any,
+) -> dict[str, Any]:
+    """Cross-check every `img_url` and `audio_filename` against GitHub.
+
+    Returns `all_present: true` only when every reference resolves; missing
+    references are reported with their exact JSON field path so the agent
+    can fix them. `publish_delf_draft` invokes this internally and refuses
+    to publish when any reference is missing.
+    """
+    return do_verify_assets(
+        level=level,
+        variant=variant,
+        section=section,
+        content=content,
+    )
+
+
+@mcp.tool()
+def resolve_delf_audio_filename(
+    level: str,
+    variant: str,
+    section: str,
+    track_number: int,
+) -> dict[str, Any]:
+    """Resolve a CO track number into the canonical GitHub audio filename.
+
+    Encapsulates per-level naming quirks (`DELF_TP_A2_…` vs `Delf_TP_B1_…`)
+    so the agent never has to template the filename in its prompt. The
+    returned `audio_filename_value` is the exact string to paste into
+    `DelfTestPaper.audio_filename`. `exists` is checked against GitHub.
+    """
+    return resolve_audio_filename(
+        level=level,
+        variant=variant,
+        section=section,
+        track_number=track_number,
+    )
+
+
+@mcp.tool()
+def migrate_delf_legacy_assets(
+    level: str,
+    variant: str,
+    section: str,
+    test_id: str,
+    dry_run: bool = True,
+    confirm_write: bool = False,
+    overwrite: bool = False,
+    webp_quality: int = 92,
+) -> dict[str, Any]:
+    """Convert image refs to structured per-paper WebP asset paths.
+
+    Legacy source files are copied, never deleted. By default this is a dry
+    run. To write, set `dry_run=false` and `confirm_write=true`.
+
+    Converts refs like `assets/tp01-q1-a.png` or `assets/tp01-q1-a.webp` to
+    `assets/{test_id}/qNN/{label}.webp`, updates the paper JSON, and verifies
+    all updated refs before committing the JSON. PNG/JPG/JPEG sources are
+    converted to WebP.
+    """
+    return do_migrate_legacy_assets(
+        level=level,
+        variant=variant,
+        section=section,
+        test_id=test_id,
+        dry_run=dry_run,
+        confirm_write=confirm_write,
+        overwrite=overwrite,
+        webp_quality=webp_quality,
     )
 
 

@@ -7,9 +7,11 @@ from typing import Any
 from src.config import Config
 from src.extensions import logger
 from src.shared.delf_practice.content_service import invalidate_delf_content_cache
+from src.shared.delf_practice.github_manager import GitHubDelfManager
 from src.shared.delf_practice.github_repository import GitHubDelfRepository
 from src.shared.delf_practice.test_paper_repository import DelfTestPaperRepository
 
+from scripts.delf_mcp.assets.verify_service import verify_delf_asset_references
 from scripts.delf_mcp.validation import validate_content
 
 
@@ -69,6 +71,7 @@ def publish_draft(
     confirm_publish: bool = False,
     repo: DelfTestPaperRepository | None = None,
     github_repo: GitHubDelfRepository | None = None,
+    github_mgr: GitHubDelfManager | None = None,
 ) -> dict[str, Any]:
     """Flip a draft to active status after re-validating its GitHub content.
 
@@ -144,6 +147,36 @@ def publish_draft(
             "message": (
                 "Persisted JSON failed validation; refusing to publish. "
                 "Use update_delf_draft to fix the content first."
+            ),
+        }
+
+    # Asset verification: refuse to publish if any img_url / audio_filename
+    # is missing from GitHub. This implements FR-3.8.
+    asset_check = verify_delf_asset_references(
+        level=row.level,
+        variant=row.variant,
+        section=row.section,
+        content=content_model.model_dump(mode="json", by_alias=True),
+        github=github_mgr,
+    )
+    if not asset_check.get("success"):
+        return {
+            "success": False,
+            "error": asset_check.get("error", "Asset verification failed"),
+            "message": (
+                "Publishing was aborted because asset references could not be "
+                "verified against GitHub."
+            ),
+        }
+    if not asset_check.get("all_present"):
+        return {
+            "success": False,
+            "error": "Refusing to publish: referenced assets are missing.",
+            "missing": asset_check.get("missing", []),
+            "missing_count": asset_check.get("missing_count", 0),
+            "message": (
+                "Upload the missing files (process_screenshot_options / "
+                "upload_delf_asset) then try again."
             ),
         }
 

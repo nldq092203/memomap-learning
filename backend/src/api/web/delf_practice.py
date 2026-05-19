@@ -8,7 +8,7 @@ GitHub layout (example):
 
 delf/a2/tout-public-a2/CO/tp/tp-01.json
 delf/a2/tout-public-a2/CO/audio/DELF_TP_A2_Piste05.mp3
-delf/a2/tout-public-a2/CO/assets/tp01-q1-a.webp
+delf/a2/tout-public-a2/CO/assets/tp-01/q01/a.webp
 """
 
 from __future__ import annotations
@@ -29,8 +29,8 @@ from src.shared.delf_practice.content_service import (
 )
 from src.shared.delf_practice.github_manager import GitHubDelfManager
 from src.shared.delf_practice.github_repository import GitHubDelfRepository
+from src.shared.delf_practice.asset_paths import image_upload_path
 from src.shared.delf_practice.local_asset_service import (
-    build_asset_filename,
     clamp_crop_box,
     decode_image_bytes,
     detect_option_boxes,
@@ -323,7 +323,7 @@ def delf_proxy_asset(asset_path: str):
     GET /web/delf/assets/<path:asset_path>
 
     Proxy image asset from GitHub.
-    Path format: <level>/<variant>/<section>/assets/<filename>
+    Path format: <level>/<variant>/<section>/assets/<filename-or-nested-path>
     """
     github_repo = GitHubDelfRepository()
     url = f"{github_repo.base_url}/delf/{asset_path}"
@@ -746,21 +746,23 @@ def delf_admin_upload_screenshot_assets(user_id: str):
                 else parse_crop_box(option.crop or {})
             )
             crop = clamp_crop_box(crop, image_width, image_height)
-            filename = option.filename or build_asset_filename(
-                test_id=paper.test_id,
-                question_number=question.question_number,
-                label=option.label,
-            )
+            filename = option.filename or f"{option.label.lower()}.webp"
             content_bytes = export_crop_to_webp(
                 image_bgr=image_bgr,
                 crop=crop,
                 quality=payload.webp_quality,
             )
-            file_path = (
-                f"delf/{paper.level.lower()}/{paper.variant}/{paper.section}/assets/{filename}"
+            path = image_upload_path(
+                level=paper.level,
+                variant=paper.variant,
+                section=paper.section,
+                test_id=paper.test_id,
+                filename=filename,
+                question_number=question.question_number,
+                label=option.label,
             )
             result = github_mgr.create_or_update_file(
-                file_path=file_path,
+                file_path=path.github_path,
                 content=content_bytes,
                 commit_message=(
                     f"chore: upload DELF asset for {paper.test_id} "
@@ -772,7 +774,8 @@ def delf_admin_upload_screenshot_assets(user_id: str):
                     "question_number": question.question_number,
                     "label": option.label.lower(),
                     "filename": filename,
-                    "file_path": file_path,
+                    "file_path": path.github_path,
+                    "img_url": path.relative_path,
                     "github_url": result.get("content", {}).get("html_url"),
                     "crop": {
                         "left": crop.left,

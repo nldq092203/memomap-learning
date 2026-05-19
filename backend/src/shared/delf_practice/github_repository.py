@@ -43,7 +43,11 @@ class GitHubDelfRepository:
         return f"{self._delf_prefix(level, variant, section)}/audio/{filename}"
 
     def asset_url(self, level: str, variant: str, section: str, filename: str) -> str:
-        """Construct raw URL for an image asset."""
+        """Construct raw URL for an image asset.
+
+        `filename` may be a legacy flat filename or a nested path relative to
+        the section's `assets/` directory, e.g. `tp-19/q01/a.webp`.
+        """
         return f"{self._delf_prefix(level, variant, section)}/assets/{filename}"
 
     # -------------------------------------------------
