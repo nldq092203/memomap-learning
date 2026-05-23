@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from src.config import Config
 from src.extensions import logger
+from src.shared.delf_practice.schemas import DelfTestPaper
 from src.shared.delf_practice.content_service import invalidate_delf_content_cache
 from src.shared.delf_practice.github_manager import GitHubDelfManager
 from src.shared.delf_practice.github_repository import GitHubDelfRepository
@@ -18,6 +20,37 @@ from scripts.delf_mcp.validation import validate_content
 def _build_student_url(level: str, variant: str, section: str) -> str:
     origin = getattr(Config, "WEB_ORIGIN", "http://localhost:3000").rstrip("/")
     return f"{origin}/learning/delf-practice/{level}/{variant}/{section}"
+
+
+def _fetch_persisted_test_paper(
+    github_path: str,
+    *,
+    github_repo: GitHubDelfRepository,
+    github_mgr: GitHubDelfManager,
+) -> DelfTestPaper:
+    """Fetch persisted JSON, falling back to the authenticated Contents API.
+
+    The primary reader uses raw GitHub URLs, which can occasionally reset the
+    connection. Draft creation already proves the Contents API path works, so
+    use it as a conservative fallback before aborting publish.
+    """
+    try:
+        return github_repo.fetch_test_paper(github_path)
+    except Exception as raw_exc:
+        logger.warning(
+            "[DELF-MCP] Raw GitHub fetch failed for {}: {}. "
+            "Trying Contents API fallback.",
+            github_path,
+            raw_exc,
+        )
+        try:
+            data = json.loads(github_mgr.read_file(github_path).decode("utf-8"))
+            return DelfTestPaper.model_validate(data)
+        except Exception as fallback_exc:
+            raise RuntimeError(
+                "raw GitHub fetch failed and Contents API fallback failed "
+                f"(raw: {raw_exc}; fallback: {fallback_exc})"
+            ) from fallback_exc
 
 
 def _resolve_target(
@@ -122,7 +155,12 @@ def publish_draft(
     # Re-validate the persisted JSON to refuse publishing broken content
     try:
         github_repo = github_repo or GitHubDelfRepository()
-        content_model = github_repo.fetch_test_paper(row.github_path)
+        github_mgr = github_mgr or GitHubDelfManager()
+        content_model = _fetch_persisted_test_paper(
+            row.github_path,
+            github_repo=github_repo,
+            github_mgr=github_mgr,
+        )
     except Exception as exc:
         return {
             "success": False,

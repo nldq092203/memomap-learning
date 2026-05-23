@@ -109,9 +109,10 @@ class _FakeRepo:
 class _FakeGithubManager:
     """Stands in for GitHubDelfManager (write side)."""
 
-    def __init__(self):
+    def __init__(self, files: dict[str, bytes] | None = None):
         self.created_or_updated: list[tuple[str, bytes, str]] = []
         self.deleted: list[str] = []
+        self.files = dict(files or {})
         self.fail_on_create_or_update = False
         self.fail_on_delete = False
 
@@ -126,6 +127,12 @@ class _FakeGithubManager:
             raise RuntimeError("simulated GitHub delete failure")
         self.deleted.append(file_path)
         return {}
+
+    def read_file(self, file_path):
+        try:
+            return self.files[file_path]
+        except KeyError:
+            raise FileNotFoundError(file_path)
 
 
 class _FakeGithubRepo:
@@ -442,6 +449,27 @@ def test_publish_flips_status_when_content_is_valid():
     assert out["status"] == "active"
     assert row.status == "active"
     assert out["student_url"].endswith("/A2/tout-public-a2/CE")
+
+
+def test_publish_falls_back_to_contents_api_when_raw_fetch_fails():
+    row = _draft_row()
+    repo = _FakeRepo([row])
+    raw_github = _FakeGithubRepo({row.github_path: fixtures.VALID_CE_PAPER})
+    raw_github.fail = True
+    api_github = _FakeGithubManager({
+        row.github_path: json.dumps(fixtures.VALID_CE_PAPER).encode("utf-8")
+    })
+
+    out = publish_service.publish_draft(
+        draft_id="row-1",
+        confirm_publish=True,
+        repo=repo,
+        github_repo=raw_github,
+        github_mgr=api_github,
+    )
+    assert out["success"] is True
+    assert out["status"] == "active"
+    assert row.status == "active"
 
 
 def test_publish_refuses_when_persisted_content_is_invalid():

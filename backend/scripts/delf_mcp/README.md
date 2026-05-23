@@ -5,7 +5,7 @@ lifecycle: validate JSON, pick a safe `test_id`, crop and upload image
 assets from a screenshot, resolve audio filenames, save/list/get/update/
 delete drafts, verify asset references, and publish drafts to active.
 
-Tools (15 total):
+Tools (18 total):
 
 ### Validation & naming
 | Tool                          | Purpose                                                                 |
@@ -34,6 +34,13 @@ Tools (15 total):
 | `resolve_delf_audio_filename` | Convert a CO track number into the canonical audio filename.             |
 | `migrate_delf_legacy_assets`  | Convert image refs to structured WebP paths and update paper JSON.       |
 
+### PDF book ingestion (Phase 3)
+| Tool                          | Purpose                                                                 |
+|-------------------------------|-------------------------------------------------------------------------|
+| `analyze_delf_book_pdf`       | Render PDF pages, detect activities, parse answer keys/transcripts, and write an analysis manifest. |
+| `preview_delf_book_extraction`| Build validated `DelfTestPaper` candidates from a PDF analysis.          |
+| `save_delf_book_drafts`       | Save reviewed PDF-extracted papers as drafts with validation and asset checks. |
+
 The asset pipeline closes the manual loop: the agent feeds a screenshot
 and per-option crop boxes, the MCP crops, WebP-encodes, uploads to GitHub
 under `assets/`, and returns the exact `img_url` strings to paste into the
@@ -50,13 +57,16 @@ cd backend
 uv sync
 uv pip install -r requirements-delf-mcp.txt          # MCP SDK
 uv pip install -r requirements-delf-local.txt        # opencv-python-headless + Pillow (asset pipeline)
+uv pip install -r requirements-delf-pdf.txt          # pymupdf (PDF book ingestion, v1)
 ```
 
 The asset-pipeline tools (`crop_screenshot_to_webp`,
 `process_screenshot_options`) need OpenCV + Pillow. PNG/JPG/JPEG conversion
-inside `migrate_delf_legacy_assets` needs Pillow. The other tools work without
-them — if those modules are missing, only the image-processing path returns a
-structured error pointing back here.
+inside `migrate_delf_legacy_assets` needs Pillow. PDF book ingestion
+(`analyze_delf_book_pdf`, `preview_delf_book_extraction`,
+`save_delf_book_drafts`) needs pymupdf. The other tools work without
+any of these — missing optional deps return a structured error pointing
+back here.
 
 ## 2. Configure `.env`
 
@@ -113,7 +123,7 @@ Verify in Claude Code:
 /mcp
 ```
 
-You should see `delf-ingest` and all 8 tools.
+You should see `delf-ingest` and all tools.
 
 ## 5. Use With Codex
 
@@ -130,12 +140,14 @@ Restart Codex after editing the config.
 
 ## 6. What Each Tool Does
 
-The tools fall into three groups:
+The tools fall into four groups:
 
 1. Prepare content: `validate_delf_content`, `suggest_delf_test_id`.
 2. Work with drafts: `save_delf_draft`, `list_delf_drafts`,
    `get_delf_draft`, `update_delf_draft`, `delete_delf_draft`.
 3. Publish reviewed content: `publish_delf_draft`.
+4. Ingest PDF books: `analyze_delf_book_pdf`,
+   `preview_delf_book_extraction`, `save_delf_book_drafts`.
 
 ### `validate_delf_content(content)`
 
@@ -778,11 +790,183 @@ That makes ownership clear, avoids filename collisions, and allows a single
 paper's assets to be migrated or cleaned up without scanning a crowded
 section-level directory.
 
-## 10. Known Limitations
+## 10. PDF Book Ingestion (Phase 3, v1 + v2 + v3)
 
-- No PDF page extraction yet — the agent has to paste page screenshots.
+Adds three tools layered on the existing draft pipeline so an agent can
+ingest a full DELF prep book PDF (plus a separate answer/transcript PDF)
+without hand-screenshotting every activity.
+
+**Shipped scope (v1 + v2 + v3):**
+- **v1**: CE flat/nested MCQ from born-digital PDFs, text-only options.
+- **v2**: CE image-option questions. Embedded images are auto-detected,
+  grouped into rows (= questions), cropped to WebP, and uploaded under
+  `assets/{test_id}/q{NN}/{label}.webp` at save time.
+- **v3**: CO papers. Transcripts are parsed from the answer/transcript
+  PDF and attached to each CO exercise. `Document N` sub-blocks become
+  `extra_transcripts` at the paper level. Audio filenames are resolved
+  via the existing `resolve_delf_audio_filename`.
+
+**Still warn-and-skip:** matching exercises (associez/reliez). Scanned
+PDFs return a `scanned_pdf` error — OCR fallback is the v4 milestone.
+The full plan lives at
+`.kiro/specs/delf-pdf-book-ingestion/requirements.md`.
+
+### The three tools
+
+| Tool | Purpose | Side effects |
+|------|---------|--------------|
+| `analyze_delf_book_pdf` | Render pages, detect activities, classify CE/CO, parse answer keys, resolve CO audio | Writes manifest + page PNGs to `.local/delf-extracts/{analysis_id}/` |
+| `preview_delf_book_extraction` | Check existing DB/GitHub IDs, build `DelfTestPaper` candidates per (chapter, section), validate each | None — preview only |
+| `save_delf_book_drafts` | Re-check existing papers, re-validate, verify assets, route to `save_delf_draft` or `update_delf_draft` | DB write + GitHub commit, only with `confirm_save=true` |
+
+### Local PDF convention
+
+Keep source PDFs in the backend-local workspace:
+
+```text
+backend/.local/delf-pdfs/
+  delf-a2-book.pdf
+  delf-a2-answers-transcripts.pdf
+```
+
+The `.local` directory is gitignored and is safe for large local-only source
+files. MCP calls should use absolute paths, for example:
+
+```text
+/Users/quynhnguyen/Documents/Documents/Code/memomap-learning/memomap-learning-backend/backend/.local/delf-pdfs/delf-a2-book.pdf
+```
+
+### Workflow
+
+```text
+1. Drop PDFs into backend/.local/delf-pdfs/ (gitignored).
+
+2. analyze_delf_book_pdf(
+     exercise_pdf_path="/abs/path/book.pdf",
+     answer_pdf_path="/abs/path/answers.pdf",
+     level="A2",
+     variant="tout-public-a2",
+   )
+   → returns { analysis_id, activities_summary, warnings, ... }
+   The agent reads activities_summary and warnings (missing_audio,
+   image_option_detected, missing_answer_key, ...) before continuing.
+
+3. preview_delf_book_extraction(
+     analysis_id="<id from step 2>",
+     sections=["CE"],          # optional
+     activity_range=[1, 4],    # optional
+   )
+   → returns { papers: [{ proposed_test_id, content, validation, ...}] }
+   The agent reviews validation + warnings per paper. Hand-edit content
+   if anything looks wrong.
+
+4. save_delf_book_drafts(
+     analysis_id="<id from step 2>",
+     selected_papers=[{ "content": <paper json> }, ...],
+     confirm_save=true,
+   )
+   → returns { saved: [...], skipped: [...] }
+   Existing draft test_ids route through update_delf_draft. Active,
+   archived, or GitHub-only test_ids are skipped before any asset upload.
+```
+
+### Copy-Paste Agent Prompt
+
+Use this prompt when the PDFs are already in `backend/.local/delf-pdfs/`.
+Replace the two filenames before sending it to Codex or Claude.
+
+```text
+Use the delf-ingest MCP server.
+
+I want to ingest DELF exercises from a PDF book.
+
+Inputs:
+- level: A2
+- variant: tout-public-a2
+- exercise_pdf_path: /Users/quynhnguyen/Documents/Documents/Code/memomap-learning/memomap-learning-backend/backend/.local/delf-pdfs/<BOOK_FILE>.pdf
+- answer_pdf_path: /Users/quynhnguyen/Documents/Documents/Code/memomap-learning/memomap-learning-backend/backend/.local/delf-pdfs/<ANSWER_TRANSCRIPT_FILE>.pdf
+
+Task:
+1. Call analyze_delf_book_pdf with the exercise PDF and answer/transcript PDF.
+2. Print analysis_id, manifest_path, activity_count, warning summary, and detected CE/CO activities.
+3. Call preview_delf_book_extraction for the section/activity range I request.
+4. Show proposed_test_id, source activities, source pages, validation result, warnings, and any image_uploads for each proposed paper.
+5. Do not save if validation fails.
+6. Do not save if answer keys, transcripts, audio, or image assets are missing.
+7. Save only after preview review by calling save_delf_book_drafts with confirm_save=true.
+8. Print draft_id, github_path, preview_url, saved_count, and skipped_count.
+9. Do not publish unless I explicitly ask you to publish.
+```
+
+Short CE-only preview prompt:
+
+```text
+Preview only CE activities from this analysis_id: <analysis_id>.
+Call preview_delf_book_extraction with sections=["CE"].
+Do not save anything.
+```
+
+Short save-reviewed-papers prompt:
+
+```text
+Save these reviewed PDF-extracted papers as drafts using save_delf_book_drafts.
+Use analysis_id=<analysis_id>, selected_papers=<reviewed papers>, confirm_save=true.
+Do not publish.
+```
+
+### Warning codes
+
+Surfaced in `activities_summary[].warning_count` and per-paper
+`warnings`. Stable codes the agent can branch on:
+
+| Code | Meaning |
+|------|---------|
+| `scanned_pdf` | Exercise or answer PDF has no embedded text — no OCR in v1 |
+| `image_option_detected` | Activity uses image options; skipped in v1 |
+| `matching_exercise_detected` | Activity uses associez/reliez; skipped in v1 |
+| `missing_audio` | CO track number couldn't be resolved or audio not in GitHub |
+| `missing_answer_key` | No answer entry found for one or more questions |
+| `points_defaulted` | Every question got `points=1.0` (default policy) |
+| `unclassified_activity` | Section could not be determined as CE or CO |
+| `missing_asset` | A referenced `img_url` or `audio_filename` is not in GitHub |
+| `validation_failed` | `validate_delf_content` rejected the paper |
+
+### Safety rules (always)
+
+- **Never publishes.** Publish remains a separate, explicit call to
+  `publish_delf_draft`.
+- **Never saves without `confirm_save=true`.**
+- **Checks existing exercises before proposing or saving test_ids.**
+- **Never overwrites an active or archived paper** — re-extractions update
+  drafts only, and GitHub-only JSON collisions are skipped.
+- **Blocks save on validation failure or any missing asset reference.**
+
+### Roadmap
+
+- **v2** (shipped): CE image-option questions. Embedded raster images are
+  detected via pymupdf, grouped into rows (one row = one question), and
+  each option is cropped + WebP-encoded. At save time the local WebPs are
+  uploaded to GitHub before asset verification runs, so a previously-
+  missing `assets/{test_id}/q{NN}/{label}.webp` becomes valid in one
+  atomic step. Crops live under
+  `.local/delf-extracts/{analysis_id}/crops/activity-{NN}/q{NN}/{label}.webp`.
+- **v3** (shipped): CO transcripts parsed from the answer/transcript PDF.
+  Main transcript goes onto `DelfExercise.transcript`; `Document N`
+  sub-blocks become `DelfTestPaper.extra_transcripts`. Audio filename
+  resolution already wired in v1's `track_resolver`.
+- **v4** (planned): OCR fallback (tesseract or easyocr) for scanned PDFs.
+
+## 11. Known Limitations
+
 - No image transforms beyond crop + WebP (no resize, rotation, stitching).
-- No OCR inside the MCP — the agent's native vision does the reading.
+- PDF ingestion currently supports born-digital PDFs only. Scanned PDFs return
+  `scanned_pdf`; OCR fallback is planned for a later milestone.
+- Matching exercises (`associez`, `reliez`, etc.) are detected but skipped.
+- CO ingestion requires track numbers/transcripts in the answer PDF and the
+  corresponding audio files to already exist in GitHub storage.
+- `save_delf_book_drafts` can save a new draft or update an existing draft, but
+  it never publishes. Publishing remains an explicit `publish_delf_draft` call.
+- No OCR inside the MCP yet.
 - No audio transcription / TTS / speech-to-text.
 - `update_delf_draft` does not support renaming a draft's `test_id` — delete
   and re-save instead.

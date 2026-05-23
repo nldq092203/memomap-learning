@@ -4,7 +4,6 @@ import type {
   DelfTestListResponse,
   DelfTestPaperDetailResponse,
 } from "@/lib/types/api/delf"
-import { GITHUB_CONTENT_BASE_URL } from "@/lib/constants"
 
 const BASE = "web/delf"
 
@@ -56,10 +55,10 @@ export const learningDelfApi = {
   },
 
   /**
-   * Helper to construct raw GitHub URLs for image assets
+   * Helper to construct proxied image asset URLs
    */
   getAssetUrl(level: string, variant: string, section: string, filename: string): string {
     const path = filename.startsWith('assets/') ? filename : `assets/${filename}`
-    return `${GITHUB_CONTENT_BASE_URL}/delf/${level.toLowerCase()}/${variant}/${section}/${path}`
+    return `/api/${BASE}/assets/${level.toLowerCase()}/${variant}/${section}/${path}`
   },
 }

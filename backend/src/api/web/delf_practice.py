@@ -16,6 +16,7 @@ from __future__ import annotations
 import base64
 import binascii
 import json
+import mimetypes
 from typing import Any
 
 from flask import request, Response
@@ -326,12 +327,23 @@ def delf_proxy_asset(asset_path: str):
     Path format: <level>/<variant>/<section>/assets/<filename-or-nested-path>
     """
     github_repo = GitHubDelfRepository()
-    url = f"{github_repo.base_url}/delf/{asset_path}"
+    github_path = f"delf/{asset_path}"
+    url = f"{github_repo.base_url}/{github_path}"
 
     try:
         resp = github_repo.fetch_raw(url)
     except Exception:
-        raise NotFoundError("Asset not found")
+        try:
+            content = GitHubDelfManager().read_file(github_path)
+        except Exception:
+            raise NotFoundError("Asset not found")
+
+        content_type = mimetypes.guess_type(asset_path)[0] or "image/webp"
+        return Response(
+            content,
+            content_type=content_type,
+            headers={"Cache-Control": "public, max-age=86400"},
+        )
 
     content_type = resp.headers.get("Content-Type", "image/webp")
 

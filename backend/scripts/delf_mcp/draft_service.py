@@ -36,6 +36,8 @@ def save_draft(
     variant: str,
     section: str,
     content: Any,
+    repo: DelfTestPaperRepository | None = None,
+    github_mgr: GitHubDelfManager | None = None,
 ) -> dict[str, Any]:
     """Validate then persist a DELF test paper as a draft.
 
@@ -57,8 +59,8 @@ def save_draft(
     paper: DelfTestPaper = validation["paper"]
     test_id = paper.test_id
 
-    repo = DelfTestPaperRepository()
-    github_mgr = GitHubDelfManager()
+    repo = repo or DelfTestPaperRepository()
+    github_mgr = github_mgr or GitHubDelfManager()
 
     # 2. Corpus preflight: DB metadata can be stale, so read GitHub too before
     #    choosing whether this test_id is safe to create.
