@@ -51,7 +51,7 @@ export const learningDelfApi = {
    * Helper to construct proxied audio URLs
    */
   getAudioProxyUrl(level: string, variant: string, section: string, filename: string): string {
-    return `/api/${BASE}/audio/${level.toLowerCase()}/${variant}/${section}/${filename}`
+    return `${apiClient.getBaseUrl()}/${BASE}/audio/${level.toLowerCase()}/${variant}/${section}/${filename}`
   },
 
   /**
@@ -59,6 +59,6 @@ export const learningDelfApi = {
    */
   getAssetUrl(level: string, variant: string, section: string, filename: string): string {
     const path = filename.startsWith('assets/') ? filename : `assets/${filename}`
-    return `/api/${BASE}/assets/${level.toLowerCase()}/${variant}/${section}/${path}`
+    return `${apiClient.getBaseUrl()}/${BASE}/assets/${level.toLowerCase()}/${variant}/${section}/${path}`
   },
 }
