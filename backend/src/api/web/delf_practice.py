@@ -289,16 +289,21 @@ def delf_proxy_audio(audio_path: str):
     GET /web/delf/audio/<path:audio_path>
 
     Proxy audio file from GitHub.
-    Path format: <level>/<variant>/<section>/audio/<filename>
+    Path format: <level>/<variant>/<section>/<filename>
+    or legacy/internal: <level>/<variant>/<section>/audio/<filename>
     """
     github_repo = GitHubDelfRepository()
-    url = f"{github_repo.base_url}/delf/{audio_path}"
+    path_parts = audio_path.strip("/").split("/")
+    if len(path_parts) >= 4 and path_parts[-2] != "audio":
+        path_parts.insert(-1, "audio")
+    github_path = f"delf/{'/'.join(path_parts)}"
+    url = f"{github_repo.base_url}/{github_path}"
 
     try:
         resp = github_repo.fetch_raw(url)
     except Exception:
         try:
-            content = GitHubDelfManager().read_file(f"delf/{audio_path}")
+            content = GitHubDelfManager().read_file(github_path)
         except Exception:
             raise NotFoundError("Audio file not found")
 
