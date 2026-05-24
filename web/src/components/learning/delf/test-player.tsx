@@ -353,7 +353,7 @@ export function TestPlayer({
             )
           }
 
-          if (exercise.type === "multiple_choice_set") {
+          if (isNestedQuestionExerciseType(exercise.type)) {
             return (
               <MultipleChoiceSetView
                 key={exercise.id}

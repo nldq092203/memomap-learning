@@ -265,16 +265,6 @@ def _build_delf_test_detail(
     except Exception as e:
         raise NotFoundError(f"Test paper content not found on GitHub: {e}")
 
-    # Build audio URL
-    audio_url = None
-    if paper.audio_filename:
-        audio_url = github_repo.audio_url(
-            level=paper.level.lower(),
-            variant=paper.variant,
-            section=paper.section,
-            filename=paper.audio_filename,
-        )
-
     result = DelfTestPaperDetailResponse(
         id=paper.id,
         test_id=paper.test_id,
@@ -288,7 +278,7 @@ def _build_delf_test_detail(
         updated_at=paper.updated_at,
         github_path=paper.github_path,
         content=content,
-        audio_url=audio_url,
+        audio_url=None,
     )
 
     return ResponseBuilder().success(data=result.model_dump(mode="json")).build()
@@ -307,7 +297,17 @@ def delf_proxy_audio(audio_path: str):
     try:
         resp = github_repo.fetch_raw(url)
     except Exception:
-        raise NotFoundError("Audio file not found")
+        try:
+            content = GitHubDelfManager().read_file(f"delf/{audio_path}")
+        except Exception:
+            raise NotFoundError("Audio file not found")
+
+        content_type = mimetypes.guess_type(audio_path)[0] or "audio/mpeg"
+        return Response(
+            content,
+            content_type=content_type,
+            headers={"Cache-Control": "public, max-age=86400"},
+        )
 
     # Determine content type
     content_type = resp.headers.get("Content-Type", "audio/mpeg")

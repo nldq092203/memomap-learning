@@ -19,6 +19,7 @@ export type DelfExerciseType =
   | 'article_comprehension'
   | 'multi_document_comprehension'
   | 'multiple_choice_set'
+  | 'listening_comprehension'
 
 // Question Content Models (matching GitHub JSON structure)
 export interface DelfImageOption {
@@ -155,6 +156,7 @@ const DOCUMENT_COMPREHENSION_EXERCISE_TYPES = new Set<string>([
 const NESTED_QUESTION_EXERCISE_TYPES = new Set<string>([
   ...DOCUMENT_COMPREHENSION_EXERCISE_TYPES,
   'multiple_choice_set',
+  'listening_comprehension',
 ])
 
 export function isDocumentComprehensionExerciseType(type: string): type is DelfExerciseType {

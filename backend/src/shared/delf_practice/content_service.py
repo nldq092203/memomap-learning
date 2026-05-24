@@ -8,6 +8,7 @@ from src.config import Config
 from src.extensions import logger
 from src.infra.cache import get_redis_client
 from src.shared.delf_practice.github_repository import GitHubDelfRepository
+from src.shared.delf_practice.github_manager import GitHubDelfManager
 from src.shared.delf_practice.schemas import DelfTestPaper
 
 DELF_CONTENT_CACHE_PREFIX = "delf:test-content:v1"
@@ -125,7 +126,17 @@ def resolve_delf_content(
         return cached
 
     repo = github_repo or GitHubDelfRepository()
-    content = repo.fetch_test_paper(paper.github_path)
+    try:
+        content = repo.fetch_test_paper(paper.github_path)
+    except Exception as raw_exc:
+        logger.warning(
+            "[DELF-CACHE] Raw GitHub fetch failed for {}: {}. "
+            "Trying Contents API fallback.",
+            paper.github_path,
+            raw_exc,
+        )
+        data = GitHubDelfManager().read_file(paper.github_path)
+        content = DelfTestPaper.model_validate_json(data.decode("utf-8"))
     set_cached_delf_content(
         level=paper.level,
         variant=paper.variant,
