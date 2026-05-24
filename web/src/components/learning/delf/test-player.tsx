@@ -179,7 +179,7 @@ export function TestPlayer({
   }
 
   const formatTime = (seconds: number) => {
-    if (isNaN(seconds)) return "0:00"
+    if (!Number.isFinite(seconds)) return ""
     const minutes = Math.floor(seconds / 60)
     const secs = Math.floor(seconds % 60)
     return `${minutes}:${secs.toString().padStart(2, "0")}`
