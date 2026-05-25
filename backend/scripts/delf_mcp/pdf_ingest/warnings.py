@@ -12,6 +12,8 @@ from typing import Any
 
 # v1 codes. New codes for v2/v3/v4 should land here too.
 SCANNED_PDF = "scanned_pdf"
+OCR_APPLIED = "ocr_applied"
+OCR_FAILED = "ocr_failed"
 IMAGE_OPTION_DETECTED = "image_option_detected"
 MATCHING_EXERCISE_DETECTED = "matching_exercise_detected"
 EXTRA_TRANSCRIPT_DETECTED = "extra_transcript_detected"
@@ -52,6 +54,8 @@ __all__ = [
     "MISSING_ANSWER_KEY",
     "MISSING_ASSET",
     "MISSING_AUDIO",
+    "OCR_APPLIED",
+    "OCR_FAILED",
     "POINTS_DEFAULTED",
     "SCANNED_PDF",
     "UNCLASSIFIED_ACTIVITY",

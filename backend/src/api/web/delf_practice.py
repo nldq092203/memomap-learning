@@ -294,8 +294,11 @@ def delf_proxy_audio(audio_path: str):
     """
     github_repo = GitHubDelfRepository()
     path_parts = audio_path.strip("/").split("/")
-    if len(path_parts) >= 4 and path_parts[-2] != "audio":
-        path_parts.insert(-1, "audio")
+    if len(path_parts) >= 4:
+        level, variant, section, *rest = path_parts
+        while rest and rest[0].lower() == "audio":
+            rest.pop(0)
+        path_parts = [level, variant, section, "audio", *rest]
     github_path = f"delf/{'/'.join(path_parts)}"
     url = f"{github_repo.base_url}/{github_path}"
 

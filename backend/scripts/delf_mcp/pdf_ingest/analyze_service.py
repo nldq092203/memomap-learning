@@ -12,6 +12,7 @@ verify audio existence at analyze-time (per plan decision D7).
 from __future__ import annotations
 
 import os
+import re
 from typing import Any
 
 from . import manifest as manifest_module
@@ -26,8 +27,110 @@ from .manifest import (
     pages_dir,
     write_manifest,
 )
+from .ocr_service import ocr_pdf
 from .pdf_reader import PdfDocument, read_pdf
 from .transcript_parser import Transcripts, parse_transcript_pdf
+
+
+OCR_MODES = {"auto", "off", "force"}
+
+
+def _source_book_id(pdf_path: str) -> str:
+    stem = os.path.splitext(os.path.basename(pdf_path))[0]
+    normalized = re.sub(r"[^A-Za-z0-9._-]+", "-", stem).strip("-")
+    return normalized or stem or "unknown-book"
+
+
+def _create_pdf_page_subset(
+    *,
+    pdf_path: str,
+    page_range: list[int],
+    workspace: str,
+) -> tuple[str, int]:
+    """Create a 1-indexed inclusive page-range subset for faster OCR."""
+    if len(page_range) != 2:
+        raise ValueError("page_range must be [start_page, end_page]")
+    start, end = int(page_range[0]), int(page_range[1])
+    if start < 1 or end < start:
+        raise ValueError("page_range must be 1-indexed and ascending")
+
+    try:
+        import fitz  # pymupdf
+    except ImportError as exc:
+        raise ImportError(
+            "pymupdf is required for page_range PDF slicing. "
+            "Install backend/requirements-delf-pdf.txt."
+        ) from exc
+
+    source = fitz.open(pdf_path)
+    try:
+        if end > source.page_count:
+            raise ValueError(
+                f"page_range end {end} exceeds PDF page_count {source.page_count}"
+            )
+        out_path = os.path.join(workspace, "source-subset.pdf")
+        subset = fitz.open()
+        try:
+            subset.insert_pdf(source, from_page=start - 1, to_page=end - 1)
+            subset.save(out_path)
+        finally:
+            subset.close()
+    finally:
+        source.close()
+    return out_path, start - 1
+
+
+def _read_pdf_with_optional_ocr(
+    *,
+    pdf_path: str,
+    render_to_dir: str | None,
+    workspace: str,
+    role: str,
+    ocr_mode: str,
+    ocr_language: str,
+) -> tuple[PdfDocument, str, list[dict[str, Any]]]:
+    """Read a PDF, optionally OCRing scanned input first."""
+    warnings: list[dict[str, Any]] = []
+
+    def _ocr_and_read(*, force_ocr: bool) -> tuple[PdfDocument, str]:
+        output_path = os.path.join(workspace, "ocr", f"{role}.ocr.pdf")
+        result = ocr_pdf(
+            input_pdf_path=pdf_path,
+            output_pdf_path=output_path,
+            language=ocr_language,
+            force_ocr=force_ocr,
+        )
+        warnings.append(
+            warning_codes.make_warning(
+                warning_codes.OCR_APPLIED,
+                f"OCR was applied to the {role} PDF before analysis.",
+                field=f"{role}_pdf_path",
+                context={
+                    "input_pdf_path": os.path.abspath(pdf_path),
+                    "ocr_pdf_path": result.output_pdf_path,
+                    "command": result.command,
+                },
+            )
+        )
+        return read_pdf(result.output_pdf_path, render_to_dir=render_to_dir), result.output_pdf_path
+
+    if ocr_mode == "force":
+        document, effective_path = _ocr_and_read(force_ocr=True)
+        return document, effective_path, warnings
+
+    try:
+        return read_pdf(pdf_path, render_to_dir=render_to_dir), pdf_path, warnings
+    except ValueError:
+        if ocr_mode != "auto":
+            raise
+        try:
+            document, effective_path = _ocr_and_read(force_ocr=True)
+            return document, effective_path, warnings
+        except Exception as exc:
+            raise RuntimeError(
+                "PDF appears to be scanned and OCR fallback failed: "
+                f"{exc}"
+            ) from exc
 
 
 def _peek_extraction(activity: ActivityRecord) -> dict[str, Any]:
@@ -139,7 +242,10 @@ def _build_activity_records(
                 text=activity.text,
             )
         )
-        has_image_options = peek["skip_reason"] == warning_codes.IMAGE_OPTION_DETECTED
+        has_image_options = (
+            peek["skip_reason"] == warning_codes.IMAGE_OPTION_DETECTED
+            or bool(crops_for_activity)
+        )
         has_matching = peek["skip_reason"] == warning_codes.MATCHING_EXERCISE_DETECTED
         for w in peek["warnings"]:
             if w["code"] == warning_codes.IMAGE_OPTION_DETECTED and crops_for_activity:
@@ -211,6 +317,9 @@ def analyze_delf_book_pdf(
     answer_pdf_path: str | None,
     level: str,
     variant: str,
+    ocr_mode: str = "auto",
+    ocr_language: str = "fra",
+    page_range: list[int] | None = None,
     workspace_root: str | None = None,
     github: Any | None = None,
 ) -> dict[str, Any]:
@@ -223,6 +332,12 @@ def analyze_delf_book_pdf(
             warning.
         level: DELF level (A1..C2).
         variant: e.g. 'tout-public-a2'.
+        ocr_mode: `auto` OCRs only scanned PDFs, `force` OCRs before reading,
+            and `off` preserves born-digital-only behavior.
+        ocr_language: Tesseract language code passed to ocrmypdf.
+        page_range: Optional 1-indexed inclusive `[start_page, end_page]`.
+            Used to OCR/import one workbook section while preserving source
+            book identity and original page numbers.
         workspace_root: Override the default `.local/delf-extracts` dir
             (used by tests).
         github: Optional `GitHubDelfManager`-shaped object (used by tests
@@ -245,21 +360,73 @@ def analyze_delf_book_pdf(
             "error": f"answer_pdf_path not found: {answer_pdf_path}",
             "message": "Provide an absolute path to a readable PDF file or omit the parameter.",
         }
+    if ocr_mode not in OCR_MODES:
+        return {
+            "success": False,
+            "error": f"Invalid ocr_mode '{ocr_mode}'. Expected one of: auto, off, force.",
+        }
 
     analysis_id, workspace = init_workspace(workspace_root=workspace_root)
+    global_warnings: list[dict[str, Any]] = []
+    source_book_id = _source_book_id(exercise_pdf_path)
+    source_page_offset = 0
+    effective_exercise_pdf_path = exercise_pdf_path
+    effective_answer_pdf_path = answer_pdf_path
+
+    if page_range is not None:
+        try:
+            effective_exercise_pdf_path, source_page_offset = _create_pdf_page_subset(
+                pdf_path=exercise_pdf_path,
+                page_range=page_range,
+                workspace=workspace,
+            )
+        except (ImportError, ValueError) as exc:
+            return {
+                "success": False,
+                "analysis_id": analysis_id,
+                "error": str(exc),
+            }
+        global_warnings.append(
+            warning_codes.make_warning(
+                "page_range_applied",
+                f"Analyzing source PDF pages {page_range[0]}-{page_range[1]} only.",
+                field="page_range",
+                context={
+                    "source_pdf_path": os.path.abspath(exercise_pdf_path),
+                    "subset_pdf_path": os.path.abspath(effective_exercise_pdf_path),
+                    "source_page_offset": source_page_offset,
+                },
+            )
+        )
 
     try:
-        exercise_pdf = read_pdf(
-            exercise_pdf_path,
+        exercise_pdf, effective_exercise_pdf_path, ocr_warnings = _read_pdf_with_optional_ocr(
+            pdf_path=effective_exercise_pdf_path,
             render_to_dir=pages_dir(workspace),
+            workspace=workspace,
+            role="exercise",
+            ocr_mode=ocr_mode,
+            ocr_language=ocr_language,
         )
+        global_warnings.extend(ocr_warnings)
     except ValueError as exc:
-        # Scanned PDF — surfaces as a clean error, not a crash.
+        # Scanned PDF with OCR disabled — surfaces as a clean error.
         return {
             "success": False,
             "analysis_id": analysis_id,
             "error": str(exc),
             "warning_code": warning_codes.SCANNED_PDF,
+            "message": (
+                "This PDF appears to be scanned. Re-run with ocr_mode='auto' "
+                "or install OCR tools: brew install ocrmypdf tesseract tesseract-lang"
+            ),
+        }
+    except RuntimeError as exc:
+        return {
+            "success": False,
+            "analysis_id": analysis_id,
+            "error": str(exc),
+            "warning_code": warning_codes.OCR_FAILED,
         }
     except ImportError as exc:
         return {
@@ -272,13 +439,33 @@ def analyze_delf_book_pdf(
     transcripts = Transcripts()
     if answer_pdf_path is not None:
         try:
-            answer_pdf = read_pdf(answer_pdf_path, render_to_dir=None)
+            answer_pdf, effective_answer_pdf_path, ocr_warnings = _read_pdf_with_optional_ocr(
+                pdf_path=answer_pdf_path,
+                render_to_dir=None,
+                workspace=workspace,
+                role="answer",
+                ocr_mode=ocr_mode,
+                ocr_language=ocr_language,
+            )
+            global_warnings.extend(ocr_warnings)
         except ValueError as exc:
             return {
                 "success": False,
                 "analysis_id": analysis_id,
                 "error": f"Answer PDF appears to be scanned: {exc}",
                 "warning_code": warning_codes.SCANNED_PDF,
+                "message": (
+                    "The answer PDF appears to be scanned. Re-run with "
+                    "ocr_mode='auto' or install OCR tools: "
+                    "brew install ocrmypdf tesseract tesseract-lang"
+                ),
+            }
+        except RuntimeError as exc:
+            return {
+                "success": False,
+                "analysis_id": analysis_id,
+                "error": str(exc),
+                "warning_code": warning_codes.OCR_FAILED,
             }
         answer_key = parse_answer_pdf(answer_pdf.pages)
         transcripts = parse_transcript_pdf(answer_pdf.pages)
@@ -292,7 +479,7 @@ def analyze_delf_book_pdf(
         from .image_option_extractor import extract_image_options_for_activities
 
         image_crops_by_activity = extract_image_options_for_activities(
-            exercise_pdf_path=exercise_pdf_path,
+            exercise_pdf_path=effective_exercise_pdf_path,
             exercise_pdf=exercise_pdf,
             workspace_dir=workspace,
         )
@@ -308,7 +495,7 @@ def analyze_delf_book_pdf(
             "Falling back to v1 warn-and-skip behavior.",
         )
 
-    records, global_warnings = _build_activity_records(
+    records, record_warnings = _build_activity_records(
         exercise_pdf=exercise_pdf,
         answer_key=answer_key,
         transcripts=transcripts,
@@ -317,6 +504,7 @@ def analyze_delf_book_pdf(
         github=github,
         image_option_crops_by_activity=image_crops_by_activity,
     )
+    global_warnings.extend(record_warnings)
     if image_extraction_warning is not None:
         global_warnings.append(image_extraction_warning)
 
@@ -334,11 +522,13 @@ def analyze_delf_book_pdf(
         analysis_id=analysis_id,
         level=level.upper(),
         variant=variant,
-        exercise_pdf_path=os.path.abspath(exercise_pdf_path),
+        exercise_pdf_path=os.path.abspath(effective_exercise_pdf_path),
         answer_pdf_path=(
-            os.path.abspath(answer_pdf_path) if answer_pdf_path else None
+            os.path.abspath(effective_answer_pdf_path) if effective_answer_pdf_path else None
         ),
         workspace_dir=workspace,
+        source_book_id=source_book_id,
+        source_page_offset=source_page_offset,
         activities=records,
         warnings=global_warnings,
     )

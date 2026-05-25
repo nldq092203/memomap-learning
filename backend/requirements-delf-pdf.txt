@@ -1,1 +1,4 @@
 pymupdf>=1.24.0
+
+# Optional scanned-PDF OCR support also requires local system tools:
+#   brew install ocrmypdf tesseract tesseract-lang

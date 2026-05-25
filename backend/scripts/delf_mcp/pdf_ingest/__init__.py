@@ -1,4 +1,4 @@
-"""PDF book ingestion for DELF (v1 — CE text-only, born-digital PDFs).
+"""PDF book ingestion for DELF.
 
 Three MCP tools layered on the existing draft pipeline:
 
@@ -11,5 +11,6 @@ State handoff between tools lives at
 stateless across calls; each tool reads the manifest by ID.
 
 PDF deps (pymupdf) are imported lazily inside `pdf_reader` so the rest of
-the MCP server still loads when the optional dep isn't installed.
+the MCP server still loads when the optional dep isn't installed. Scanned
+PDF support is handled by optional local `ocrmypdf` + Tesseract tooling.
 """

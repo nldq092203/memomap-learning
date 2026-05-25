@@ -54,6 +54,31 @@ def test_finds_exercice_synonym():
     assert boundaries[0].activity_number == 5
 
 
+def test_finds_numbered_listening_prompt_header():
+    pages = [
+        _page(
+            1,
+            "Partie B\n"
+            "Qù15 1. Écoutez les émissions de radio.\n"
+            "1. Question?\n"
+            "2 = Vous écoutez la radio.\n",
+        )
+    ]
+    boundaries = find_activity_boundaries(pages)
+    assert [b.activity_number for b in boundaries] == [1, 2]
+
+
+def test_infers_missing_co_activity_number_from_listening_prompt():
+    pages = [
+        _page(1, "4. Vous écoutez la radio.\nDOCUMENT 1\n1. Question?"),
+        _page(2, "GD2 ] « Vous écoutez la radio.\nDOCUMENT 1\n1. Question?"),
+        _page(3, "6. Vous écoutez la radio.\nDOCUMENT 1\n1. Question?"),
+    ]
+    boundaries = find_activity_boundaries(pages)
+    assert [b.activity_number for b in boundaries] == [4, 5, 6]
+    assert boundaries[1].raw_header == "5. Vous écoutez"
+
+
 def test_chapter_boundaries():
     pages = [
         _page(1, "Chapitre 1\n\nActivité 1"),

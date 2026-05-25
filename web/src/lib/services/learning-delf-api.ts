@@ -51,7 +51,8 @@ export const learningDelfApi = {
    * Helper to construct proxied audio URLs
    */
   getAudioProxyUrl(level: string, variant: string, section: string, filename: string): string {
-    return `${apiClient.getBaseUrl()}/${BASE}/audio/${level.toLowerCase()}/${variant}/${section}/audio/${filename}`
+    const cleanFilename = filename.replace(/^\/+/, "").replace(/^(audio\/)+/i, "")
+    return `${apiClient.getBaseUrl()}/${BASE}/audio/${level.toLowerCase()}/${variant}/${section}/audio/${cleanFilename}`
   },
 
   /**

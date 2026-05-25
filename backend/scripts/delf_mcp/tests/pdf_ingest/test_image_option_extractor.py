@@ -8,6 +8,7 @@ the expected `q{NN}/{label}.webp` structure.
 from __future__ import annotations
 
 import os
+import io
 import struct
 import sys
 import zlib
@@ -21,6 +22,7 @@ if _BACKEND_DIR not in sys.path:
 import pytest
 
 fitz = pytest.importorskip("fitz")  # pymupdf
+Image = pytest.importorskip("PIL.Image")
 
 from scripts.delf_mcp.pdf_ingest.image_option_extractor import (
     extract_image_options_for_activity,
@@ -152,3 +154,44 @@ def test_no_images_yields_no_crops(tmp_path):
         workspace_dir=workspace,
     )
     assert crops == []
+
+
+def test_scanned_full_page_image_fallback_detects_option_row(tmp_path):
+    pdf_path = str(tmp_path / "scanned.pdf")
+    workspace = str(tmp_path / "work")
+    os.makedirs(workspace, exist_ok=True)
+
+    canvas = Image.new("RGB", (1200, 1600), "white")
+    colors = [(40, 160, 220), (230, 80, 60), (240, 190, 30)]
+    for idx, color in enumerate(colors):
+        left = 230 + idx * 320
+        top = 500
+        for x in range(left, left + 180):
+            for y in range(top, top + 180):
+                canvas.putpixel((x, y), color)
+    buf = io.BytesIO()
+    canvas.save(buf, format="PNG")
+
+    doc = fitz.open()
+    try:
+        page = doc.new_page(width=600, height=800)
+        page.insert_image(page.rect, stream=buf.getvalue())
+        doc.save(pdf_path)
+    finally:
+        doc.close()
+
+    crops = extract_image_options_for_activity(
+        pdf_path=pdf_path,
+        page_start=1,
+        page_end=1,
+        activity_number=1,
+        workspace_dir=workspace,
+    )
+
+    assert len(crops) == 3
+    assert [(c.question_number, c.label) for c in crops] == [
+        (1, "a"),
+        (1, "b"),
+        (1, "c"),
+    ]
+    assert all(os.path.exists(c.local_path) for c in crops)

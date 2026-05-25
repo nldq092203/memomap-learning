@@ -15,6 +15,7 @@ Per plan decisions D2, D6, D7:
 from __future__ import annotations
 
 import base64
+import json
 import os
 from typing import Any
 
@@ -90,6 +91,72 @@ def _github_json_exists(
     if checker is None:
         return False, github_path
     return bool(checker(github_path)), github_path
+
+
+def _collect_source_activity_ids(content: dict[str, Any]) -> set[str]:
+    """Collect durable PDF activity ids from a paper dict."""
+    ids: set[str] = set()
+
+    def _add_from_ref(ref: Any) -> None:
+        if not isinstance(ref, dict):
+            return
+        activity_id = ref.get("activity_id")
+        if isinstance(activity_id, str) and ":activity-" in activity_id:
+            ids.add(activity_id)
+
+    _add_from_ref(content.get("source_ref"))
+    for exercise in content.get("exercises") or []:
+        if isinstance(exercise, dict):
+            _add_from_ref(exercise.get("source_ref"))
+    return ids
+
+
+def _find_existing_source_duplicate(
+    *,
+    paper_content: dict[str, Any],
+    level: str,
+    variant: str,
+    section: str,
+    github_mgr: Any | None,
+) -> dict[str, Any] | None:
+    """Return duplicate details if an existing JSON has the same source activity."""
+    source_ids = _collect_source_activity_ids(paper_content)
+    if not source_ids:
+        return None
+
+    if github_mgr is None:
+        from src.shared.delf_practice.github_manager import GitHubDelfManager
+
+        github_mgr = GitHubDelfManager()
+
+    directory = build_github_directory(level, variant, section)
+    stems = github_mgr.list_json_stems(directory)
+    current_test_id = str(paper_content.get("test_id") or "")
+
+    for stem in stems:
+        if stem == current_test_id:
+            continue
+        path = f"{directory}/{stem}.json"
+        raw = github_mgr.read_file(path)
+        try:
+            existing = json.loads(raw.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            continue
+        if not isinstance(existing, dict):
+            continue
+        overlap = sorted(source_ids & _collect_source_activity_ids(existing))
+        if overlap:
+            return {
+                "source": "GitHub",
+                "existing_test_id": stem,
+                "github_path": path,
+                "source_activity_ids": overlap,
+                "message": (
+                    "An existing DELF JSON already references the same PDF "
+                    "book activity; refusing to save a duplicate."
+                ),
+            }
+    return None
 
 
 def _collect_image_uploads_for_paper(
@@ -286,6 +353,27 @@ def _save_one_paper(
                     ),
                 },
             )
+
+    try:
+        duplicate_source = _find_existing_source_duplicate(
+            paper_content=paper_content,
+            level=level,
+            variant=variant,
+            section=section,
+            github_mgr=github_mgr,
+        )
+    except Exception as exc:
+        return _skip_record(
+            test_id=test_id,
+            reason="existing_source_check_failed",
+            details={"error": str(exc)},
+        )
+    if duplicate_source is not None:
+        return _skip_record(
+            test_id=test_id,
+            reason="source_activity_exists",
+            details=duplicate_source,
+        )
 
     # 3. v2 — upload image-option crops before asset verification runs.
     uploaded_crops: list[dict[str, Any]] = []

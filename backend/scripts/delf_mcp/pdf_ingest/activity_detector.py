@@ -27,6 +27,12 @@ _ACTIVITY_HEADER_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"^\s*activit[ée]\s+(\d{1,3})\b", re.IGNORECASE | re.MULTILINE),
     # "Exercice 1", "EXERCICE 1"
     re.compile(r"^\s*exercice\s+(\d{1,3})\b", re.IGNORECASE | re.MULTILINE),
+    # CO prep-book pages often use only a numbered listening prompt:
+    # "1. Écoutez les émissions..." or OCR variants like "2 = Vous écoutez..."
+    re.compile(
+        r"(?:^|\s)(\d{1,3})\s*[\.\-=]\s*(?:vous\s+)?[ée]coutez\b",
+        re.IGNORECASE | re.MULTILINE,
+    ),
 )
 
 # Chapter / unit header. Used to group activities by chapter so that
@@ -129,6 +135,39 @@ def find_activity_boundaries(
             continue
         seen.add(key)
         deduped.append(boundary)
+
+    # OCR often loses the large colored activity number in this A2 CO layout,
+    # while preserving the prompt "Vous écoutez la radio." If a page has that
+    # listening prompt but no boundary, infer the next activity number from the
+    # previous page boundary so the page is not merged into the prior activity.
+    pages_with_boundary = {b.page_number for b in deduped}
+    inferred: list[ActivityBoundary] = []
+    last_boundary: ActivityBoundary | None = None
+    for page in pages:
+        explicit = [b for b in deduped if b.page_number == page.page_number]
+        if explicit:
+            last_boundary = explicit[-1]
+            continue
+        normalized = _normalize_for_match(page.text)
+        if (
+            last_boundary is not None
+            and page.page_number not in pages_with_boundary
+            and "vous ecoutez la radio" in normalized
+        ):
+            offset = normalized.find("vous ecoutez la radio")
+            number = last_boundary.activity_number + 1
+            inferred_boundary = ActivityBoundary(
+                activity_number=number,
+                page_number=page.page_number,
+                char_offset=max(offset, 0),
+                raw_header=f"{number}. Vous écoutez",
+            )
+            inferred.append(inferred_boundary)
+            pages_with_boundary.add(page.page_number)
+            last_boundary = inferred_boundary
+    if inferred:
+        deduped.extend(inferred)
+        deduped.sort(key=lambda b: (b.page_number, b.char_offset))
     return deduped
 
 

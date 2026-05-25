@@ -78,6 +78,20 @@ class DelfSubQuestion(BaseModel):
     correct_answers: Union[dict[str, int], list[str], None] = None
 
 
+class DelfSourceRef(BaseModel):
+    """Stable pointer back to the source PDF book activity."""
+
+    book_id: str = Field(..., min_length=1)
+    activity_id: str | None = None
+    activity_number: int | None = None
+    chapter_number: int | None = None
+    section: str | None = None
+    page_start: int | None = None
+    page_end: int | None = None
+    source_activities: list[int] = Field(default_factory=list)
+    source_pages: list[int] = Field(default_factory=list)
+
+
 class DelfExercise(BaseModel):
     """Single exercise within a test paper.
     
@@ -102,6 +116,7 @@ class DelfExercise(BaseModel):
     points: float | None = None
     transcript: str | None = None
     explanation: str | None = None
+    source_ref: DelfSourceRef | None = None
 
     # --- Matching fields ---
     documents: list[DelfDocument] = Field(default_factory=list)
@@ -126,6 +141,7 @@ class DelfTestPaper(BaseModel):
     audio_filename: str | None = None
     exercises: list[DelfExercise] = Field(default_factory=list)
     extra_transcripts: list[DelfExtraTranscript] = Field(default_factory=list)
+    source_ref: DelfSourceRef | None = None
 
 
 # ============================================================================
@@ -245,6 +261,7 @@ __all__ = [
     "DelfReadingDocument",
     "DelfLabelOption",
     "DelfSubQuestion",
+    "DelfSourceRef",
     "DelfExercise",
     "DelfExtraTranscript",
     "DelfTestPaper",

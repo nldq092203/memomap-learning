@@ -10,6 +10,8 @@ warnings inline. The agent should review before calling save.
 
 from __future__ import annotations
 
+import os
+import re
 from typing import Any
 
 from src.shared.delf_practice.asset_paths import nested_image_relative_path
@@ -23,6 +25,43 @@ from scripts.delf_mcp.validation import validate_content
 from . import question_extractor
 from . import warnings as warning_codes
 from .manifest import ActivityRecord, ImageOptionCrop, read_manifest
+
+
+def _source_book_id(exercise_pdf_path: str) -> str:
+    """Stable book id derived from the source PDF filename."""
+    stem = os.path.splitext(os.path.basename(exercise_pdf_path))[0]
+    normalized = re.sub(r"[^A-Za-z0-9._-]+", "-", stem).strip("-")
+    return normalized or stem or "unknown-book"
+
+
+def _activity_source_ref(
+    activity: ActivityRecord,
+    *,
+    book_id: str,
+    page_offset: int,
+) -> dict[str, Any]:
+    chapter_part = (
+        f"chapter-{activity.chapter_number}"
+        if activity.chapter_number is not None
+        else "chapter-unknown"
+    )
+    section = activity.section.upper()
+    activity_id = (
+        f"{book_id}:{section}:{chapter_part}:activity-{activity.activity_number}"
+    )
+    return {
+        "book_id": book_id,
+        "activity_id": activity_id,
+        "activity_number": activity.activity_number,
+        "chapter_number": activity.chapter_number,
+        "section": section,
+        "page_start": activity.page_start + page_offset,
+        "page_end": activity.page_end + page_offset,
+        "source_activities": [activity.activity_number],
+        "source_pages": list(
+            range(activity.page_start + page_offset, activity.page_end + page_offset + 1)
+        ),
+    }
 
 
 def _filter_activities(
@@ -42,9 +81,17 @@ def _filter_activities(
     return filtered
 
 
-def _group_key(activity: ActivityRecord) -> tuple[Any, str]:
-    """(chapter_number, section) — both must match to merge into one paper."""
-    return (activity.chapter_number, activity.section.upper())
+def _group_key(
+    activity: ActivityRecord,
+    *,
+    split_co_by_activity: bool,
+) -> tuple[Any, str, int | None]:
+    """Grouping key for paper assembly."""
+    section = activity.section.upper()
+    activity_part = (
+        activity.activity_number if split_co_by_activity and section == "CO" else None
+    )
+    return (activity.chapter_number, section, activity_part)
 
 
 def _assign_img_urls(
@@ -79,6 +126,8 @@ def _extract_exercise_for_activity(
     activity: ActivityRecord,
     *,
     proposed_test_id: str,
+    book_id: str,
+    page_offset: int,
 ) -> tuple[
     dict[str, Any] | None,
     list[dict[str, Any]],
@@ -113,12 +162,15 @@ def _extract_exercise_for_activity(
         transcript=activity.transcript,
         image_option_crops=enriched or None,
     )
-    return (
-        result.exercise,
-        list(result.warnings),
-        result.skip_reason,
-        enriched,
-    )
+    exercise = result.exercise
+    if exercise is not None:
+        exercise["source_ref"] = _activity_source_ref(
+            activity,
+            book_id=book_id,
+            page_offset=page_offset,
+        )
+
+    return (exercise, list(result.warnings), result.skip_reason, enriched)
 
 
 def _build_paper(
@@ -128,6 +180,8 @@ def _build_paper(
     activities: list[ActivityRecord],
     proposed_test_id: str,
     audio_filename: str | None,
+    book_id: str,
+    page_offset: int,
 ) -> tuple[
     dict[str, Any],
     list[dict[str, Any]],
@@ -150,7 +204,10 @@ def _build_paper(
     for activity in activities:
         exercise, warnings_for_activity, _skip_reason, enriched_crops = (
             _extract_exercise_for_activity(
-                activity, proposed_test_id=proposed_test_id
+                activity,
+                proposed_test_id=proposed_test_id,
+                book_id=book_id,
+                page_offset=page_offset,
             )
         )
         warnings_out.extend(warnings_for_activity)
@@ -178,12 +235,26 @@ def _build_paper(
                     "content": str(extra["content"]),
                 })
 
+    paper_source_pages = sorted(page + page_offset for page in source_pages)
+    paper_source_activities = [a.activity_number for a in activities]
     paper: dict[str, Any] = {
         "test_id": proposed_test_id,
         "section": section,
         "audio_filename": audio_filename if section == "CO" else None,
         "exercises": exercises,
         "extra_transcripts": extra_transcripts,
+        "source_ref": {
+            "book_id": book_id,
+            "activity_id": (
+                f"{book_id}:{section}:chapter-{chapter}"
+                if chapter is not None
+                else f"{book_id}:{section}:chapter-unknown"
+            ),
+            "chapter_number": chapter,
+            "section": section,
+            "source_activities": paper_source_activities,
+            "source_pages": paper_source_pages,
+        },
     }
     if skipped_activities:
         warnings_out.append(
@@ -210,6 +281,7 @@ def preview_delf_book_extraction(
     activity_range: list[int] | None = None,
     workspace_root: str | None = None,
     existing_test_ids: set[str] | None = None,
+    split_co_by_activity: bool = False,
     repo: Any | None = None,
     github: Any | None = None,
 ) -> dict[str, Any]:
@@ -222,6 +294,8 @@ def preview_delf_book_extraction(
         workspace_root: Override `.local/delf-extracts` (tests).
         existing_test_ids: Pre-seeded set of IDs to avoid colliding with.
             Tests pass this in; production also checks DB/GitHub directly.
+        split_co_by_activity: When True, each CO activity becomes its own
+            candidate paper instead of grouping all CO activities in a chapter.
         repo / github: Optional injectable dependencies for tests.
 
     Returns:
@@ -238,19 +312,21 @@ def preview_delf_book_extraction(
         sections=sections,
         activity_range=activity_range,
     )
+    book_id = manifest.source_book_id or _source_book_id(manifest.exercise_pdf_path)
+    page_offset = manifest.source_page_offset
 
     # Group by (chapter, section).
-    groups: dict[tuple[Any, str], list[ActivityRecord]] = {}
-    group_order: list[tuple[Any, str]] = []
+    groups: dict[tuple[Any, str, int | None], list[ActivityRecord]] = {}
+    group_order: list[tuple[Any, str, int | None]] = []
     for activity in activities:
-        key = _group_key(activity)
+        key = _group_key(activity, split_co_by_activity=split_co_by_activity)
         if key not in groups:
             groups[key] = []
             group_order.append(key)
         groups[key].append(activity)
 
     used_ids_by_section: dict[str, set[str]] = {}
-    for _, section in group_order:
+    for _, section, _ in group_order:
         section_key = section.upper()
         if section_key not in ("CE", "CO") or section_key in used_ids_by_section:
             continue
@@ -279,8 +355,8 @@ def preview_delf_book_extraction(
 
     papers: list[dict[str, Any]] = []
 
-    for chapter, section in group_order:
-        group_activities = groups[(chapter, section)]
+    for chapter, section, activity_part in group_order:
+        group_activities = groups[(chapter, section, activity_part)]
         if section not in ("CE", "CO"):
             # UNKNOWN section: skip the whole group with a warning.
             papers.append({
@@ -322,6 +398,8 @@ def preview_delf_book_extraction(
             activities=group_activities,
             proposed_test_id=proposed,
             audio_filename=audio_filename,
+            book_id=book_id,
+            page_offset=page_offset,
         )
 
         validation = validate_content(paper)
@@ -336,6 +414,7 @@ def preview_delf_book_extraction(
             "source_activities": [a.activity_number for a in group_activities],
             "source_pages": source_pages,
             "chapter_number": chapter,
+            "source_group_activity": activity_part,
             "image_uploads": image_uploads,
         })
 

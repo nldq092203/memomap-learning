@@ -527,7 +527,7 @@ def migrate_delf_legacy_assets(
 
 
 # ---------------------------------------------------------------------------
-# PDF book ingestion (Phase 3, v1 — CE text-only)
+# PDF book ingestion (Phase 3)
 # ---------------------------------------------------------------------------
 
 
@@ -537,6 +537,9 @@ def analyze_delf_book_pdf(
     answer_pdf_path: str | None,
     level: str,
     variant: str,
+    ocr_mode: str = "auto",
+    ocr_language: str = "fra",
+    page_range: list[int] | None = None,
 ) -> dict[str, Any]:
     """Analyze a DELF book PDF: detect activities, classify CE/CO, write manifest.
 
@@ -545,9 +548,10 @@ def analyze_delf_book_pdf(
     `resolve_delf_audio_filename`, and persists a manifest the agent uses to
     drive `preview_delf_book_extraction`.
 
-    v1 scope: born-digital PDFs only (no OCR), CE flat/nested MCQ, text-only
-    options. Image-option and matching exercises are detected and skipped
-    with `image_option_detected` / `matching_exercise_detected` warnings.
+    Scanned PDFs are OCRed with `ocrmypdf` when `ocr_mode` is "auto" or
+    "force". CE flat/nested MCQ and image-option exercises are supported.
+    Matching exercises are detected and skipped with a
+    `matching_exercise_detected` warning.
 
     Args:
         exercise_pdf_path: Absolute path to the exercise PDF file.
@@ -556,6 +560,9 @@ def analyze_delf_book_pdf(
             `missing_answer_key` warning).
         level: A1, A2, B1, B2, C1, or C2.
         variant: e.g. 'tout-public-a2'.
+        ocr_mode: "auto" (default), "off", or "force".
+        ocr_language: Tesseract language code, default "fra".
+        page_range: Optional 1-indexed inclusive `[start_page, end_page]`.
 
     Returns:
         On success: {success: true, analysis_id, manifest_path,
@@ -568,6 +575,9 @@ def analyze_delf_book_pdf(
         answer_pdf_path=answer_pdf_path,
         level=level,
         variant=variant,
+        ocr_mode=ocr_mode,
+        ocr_language=ocr_language,
+        page_range=page_range,
     )
 
 
@@ -576,6 +586,7 @@ def preview_delf_book_extraction(
     analysis_id: str,
     sections: list[str] | None = None,
     activity_range: list[int] | None = None,
+    split_co_by_activity: bool = False,
 ) -> dict[str, Any]:
     """Build DelfTestPaper candidates from a manifest. Validates each.
 
@@ -588,6 +599,7 @@ def preview_delf_book_extraction(
         analysis_id: ID returned by `analyze_delf_book_pdf`.
         sections: Optional filter, e.g. ["CE"], ["CO"], or ["CE", "CO"].
         activity_range: Optional `[lo, hi]` inclusive bounds on activity_number.
+        split_co_by_activity: When true, each CO activity becomes one paper.
 
     Returns:
         {success, analysis_id, papers: [{proposed_test_id, content,
@@ -598,6 +610,7 @@ def preview_delf_book_extraction(
         analysis_id=analysis_id,
         sections=sections,
         activity_range=activity_range,
+        split_co_by_activity=split_co_by_activity,
     )
 
 

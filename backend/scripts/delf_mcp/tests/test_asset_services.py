@@ -404,6 +404,21 @@ def test_verify_checks_audio_filename_for_co_papers():
     assert result["all_present"] is True
 
 
+def test_verify_normalizes_audio_directory_prefix_for_co_papers():
+    import copy
+    paper = copy.deepcopy(fixtures.VALID_CE_PAPER)
+    paper["section"] = "CO"
+    paper["audio_filename"] = "audio/audio/DELF_TP_A2_Piste28.mp3"
+    gh = _FakeGithub({
+        "delf/a2/v/CO/audio/DELF_TP_A2_Piste28.mp3": b"",
+    })
+    result = verify_delf_asset_references(
+        level="A2", variant="v", section="CO", content=paper, github=gh,
+    )
+    assert result["success"] is True
+    assert result["all_present"] is True
+
+
 def test_verify_flags_missing_audio_filename():
     import copy
     paper = copy.deepcopy(fixtures.VALID_CE_PAPER)

@@ -68,6 +68,8 @@ class Manifest:
     exercise_pdf_path: str
     answer_pdf_path: str | None
     workspace_dir: str  # absolute path to {workspace_root}/{analysis_id}
+    source_book_id: str | None = None
+    source_page_offset: int = 0
     activities: list[ActivityRecord] = field(default_factory=list)
     warnings: list[dict[str, Any]] = field(default_factory=list)
     schema_version: int = 1
@@ -201,6 +203,8 @@ def read_manifest(analysis_id: str, *, workspace_root: str | None = None) -> Man
         exercise_pdf_path=str(data["exercise_pdf_path"]),
         answer_pdf_path=data.get("answer_pdf_path"),
         workspace_dir=str(data["workspace_dir"]),
+        source_book_id=data.get("source_book_id"),
+        source_page_offset=int(data.get("source_page_offset", 0)),
         activities=[_from_jsonable_activity(a) for a in data.get("activities", [])],
         warnings=list(data.get("warnings") or []),
         schema_version=int(data.get("schema_version", 1)),

@@ -24,7 +24,25 @@ from scripts.delf_mcp.pdf_ingest.manifest import (
     init_workspace,
     write_manifest,
 )
-from scripts.delf_mcp.pdf_ingest.preview_service import preview_delf_book_extraction
+from scripts.delf_mcp.pdf_ingest.preview_service import (
+    preview_delf_book_extraction as _preview_delf_book_extraction,
+)
+
+
+class _FakeRepo:
+    def list_by_scope(self, level, variant, section, status=None):
+        return []
+
+
+class _FakeGithub:
+    def list_json_stems(self, directory_path: str) -> list[str]:
+        return []
+
+
+def preview_delf_book_extraction(**kwargs):
+    kwargs.setdefault("repo", _FakeRepo())
+    kwargs.setdefault("github", _FakeGithub())
+    return _preview_delf_book_extraction(**kwargs)
 
 
 CE_TEXT_ONE_QUESTION = (
@@ -103,6 +121,12 @@ def test_preview_groups_one_paper_per_chapter_and_section(tmp_path):
     assert len(paper["content"]["exercises"]) == 2
     assert paper["validation"]["valid"] is True
     assert paper["source_activities"] == [1, 2]
+    assert paper["content"]["source_ref"]["book_id"] == "exercise"
+    assert paper["content"]["source_ref"]["source_activities"] == [1, 2]
+    assert (
+        paper["content"]["exercises"][0]["source_ref"]["activity_id"]
+        == "exercise:CE:chapter-1:activity-1"
+    )
 
 
 def test_preview_filters_by_section(tmp_path):
@@ -202,6 +226,41 @@ def test_preview_uses_audio_from_first_co_activity_in_group(tmp_path):
     paper = result["papers"][0]
     assert paper["content"]["section"] == "CO"
     assert paper["content"]["audio_filename"] == "DELF_TP_A2_Piste07.mp3"
+
+
+def test_preview_can_split_co_activities_into_separate_papers(tmp_path):
+    co_text = (
+        "Compréhension orale\n"
+        "Écoutez la Piste 7.\n\n"
+        "1. Question ?\n"
+        "a) Oui\nb) Non\n"
+    )
+    activities = [
+        ActivityRecord(
+            activity_number=n,
+            section="CO",
+            chapter_number=1,
+            title=f"Activité {n}",
+            page_start=n,
+            page_end=n,
+            text=co_text,
+            track_numbers=[n],
+            audio_filename=f"DELF_TP_A2_Piste{n:02d}.mp3",
+            audio_exists=True,
+            answer_key={1: 0},
+        )
+        for n in (1, 2)
+    ]
+    analysis_id = _seed_manifest(tmp_path, activities)
+    result = preview_delf_book_extraction(
+        analysis_id=analysis_id,
+        split_co_by_activity=True,
+        workspace_root=str(tmp_path),
+    )
+    assert result["success"] is True
+    assert len(result["papers"]) == 2
+    assert [p["source_activities"] for p in result["papers"]] == [[1], [2]]
+    assert [p["source_group_activity"] for p in result["papers"]] == [1, 2]
 
 
 def test_preview_skips_image_option_activity_with_warning(tmp_path):

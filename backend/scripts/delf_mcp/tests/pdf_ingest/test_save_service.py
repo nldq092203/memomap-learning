@@ -117,6 +117,7 @@ class _FakeGithubManager:
         self.created: list[tuple[str, bytes]] = []
         self.created_or_updated: list[tuple[str, bytes]] = []
         self.existing_paths: set[str] = set(existing_paths or ())
+        self.files: dict[str, bytes] = {}
 
     def file_exists(self, path: str) -> bool:
         return path in self.existing_paths
@@ -124,15 +125,25 @@ class _FakeGithubManager:
     def create_file(self, file_path, content, commit_message):
         self.created.append((file_path, content))
         self.existing_paths.add(file_path)
+        self.files[file_path] = content if isinstance(content, bytes) else content.encode()
         return {"content": {"html_url": f"https://example.com/{file_path}"}}
 
     def create_or_update_file(self, file_path, content, commit_message):
         self.created_or_updated.append((file_path, content))
         self.existing_paths.add(file_path)
+        self.files[file_path] = content if isinstance(content, bytes) else content.encode()
         return {"content": {"html_url": f"https://example.com/{file_path}"}}
 
     def list_json_stems(self, directory_path: str) -> list[str]:
-        return []
+        prefix = directory_path.rstrip("/") + "/"
+        stems = []
+        for path in self.files:
+            if path.startswith(prefix) and path.endswith(".json"):
+                stems.append(os.path.basename(path)[:-5])
+        return sorted(stems)
+
+    def read_file(self, file_path: str) -> bytes:
+        return self.files[file_path]
 
 
 # ---------------------------------------------------------------------------
@@ -182,6 +193,33 @@ def _valid_ce_paper(test_id: str = "tp-01") -> dict:
             },
         ],
     }
+
+
+def _valid_ce_paper_with_source(
+    test_id: str = "tp-01",
+    activity_id: str = "book-a:CE:chapter-1:activity-1",
+) -> dict:
+    paper = _valid_ce_paper(test_id)
+    paper["source_ref"] = {
+        "book_id": "book-a",
+        "activity_id": "book-a:CE:chapter-1",
+        "chapter_number": 1,
+        "section": "CE",
+        "source_activities": [1],
+        "source_pages": [12],
+    }
+    paper["exercises"][0]["source_ref"] = {
+        "book_id": "book-a",
+        "activity_id": activity_id,
+        "activity_number": 1,
+        "chapter_number": 1,
+        "section": "CE",
+        "page_start": 12,
+        "page_end": 12,
+        "source_activities": [1],
+        "source_pages": [12],
+    }
+    return paper
 
 
 # ---------------------------------------------------------------------------
@@ -340,6 +378,35 @@ def test_save_partial_outcome_mixed_results(tmp_path):
     assert out["skipped_count"] == 1
     assert out["saved"][0]["test_id"] == "tp-01"
     assert out["skipped"][0]["reason"] == warning_codes.VALIDATION_FAILED
+
+
+def test_save_blocks_duplicate_pdf_source_activity(tmp_path):
+    analysis_id = _seed_manifest(tmp_path)
+    repo = _FakeRepo()
+    gh = _FakeGithubManager()
+
+    existing_path = "delf/a2/tout-public-a2/CE/tp/tp-01.json"
+    gh.files[existing_path] = (
+        save_module.validate_content(_valid_ce_paper_with_source("tp-01"))["paper"]
+        .model_dump_json(indent=2, by_alias=True)
+        .encode("utf-8")
+    )
+    gh.existing_paths.add(existing_path)
+
+    out = save_module.save_delf_book_drafts(
+        analysis_id=analysis_id,
+        selected_papers=[{"content": _valid_ce_paper_with_source("tp-02")}],
+        confirm_save=True,
+        workspace_root=str(tmp_path),
+        repo=repo,
+        github_mgr=gh,
+        github_repo=gh,
+    )
+
+    assert out["saved"] == []
+    skipped = out["skipped"][0]
+    assert skipped["reason"] == "source_activity_exists"
+    assert skipped["details"]["existing_test_id"] == "tp-01"
 
 
 def test_save_rejects_non_list_selection(tmp_path):

@@ -138,6 +138,8 @@ def audio_reference_github_path(
     *, level: str, variant: str, section: str, audio_filename: str
 ) -> str:
     value = audio_filename.strip().lstrip("/")
+    while value.lower().startswith("audio/"):
+        value = value.split("/", 1)[1]
     return f"{audio_asset_directory(level=level, variant=variant, section=section)}/{value}"
 
 

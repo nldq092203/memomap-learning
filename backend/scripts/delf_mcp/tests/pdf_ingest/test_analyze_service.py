@@ -21,7 +21,9 @@ import pytest
 fitz = pytest.importorskip("fitz")  # pymupdf
 
 from scripts.delf_mcp.pdf_ingest import warnings as warning_codes
+from scripts.delf_mcp.pdf_ingest import analyze_service
 from scripts.delf_mcp.pdf_ingest.analyze_service import analyze_delf_book_pdf
+from scripts.delf_mcp.pdf_ingest.ocr_service import OcrResult
 
 
 def _write_pdf(path: str, pages: list[str]) -> None:
@@ -161,9 +163,86 @@ def test_analyze_returns_error_for_scanned_pdf(tmp_path):
         level="A2",
         variant="tout-public-a2",
         workspace_root=str(tmp_path / "work"),
+        ocr_mode="off",
     )
     assert out["success"] is False
     assert out["warning_code"] == warning_codes.SCANNED_PDF
+
+
+def test_analyze_auto_ocrs_scanned_pdf(tmp_path, monkeypatch):
+    pdf_path = str(tmp_path / "empty.pdf")
+    doc = fitz.open()
+    try:
+        doc.new_page()
+        doc.save(pdf_path)
+    finally:
+        doc.close()
+
+    def _fake_ocr_pdf(*, input_pdf_path, output_pdf_path, language, force_ocr):
+        assert input_pdf_path == pdf_path
+        assert language == "fra"
+        assert force_ocr is True
+        os.makedirs(os.path.dirname(output_pdf_path), exist_ok=True)
+        _write_pdf(output_pdf_path, [
+            (
+                "Activite 1\n"
+                "Comprehension ecrite\n"
+                "Lisez le texte.\n\n"
+                "Paris est la capitale.\n\n"
+                "1. Quelle est la capitale ?\n"
+                "a) Lyon\nb) Paris\nc) Marseille"
+            ),
+        ])
+        return OcrResult(
+            output_pdf_path=output_pdf_path,
+            command=["ocrmypdf", "-l", language, input_pdf_path, output_pdf_path],
+        )
+
+    monkeypatch.setattr(analyze_service, "ocr_pdf", _fake_ocr_pdf)
+
+    out = analyze_delf_book_pdf(
+        exercise_pdf_path=pdf_path,
+        answer_pdf_path=None,
+        level="A2",
+        variant="tout-public-a2",
+        workspace_root=str(tmp_path / "work"),
+    )
+
+    assert out["success"] is True, out
+    assert out["activity_count"] == 1
+    codes = {w["code"] for w in out["warnings"]}
+    assert warning_codes.OCR_APPLIED in codes
+
+    with open(out["manifest_path"], "r", encoding="utf-8") as fh:
+        manifest_data = json.load(fh)
+    assert manifest_data["exercise_pdf_path"].endswith("exercise.ocr.pdf")
+
+
+def test_analyze_auto_ocr_failure_is_explicit(tmp_path, monkeypatch):
+    pdf_path = str(tmp_path / "empty.pdf")
+    doc = fitz.open()
+    try:
+        doc.new_page()
+        doc.save(pdf_path)
+    finally:
+        doc.close()
+
+    def _fake_ocr_pdf(**kwargs):
+        raise RuntimeError("ocr tool missing")
+
+    monkeypatch.setattr(analyze_service, "ocr_pdf", _fake_ocr_pdf)
+
+    out = analyze_delf_book_pdf(
+        exercise_pdf_path=pdf_path,
+        answer_pdf_path=None,
+        level="A2",
+        variant="tout-public-a2",
+        workspace_root=str(tmp_path / "work"),
+    )
+
+    assert out["success"] is False
+    assert out["warning_code"] == warning_codes.OCR_FAILED
+    assert "ocr tool missing" in out["error"]
 
 
 def test_analyze_returns_error_for_missing_pdf(tmp_path):
