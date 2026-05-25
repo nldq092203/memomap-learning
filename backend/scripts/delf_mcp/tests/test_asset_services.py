@@ -24,6 +24,9 @@ from scripts.delf_mcp.assets.verify_service import (  # noqa: E402
     verify_delf_asset_references,
 )
 from scripts.delf_mcp.tests import fixtures  # noqa: E402
+from src.shared.delf_practice.asset_paths import (  # noqa: E402
+    legacy_flat_image_ref_to_nested,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -98,6 +101,21 @@ def _png_bytes() -> bytes:
     out = io.BytesIO()
     img.save(out, format="PNG")
     return out.getvalue()
+
+
+# ---------------------------------------------------------------------------
+# asset path helpers
+# ---------------------------------------------------------------------------
+
+
+def test_legacy_flat_image_refs_map_to_structured_webp_paths():
+    assert legacy_flat_image_ref_to_nested("assets/tp02-q1-p6-a.webp") == (
+        "assets/tp-02/q01/a.webp"
+    )
+    assert legacy_flat_image_ref_to_nested("tp04-q3-b.png") == (
+        "assets/tp-04/q03/b.webp"
+    )
+    assert legacy_flat_image_ref_to_nested("assets/tp-04/q03/b.webp") is None
 
 
 class _FakeRepo:

@@ -30,7 +30,10 @@ from src.shared.delf_practice.content_service import (
 )
 from src.shared.delf_practice.github_manager import GitHubDelfManager
 from src.shared.delf_practice.github_repository import GitHubDelfRepository
-from src.shared.delf_practice.asset_paths import image_upload_path
+from src.shared.delf_practice.asset_paths import (
+    image_upload_path,
+    legacy_flat_image_ref_to_nested,
+)
 from src.shared.delf_practice.local_asset_service import (
     clamp_crop_box,
     decode_image_bytes,
@@ -335,7 +338,14 @@ def delf_proxy_asset(asset_path: str):
     Path format: <level>/<variant>/<section>/assets/<filename-or-nested-path>
     """
     github_repo = GitHubDelfRepository()
-    github_path = f"delf/{asset_path}"
+    path_parts = asset_path.strip("/").split("/")
+    if len(path_parts) >= 5:
+        level, variant, section, assets_segment, *rest = path_parts
+        if assets_segment.lower() == "assets":
+            normalized = legacy_flat_image_ref_to_nested("/".join(rest))
+            if normalized is not None:
+                path_parts = [level, variant, section, *normalized.split("/")]
+    github_path = f"delf/{'/'.join(path_parts)}"
     url = f"{github_repo.base_url}/{github_path}"
 
     try:

@@ -13,6 +13,11 @@ from dataclasses import dataclass
 _SAFE_SEGMENT_RE = re.compile(r"[^a-z0-9_-]+")
 _IMAGE_EXTENSIONS = (".webp", ".png", ".jpg", ".jpeg")
 _AUDIO_EXTENSIONS = (".mp3", ".m4a", ".wav")
+_LEGACY_FLAT_IMAGE_RE = re.compile(
+    r"^tp-?(?P<test_number>\d+)-q(?P<question_number>\d+)"
+    r"(?:-p\d+)?-(?P<label>[a-z0-9_-]+)\.(?:webp|png|jpe?g)$",
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True)
@@ -68,6 +73,34 @@ def nested_image_relative_path(
     return (
         f"assets/{normalized_test_id}/q{question_number:02d}/"
         f"{normalized_label}{extension}"
+    )
+
+
+def legacy_flat_image_ref_to_nested(img_url: str) -> str | None:
+    """Map old flat option-image names to the canonical nested WebP ref.
+
+    Examples:
+    - `assets/tp02-q1-p6-a.webp` -> `assets/tp-02/q01/a.webp`
+    - `tp04-q3-b.png` -> `assets/tp-04/q03/b.webp`
+    """
+    value = img_url.strip().lstrip("/")
+    if value.startswith("assets/"):
+        value = value[len("assets/"):]
+    if "/" in value:
+        return None
+
+    match = _LEGACY_FLAT_IMAGE_RE.match(value)
+    if not match:
+        return None
+
+    test_number = int(match.group("test_number"))
+    question_number = int(match.group("question_number"))
+    label = match.group("label")
+    return nested_image_relative_path(
+        test_id=f"tp-{test_number:02d}",
+        question_number=question_number,
+        label=label,
+        extension=".webp",
     )
 
 
@@ -151,6 +184,7 @@ __all__ = [
     "image_asset_directory",
     "image_reference_github_path",
     "image_upload_path",
+    "legacy_flat_image_ref_to_nested",
     "nested_image_relative_path",
     "normalize_path_segment",
     "scope_prefix",

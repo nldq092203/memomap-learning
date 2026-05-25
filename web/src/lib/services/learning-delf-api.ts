@@ -7,6 +7,24 @@ import type {
 
 const BASE = "web/delf"
 
+function normalizeDelfAssetPath(filename: string): string {
+  const path = filename.replace(/^\/+/, "")
+  const withoutAssets = path.startsWith("assets/") ? path.slice("assets/".length) : path
+  if (withoutAssets.includes("/")) {
+    return path.startsWith("assets/") ? path : `assets/${path}`
+  }
+
+  const match = withoutAssets.match(/^tp-?(\d+)-q(\d+)(?:-p\d+)?-([a-z0-9_-]+)\.(?:webp|png|jpe?g)$/i)
+  if (!match) {
+    return path.startsWith("assets/") ? path : `assets/${path}`
+  }
+
+  const testId = `tp-${match[1].padStart(2, "0")}`
+  const question = `q${match[2].padStart(2, "0")}`
+  const label = match[3].toLowerCase()
+  return `assets/${testId}/${question}/${label}.webp`
+}
+
 export const learningDelfApi = {
   /**
    * List all test papers for a given level and optional variant/section
@@ -59,7 +77,7 @@ export const learningDelfApi = {
    * Helper to construct proxied image asset URLs
    */
   getAssetUrl(level: string, variant: string, section: string, filename: string): string {
-    const path = filename.startsWith('assets/') ? filename : `assets/${filename}`
+    const path = normalizeDelfAssetPath(filename)
     return `${apiClient.getBaseUrl()}/${BASE}/assets/${level.toLowerCase()}/${variant}/${section}/${path}`
   },
 }
