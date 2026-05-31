@@ -19,6 +19,7 @@ High-level frontend flow:
 """
 
 from flask import Blueprint, request
+from sqlalchemy.exc import SQLAlchemyError
 
 from src.api.decorators import require_auth
 from src.infra.auth.google_oauth import (
@@ -130,43 +131,54 @@ def create_token():
     email = google_user.get("email")
 
     # Ensure user exists in DB
-    with db_session() as db:
-        user = UserQueries.get_by_email(db, email) if email else None
-        if not user:
-            extra = {
-                "google_sub": google_user.get("sub"),
-                "google_email_verified": google_user.get("email_verified"),
-                "google_iss": google_user.get("iss"),
-                "google_aud": google_user.get("aud"),
-            }
+    try:
+        with db_session() as db:
+            user = UserQueries.get_by_email(db, email) if email else None
+            if not user:
+                extra = {
+                    "google_sub": google_user.get("sub"),
+                    "google_email_verified": google_user.get("email_verified"),
+                    "google_iss": google_user.get("iss"),
+                    "google_aud": google_user.get("aud"),
+                }
 
-            user = UserQueries.create(db, email=email, extra=extra)
-            logger.info(f"[AUTH] Created new user: {email}")
+                user = UserQueries.create(db, email=email, extra=extra)
+                logger.info(f"[AUTH] Created new user: {email}")
 
-        existing_refresh_token = UserQueries.get_google_auth(user).get("refresh_token")
-        google_auth = build_google_auth_record(
-            google_tokens,
-            existing_refresh_token=existing_refresh_token,
-        )
-        if not google_auth.get("refresh_token"):
-            return (
-                ResponseBuilder()
-                .error(
-                    message="Google offline access was not granted. Please sign in with Google again.",
-                    status_code=401,
-                )
-                .build()
+            existing_refresh_token = UserQueries.get_google_auth(user).get("refresh_token")
+            google_auth = build_google_auth_record(
+                google_tokens,
+                existing_refresh_token=existing_refresh_token,
             )
-        UserQueries.update_google_oauth(
-            db,
-            user,
-            google_user=google_user,
-            google_auth=google_auth,
-        )
-        db.commit()
+            if not google_auth.get("refresh_token"):
+                return (
+                    ResponseBuilder()
+                    .error(
+                        message="Google offline access was not granted. Please sign in with Google again.",
+                        status_code=401,
+                    )
+                    .build()
+                )
+            UserQueries.update_google_oauth(
+                db,
+                user,
+                google_user=google_user,
+                google_auth=google_auth,
+            )
+            db.commit()
 
-        user_id = user.id
-        user_email = user.email
+            user_id = user.id
+            user_email = user.email
+    except SQLAlchemyError as exc:
+        logger.exception(f"[AUTH] Database error while persisting Google login: {exc}")
+        return (
+            ResponseBuilder()
+            .error(
+                message="Sign-in is temporarily unavailable. Please try again shortly.",
+                status_code=503,
+            )
+            .build()
+        )
 
     # Create JWT
     token = create_jwt(

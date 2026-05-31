@@ -10,7 +10,7 @@ class ApiClient {
   // Retry + circuit breaker settings
   private readonly MAX_ATTEMPTS = 3; // total attempts = 3 (1 initial + 2 retries)
   private readonly RETRY_BASE_DELAY_MS = 300; // base backoff delay
-  private readonly CIRCUIT_FAILURE_THRESHOLD = 1; // open circuit after a fully failed request
+  private readonly CIRCUIT_FAILURE_THRESHOLD = 3; // open circuit after 3 consecutive fully failed requests
   private readonly CIRCUIT_OPEN_COOLDOWN_MS = 60_000; // keep circuit open for 60s
   private readonly NOTIFY_THROTTLE_MS = 15_000; // min gap between identical error toasts
 

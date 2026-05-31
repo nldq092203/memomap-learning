@@ -4,7 +4,11 @@ from flask import Blueprint
 from src.utils.response_builder import ResponseBuilder
 from src.domain.errors import ValidationError, ResourceNotFoundError
 from src.extensions import logger
-from src.infra.auth.google_oauth import GoogleOAuthExchangeError, GoogleOAuthRefreshError
+from src.infra.auth.google_oauth import (
+    GoogleOAuthError,
+    GoogleOAuthExchangeError,
+    GoogleOAuthRefreshError,
+)
 from src.infra.drive.client import GoogleDriveError
 
 
@@ -90,7 +94,8 @@ def register_error_handlers(bp: Blueprint):
         return (
             ResponseBuilder()
             .error(
-                message=str(error) or "Google Drive session expired or invalid. Please sign in with Google again.",
+                message=str(error)
+                or "Google Drive session expired or invalid. Please sign in with Google again.",
                 status_code=403,
             )
             .build()
@@ -103,6 +108,18 @@ def register_error_handlers(bp: Blueprint):
             .error(
                 message=str(error) or "Google authentication failed.",
                 status_code=401,
+            )
+            .build()
+        )
+
+    @bp.errorhandler(GoogleOAuthError)
+    def handle_google_oauth_error(error: GoogleOAuthError):
+        logger.warning(f"[API] Google OAuth upstream error: {error}")
+        return (
+            ResponseBuilder()
+            .error(
+                message="Could not reach Google authentication service. Please try again.",
+                status_code=502,
             )
             .build()
         )
