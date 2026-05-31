@@ -5,6 +5,21 @@ import { AuthContextType, AuthState } from '@/lib/types/auth';
 import { authService } from '@/lib/services/auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AUTH_INIT_TIMEOUT_MS = 8_000;
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallback: T): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  const timeout = new Promise<T>((resolve) => {
+    timeoutId = setTimeout(() => resolve(fallback), timeoutMs);
+  });
+
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  });
+}
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -169,18 +184,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return;
       }
 
-      try {
-        await refreshAuth();
-      } catch (error) {
-        console.warn('Failed to initialize auth (backend may not be running):', error);
-        // Set loading to false even if auth check fails
-        setState(prev => ({ ...prev, isLoading: false }));
-      }
+      const user = await withTimeout(
+        authService.getCurrentUser({ force: true }).catch((error) => {
+          console.warn('Failed to initialize auth (backend may not be running):', error);
+          return null;
+        }),
+        AUTH_INIT_TIMEOUT_MS,
+        null,
+      );
+
+      setState({
+        user,
+        isAuthenticated: user !== null,
+        isLoading: false,
+        error: null,
+      });
     };
 
     initializeAuth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clearLearningSettingsForUser, refreshAuth]); // initialization is explicitly guarded by ref
+  }, [clearLearningSettingsForUser]); // initialization is explicitly guarded by ref
 
   const contextValue: AuthContextType = {
     ...state,

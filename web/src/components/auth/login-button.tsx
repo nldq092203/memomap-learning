@@ -21,7 +21,8 @@ function LoginButtonInner({
   className,
   children,
 }: LoginButtonProps) {
-  const { login, isLoading } = useLogin()
+  const { login } = useLogin()
+  const [isSigningIn, setIsSigningIn] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const googleLogin = useGoogleLogin({
@@ -33,29 +34,56 @@ function LoginButtonInner({
       } catch (error) {
         console.error("Login failed:", error)
         setError("Failed to sign in. Please try again.")
+      } finally {
+        setIsSigningIn(false)
       }
     },
     onError: (error) => {
       console.error("Google login failed:", error)
+      setIsSigningIn(false)
       setError("Google authentication failed. Please try again.")
+    },
+    onNonOAuthError: (error) => {
+      console.error("Google login popup failed:", error)
+      setIsSigningIn(false)
+
+      if (error.type === "popup_failed_to_open") {
+        setError("The Google sign-in popup was blocked. Allow popups for this site and try again.")
+        return
+      }
+
+      if (error.type === "popup_closed") {
+        setError("Google sign-in was closed before it finished.")
+        return
+      }
+
+      setError("Google sign-in could not start. Please try again.")
     },
     flow: "auth-code",
   })
 
   const handleLogin = () => {
-    googleLogin()
+    try {
+      setError(null)
+      setIsSigningIn(true)
+      googleLogin()
+    } catch (error) {
+      console.error("Google login could not start:", error)
+      setIsSigningIn(false)
+      setError("Google sign-in could not start. Please try again.")
+    }
   }
 
   return (
     <div className="flex flex-col items-center gap-2">
       <Button
         onClick={handleLogin}
-        disabled={isLoading}
+        disabled={isSigningIn}
         variant={variant}
         size={size}
         className={className}
       >
-        {isLoading ? (
+        {isSigningIn ? (
           <>
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             Signing in...
