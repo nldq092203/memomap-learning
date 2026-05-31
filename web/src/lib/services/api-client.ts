@@ -164,6 +164,13 @@ class ApiClient {
    */
   private async recordFailure(method: string, endpoint: string, error: unknown) {
     const key = this.getCircuitKey(method, endpoint);
+    const status = (error && (error as AxiosError).response?.status) || 0;
+
+    if (status >= 400 && status < 500 && status !== 429) {
+      this.circuitState.set(key, { failures: 0 });
+      return;
+    }
+
     const prev = this.circuitState.get(key) || { failures: 0 as number };
     const failures = (prev.failures || 0) + 1;
     const state = { ...prev, failures } as { failures: number; openUntil?: number; lastNotifiedAt?: number };
@@ -171,7 +178,6 @@ class ApiClient {
     if (failures >= this.CIRCUIT_FAILURE_THRESHOLD) {
       state.openUntil = Date.now() + this.CIRCUIT_OPEN_COOLDOWN_MS;
       const now = Date.now();
-      const status = (error && (error as AxiosError).response?.status) || 0;
       const canNotify = !state.lastNotifiedAt || (now - state.lastNotifiedAt) > this.NOTIFY_THROTTLE_MS;
       if (status !== 401 && canNotify) {
         state.lastNotifiedAt = now;

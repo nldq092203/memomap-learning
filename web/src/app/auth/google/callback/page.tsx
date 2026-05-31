@@ -29,12 +29,11 @@ function GoogleCallbackContent() {
   const { login } = useLogin()
   const [error, setError] = useState<string | null>(null)
   const exchangedCodeRef = useRef<string | null>(null)
+  const code = searchParams.get("code")
+  const oauthError = searchParams.get("error")
+  const returnTo = getSafeReturnPath(searchParams.get("state"))
 
   useEffect(() => {
-    const code = searchParams.get("code")
-    const oauthError = searchParams.get("error")
-    const returnTo = getSafeReturnPath(searchParams.get("state"))
-
     if (oauthError) {
       setError("Google sign-in was cancelled or denied.")
       return
@@ -49,6 +48,8 @@ function GoogleCallbackContent() {
       return
     }
     exchangedCodeRef.current = code
+
+    window.history.replaceState(null, "", GOOGLE_REDIRECT_PATH)
 
     let cancelled = false
 
@@ -68,7 +69,7 @@ function GoogleCallbackContent() {
     return () => {
       cancelled = true
     }
-  }, [login, router, searchParams])
+  }, [code, login, oauthError, returnTo, router])
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4">
