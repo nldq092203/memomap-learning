@@ -28,12 +28,19 @@ function GoogleCallbackContent() {
   const searchParams = useSearchParams()
   const { login } = useLogin()
   const [error, setError] = useState<string | null>(null)
-  const exchangedCodeRef = useRef<string | null>(null)
-  const code = searchParams.get("code")
-  const oauthError = searchParams.get("error")
-  const returnTo = getSafeReturnPath(searchParams.get("state"))
+
+  // Capture the OAuth params from the *initial* render only. Stripping the
+  // code from the URL below triggers Next.js to re-sync useSearchParams(),
+  // so reading them live would re-run this effect with an empty `code`.
+  const oauthParamsRef = useRef({
+    code: searchParams.get("code"),
+    oauthError: searchParams.get("error"),
+    returnTo: getSafeReturnPath(searchParams.get("state")),
+  })
 
   useEffect(() => {
+    const { code, oauthError, returnTo } = oauthParamsRef.current
+
     if (oauthError) {
       setError("Google sign-in was cancelled or denied.")
       return
@@ -43,11 +50,6 @@ function GoogleCallbackContent() {
       setError("Google sign-in did not return an authorization code.")
       return
     }
-
-    if (exchangedCodeRef.current === code) {
-      return
-    }
-    exchangedCodeRef.current = code
 
     window.history.replaceState(null, "", GOOGLE_REDIRECT_PATH)
 
@@ -69,7 +71,10 @@ function GoogleCallbackContent() {
     return () => {
       cancelled = true
     }
-  }, [code, login, oauthError, returnTo, router])
+    // Runs once on mount: the exchange consumes a single-use code, and the
+    // params are captured in a ref so URL changes never re-trigger it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4">
