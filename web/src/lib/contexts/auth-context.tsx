@@ -51,7 +51,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, []);
 
-  const login = useCallback(async (googleCode: string) => {
+  const login = useCallback(async (googleCode: string, options?: { redirectUri?: string }) => {
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       setState({
@@ -61,7 +61,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         error: null,
       });
 
-      const { user } = await authService.exchangeGoogleCode(googleCode);
+      const { user } = await authService.exchangeGoogleCode(googleCode, options);
       setState({
         user,
         isAuthenticated: true,

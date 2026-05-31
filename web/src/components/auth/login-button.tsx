@@ -14,6 +14,23 @@ interface LoginButtonProps {
 }
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""
+const GOOGLE_REDIRECT_PATH = "/auth/google/callback"
+
+function getGoogleRedirectUri() {
+  if (typeof window === "undefined") {
+    return GOOGLE_REDIRECT_PATH
+  }
+
+  return `${window.location.origin}${GOOGLE_REDIRECT_PATH}`
+}
+
+function getOAuthReturnPath() {
+  if (typeof window === "undefined") {
+    return "/"
+  }
+
+  return `${window.location.pathname}${window.location.search}${window.location.hash}`
+}
 
 function LoginButtonInner({
   variant,
@@ -24,6 +41,7 @@ function LoginButtonInner({
   const { login } = useLogin()
   const [isSigningIn, setIsSigningIn] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const redirectUri = getGoogleRedirectUri()
 
   const googleLogin = useGoogleLogin({
     scope: "openid email profile https://www.googleapis.com/auth/drive.file",
@@ -60,6 +78,9 @@ function LoginButtonInner({
       setError("Google sign-in could not start. Please try again.")
     },
     flow: "auth-code",
+    ux_mode: "redirect",
+    redirect_uri: redirectUri,
+    state: getOAuthReturnPath(),
   })
 
   const handleLogin = () => {

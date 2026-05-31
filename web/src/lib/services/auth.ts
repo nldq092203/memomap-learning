@@ -31,11 +31,17 @@ export class AuthService {
   /**
    * Exchange Google authorization code for app JWT token.
    */
-  async exchangeGoogleCode(code: string): Promise<{ token: string; user: User }> {
+  async exchangeGoogleCode(
+    code: string,
+    options?: { redirectUri?: string }
+  ): Promise<{ token: string; user: User }> {
     try {
       const response = await apiClient.post<AuthTokenExchangeResponse>(
         '/auth/token',
-        { code }
+        {
+          code,
+          ...(options?.redirectUri ? { redirect_uri: options.redirectUri } : {}),
+        }
       );
       const user = this.normalizeExchangeUser(response);
       this.setToken(response.token);
