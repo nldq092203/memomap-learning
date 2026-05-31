@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useEffect, useState } from "react"
+import { Suspense, useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Loader2, AlertCircle } from "lucide-react"
 import { useLogin } from "@/lib/hooks/use-auth"
@@ -28,6 +28,7 @@ function GoogleCallbackContent() {
   const searchParams = useSearchParams()
   const { login } = useLogin()
   const [error, setError] = useState<string | null>(null)
+  const exchangedCodeRef = useRef<string | null>(null)
 
   useEffect(() => {
     const code = searchParams.get("code")
@@ -43,6 +44,11 @@ function GoogleCallbackContent() {
       setError("Google sign-in did not return an authorization code.")
       return
     }
+
+    if (exchangedCodeRef.current === code) {
+      return
+    }
+    exchangedCodeRef.current = code
 
     let cancelled = false
 
