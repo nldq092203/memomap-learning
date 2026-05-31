@@ -1,7 +1,7 @@
 "use client"
 
-import { Suspense, useEffect, useRef, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { Suspense, useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Loader2, AlertCircle } from "lucide-react"
 import { useLogin } from "@/lib/hooks/use-auth"
 
@@ -23,23 +23,31 @@ function getSafeReturnPath(value: string | null) {
   return value
 }
 
+// Guards the single-use code exchange for the lifetime of this page load.
+// Every Google redirect is a full page load, so this resets naturally; within
+// a load it survives remounts/re-renders so we never double-exchange nor flash
+// a false "no authorization code" error after the URL has been read.
+let redirectHandled = false
+
 function GoogleCallbackContent() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const { login } = useLogin()
   const [error, setError] = useState<string | null>(null)
 
-  // Capture the OAuth params from the *initial* render only. Stripping the
-  // code from the URL below triggers Next.js to re-sync useSearchParams(),
-  // so reading them live would re-run this effect with an empty `code`.
-  const oauthParamsRef = useRef({
-    code: searchParams.get("code"),
-    oauthError: searchParams.get("error"),
-    returnTo: getSafeReturnPath(searchParams.get("state")),
-  })
-
   useEffect(() => {
-    const { code, oauthError, returnTo } = oauthParamsRef.current
+    if (redirectHandled) {
+      return
+    }
+    redirectHandled = true
+
+    // Read straight from the live URL. useSearchParams() can hydrate empty on
+    // a statically-optimized page; window.location.search is always accurate
+    // on the client. We intentionally do NOT strip the code from the URL here
+    // — doing so makes any remount read an empty URL and show a false error.
+    const params = new URLSearchParams(window.location.search)
+    const code = params.get("code")
+    const oauthError = params.get("error")
+    const returnTo = getSafeReturnPath(params.get("state"))
 
     if (oauthError) {
       setError("Google sign-in was cancelled or denied.")
@@ -51,30 +59,15 @@ function GoogleCallbackContent() {
       return
     }
 
-    window.history.replaceState(null, "", GOOGLE_REDIRECT_PATH)
-
-    let cancelled = false
-
     void login(code, { redirectUri: getGoogleRedirectUri() })
       .then(() => {
-        if (!cancelled) {
-          router.replace(returnTo)
-        }
+        router.replace(returnTo)
       })
       .catch((error) => {
         console.error("Google redirect login failed:", error)
-        if (!cancelled) {
-          setError("Failed to finish Google sign-in. Please try again.")
-        }
+        setError("Failed to finish Google sign-in. Please try again.")
       })
-
-    return () => {
-      cancelled = true
-    }
-    // Runs once on mount: the exchange consumes a single-use code, and the
-    // params are captured in a ref so URL changes never re-trigger it.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [login, router])
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4">
