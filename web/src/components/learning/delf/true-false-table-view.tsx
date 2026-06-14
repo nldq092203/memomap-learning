@@ -114,33 +114,34 @@ export function TrueFalseTableView({
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-lg border border-slate-300 bg-white">
       <div className="overflow-x-auto">
         <table className="min-w-[760px] w-full border-collapse text-sm">
           <thead>
-            <tr className="border-b border-slate-200 bg-amber-50/80">
-              <th className="sticky left-0 z-10 w-[220px] bg-amber-50/95 px-4 py-3 text-left font-semibold text-slate-700">
-                Critère
+            <tr className="border-b border-slate-300 bg-amber-50">
+              <th className="sticky left-0 z-10 w-[240px] bg-amber-50 px-4 py-3 text-left font-semibold text-slate-800">
+                Propositions
               </th>
               {model.columns.map((column, index) => (
                 <th
                   key={column}
                   colSpan={2}
-                  className="border-l border-amber-100 px-3 py-3 text-center text-base font-bold text-slate-900"
+                  className="border-l border-slate-300 px-3 py-3 text-center text-sm font-bold text-slate-900"
                 >
-                  {index + 1}. {column}
+                  <span className="block text-xs font-semibold uppercase text-slate-500">Annonce {index + 1}</span>
+                  <span className="block">{column}</span>
                 </th>
               ))}
             </tr>
-            <tr className="border-b border-slate-200 bg-white">
+            <tr className="border-b border-slate-300 bg-white">
               <th className="sticky left-0 z-10 bg-white px-4 py-2" />
               {model.columns.map((column) => (
-                <th key={column} colSpan={2} className="border-l border-slate-100 p-0">
+                <th key={column} colSpan={2} className="border-l border-slate-300 p-0">
                   <div className="grid grid-cols-2">
                     <span className="px-3 py-2 text-center text-xs font-semibold uppercase text-slate-500">
                       OUI
                     </span>
-                    <span className="border-l border-slate-100 px-3 py-2 text-center text-xs font-semibold uppercase text-slate-500">
+                    <span className="border-l border-slate-200 px-3 py-2 text-center text-xs font-semibold uppercase text-slate-500">
                       NON
                     </span>
                   </div>
@@ -151,9 +152,9 @@ export function TrueFalseTableView({
           <tbody>
             {model.rows.map((row, rowIndex) => (
               <tr key={row} className="border-b border-slate-200 last:border-b-0">
-                <th className="sticky left-0 z-10 bg-white px-4 py-4 text-left align-middle text-base font-medium text-slate-800">
-                  <span className="mr-2 text-amber-500">{String.fromCharCode(97 + rowIndex)}.</span>
-                  {row}
+                <th className="sticky left-0 z-10 bg-white px-4 py-3 text-left align-middle text-sm font-medium text-slate-800">
+                  <span className="mr-2 font-bold text-amber-600">{String.fromCharCode(97 + rowIndex)}.</span>
+                  <span>{row}</span>
                 </th>
                 {model.columns.map((column) => {
                   const question = findQuestion(row, column)
@@ -169,7 +170,7 @@ export function TrueFalseTableView({
                   const isWrong = showResults && answer !== undefined && answer !== correctAnswer
 
                   return (
-                    <td key={question.id} colSpan={2} className="border-l border-slate-100 p-0 align-middle">
+                    <td key={question.id} colSpan={2} className="border-l border-slate-300 p-0 align-middle">
                       <div
                         className={`grid grid-cols-2 transition-colors ${
                           isCorrect
@@ -189,7 +190,7 @@ export function TrueFalseTableView({
                             <label
                               key={label}
                               htmlFor={inputId}
-                              className={`relative flex min-h-14 cursor-pointer items-center justify-center border-l border-slate-100 first:border-l-0 ${
+                              className={`relative flex min-h-12 cursor-pointer items-center justify-center border-l border-slate-200 first:border-l-0 ${
                                 showResults ? "cursor-default" : "hover:bg-teal-50/70"
                               }`}
                             >
@@ -204,7 +205,7 @@ export function TrueFalseTableView({
                                 className="sr-only"
                               />
                               <span
-                                className={`flex h-5 w-5 items-center justify-center rounded border-2 bg-white transition-all ${
+                                className={`flex h-5 w-5 items-center justify-center rounded-sm border-2 bg-white transition-all ${
                                   selected
                                     ? "border-teal-500 ring-2 ring-teal-100"
                                     : "border-slate-300"
