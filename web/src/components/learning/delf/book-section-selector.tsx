@@ -134,7 +134,6 @@ export function BookSectionSelector({
                 </div>
               }
               title={formatDelfVariantLabel(summary.variant)}
-              description="Les exercices sont ranges par competence pour garder la liste courte meme quand le nombre de livres augmente."
             >
               <div className="grid gap-3 sm:grid-cols-2">
                 {availableSections.map((section) => {
