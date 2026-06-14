@@ -5,9 +5,11 @@ import type { DelfLevel, DelfSection, DelfTestPaperResponse } from "@/lib/types/
 import { ArrowLeft, BookOpen, Clock3, Headphones, Loader2, PlayCircle } from "lucide-react"
 import { TrainingChoiceCard, TrainingSectionHeader, TrainingSurface } from "@/components/learning/ui"
 import { GuestUpgradeHint } from "@/components/auth/guest-upgrade-hint"
+import { formatDelfVariantLabel } from "@/lib/utils/delf-routes"
 
 interface TestListProps {
   level: DelfLevel
+  variant: string
   section: DelfSection
   tests: DelfTestPaperResponse[]
   loading: boolean
@@ -17,6 +19,7 @@ interface TestListProps {
 
 export function TestList({
   level,
+  variant,
   section,
   tests,
   loading,
@@ -25,6 +28,7 @@ export function TestList({
 }: TestListProps) {
   const Icon = section === "CO" ? Headphones : BookOpen
   const sectionName = section === "CO" ? "Compréhension orale" : "Compréhension écrite"
+  const variantLabel = formatDelfVariantLabel(variant)
 
   return (
     <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
@@ -35,16 +39,20 @@ export function TestList({
           className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 transition-colors hover:bg-white hover:text-slate-900"
         >
           <ArrowLeft className="h-4 w-4" />
-          Niveaux
+          Livres
         </button>
         <span>/</span>
         <span className="min-w-0 break-words font-medium text-slate-700">
-          {level} {section}
+          {variantLabel}
+        </span>
+        <span>/</span>
+        <span className="min-w-0 break-words font-medium text-slate-700">
+          {section}
         </span>
       </div>
 
       <TrainingSectionHeader
-        title={`Sujets DELF ${level}`}
+        title={`DELF ${level} - ${variantLabel}`}
         description="Choisissez un sujet pour commencer votre session d'entrainement."
         badge={
           <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
@@ -91,10 +99,10 @@ export function TestList({
                 onClick={() => onSelectTest(test.test_id, test.level, test.variant, test.section)}
                 eyebrow={
                   <div className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-                    Sujet {test.test_id}
+                    {sectionName}
                   </div>
                 }
-                title={`Variante ${test.variant}`}
+                title={`Sujet ${test.test_id}`}
                 meta={
                   test.status === "draft" ? (
                     <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">Brouillon</Badge>

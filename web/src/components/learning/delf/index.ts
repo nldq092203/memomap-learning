@@ -1,4 +1,5 @@
 export * from "./level-section-selector"
+export * from "./book-section-selector"
 export * from "./test-list"
 export * from "./test-player"
 export * from "./exercise-view"

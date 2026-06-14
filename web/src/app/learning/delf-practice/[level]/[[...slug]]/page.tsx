@@ -4,13 +4,14 @@ import { useEffect, useMemo, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { TestList, TestPlayer } from "@/components/learning/delf"
+import { BookSectionSelector, TestList, TestPlayer } from "@/components/learning/delf"
 import { useGuest, GUEST_ALLOWED_DELF_LEVELS } from "@/lib/contexts/guest-context"
 import { useDelfPractice } from "@/lib/hooks/use-delf-practice"
 import { learningDelfApi } from "@/lib/services/learning-delf-api"
 import { notificationService } from "@/lib/services/notification-service"
 import type { DelfLevel, DelfSection, DelfTestPaperResponse } from "@/lib/types/api/delf"
 import {
+  buildDelfLevelRoute,
   buildDelfListRoute,
   buildDelfTestRoute,
   buildDelfVariant,
@@ -21,7 +22,9 @@ import {
 
 type ResolvedRoute =
   | { kind: "invalid" }
-  | { kind: "list"; level: DelfLevel; section: DelfSection }
+  | { kind: "books"; level: DelfLevel }
+  | { kind: "legacy-list"; level: DelfLevel; section: DelfSection }
+  | { kind: "list"; level: DelfLevel; variant: string; section: DelfSection }
   | {
       kind: "test"
       level: DelfLevel
@@ -61,14 +64,35 @@ export default function DelfLevelRoutePage() {
     }
 
     const slug = Array.isArray(params.slug) ? params.slug : []
+    if (slug.length === 0) {
+      return {
+        kind: "books",
+        level,
+      }
+    }
+
     if (slug.length === 1) {
       const section = slug[0]?.toUpperCase()
       if (!section || !isDelfSection(section)) {
         return { kind: "invalid" }
       }
       return {
+        kind: "legacy-list",
+        level,
+        section,
+      }
+    }
+
+    if (slug.length === 2) {
+      const [variant, sectionRaw] = slug
+      const section = sectionRaw?.toUpperCase()
+      if (!variant || !section || !isDelfSection(section)) {
+        return { kind: "invalid" }
+      }
+      return {
         kind: "list",
         level,
+        variant,
         section,
       }
     }
@@ -97,6 +121,11 @@ export default function DelfLevelRoutePage() {
       return
     }
 
+    if (route.kind === "legacy-list") {
+      router.replace(buildDelfListRoute(route.level, buildDelfVariant(route.level), route.section))
+      return
+    }
+
     if (isGuest && !GUEST_ALLOWED_DELF_LEVELS.includes(route.level)) {
       setShowSyncModal(true)
       router.replace(DELF_PRACTICE_ROOT)
@@ -104,7 +133,7 @@ export default function DelfLevelRoutePage() {
   }, [isGuest, route, router, setShowSyncModal])
 
   useEffect(() => {
-    if (route.kind !== "list") {
+    if (route.kind !== "books" && route.kind !== "list") {
       setTests([])
       return
     }
@@ -113,11 +142,10 @@ export default function DelfLevelRoutePage() {
     const load = async () => {
       setLoadingList(true)
       try {
-        const variant = buildDelfVariant(route.level)
         const data = await learningDelfApi.listTests(
           route.level,
-          route.section,
-          variant,
+          route.kind === "list" ? route.section : undefined,
+          route.kind === "list" ? route.variant : undefined,
           isGuest,
         )
         if (!cancelled) {
@@ -159,7 +187,7 @@ export default function DelfLevelRoutePage() {
         isGuest,
       )
       if (!loaded && !cancelled) {
-        router.replace(buildDelfListRoute(route.level, route.section))
+        router.replace(buildDelfListRoute(route.level, route.variant, route.section))
       }
       if (!cancelled) {
         setLoadingTest(false)
@@ -193,11 +221,40 @@ export default function DelfLevelRoutePage() {
 
           <TestList
             level={route.level}
+            variant={route.variant}
             section={route.section}
             tests={tests}
             loading={loadingList}
             onSelectTest={(testId, level, variant, section) => {
               router.push(buildDelfTestRoute(level, variant, section, testId))
+            }}
+            onBack={() => router.push(buildDelfLevelRoute(route.level))}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  if (route.kind === "books") {
+    return (
+      <div className={commonShell}>
+        <div className="mx-auto max-w-6xl px-4 py-6 md:py-8">
+          <Button
+            type="button"
+            variant="ghost"
+            className="mb-6 rounded-full px-3 text-slate-600 hover:bg-white hover:text-slate-900"
+            onClick={() => router.push("/learning/workspace")}
+          >
+            <ArrowLeft className="mr-1.5 h-4 w-4" />
+            Retour à l&apos;espace d&apos;entrainement
+          </Button>
+
+          <BookSectionSelector
+            level={route.level}
+            tests={tests}
+            loading={loadingList}
+            onSelectSection={(variant, section) => {
+              router.push(buildDelfListRoute(route.level, variant, section))
             }}
             onBack={() => router.push(DELF_PRACTICE_ROOT)}
           />
@@ -233,7 +290,7 @@ export default function DelfLevelRoutePage() {
               onAnswerSubQuestion={updateSubQuestionAnswer}
               onSubmit={submitTest}
               onRestartTest={restartCurrentTest}
-              onBackToList={() => router.push(buildDelfListRoute(route.level, route.section))}
+              onBackToList={() => router.push(buildDelfListRoute(route.level, route.variant, route.section))}
               onBackToRoot={() => router.push(DELF_PRACTICE_ROOT)}
             />
           ) : (

@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button"
 import type { DelfLevel, DelfSection } from "@/lib/types/api/delf"
 import { GUEST_ALLOWED_DELF_LEVELS, useGuest } from "@/lib/contexts/guest-context"
-import { BookOpen, Headphones, Lock, Mic, PenTool, Sparkles } from "lucide-react"
+import { BookOpen, ChevronRight, Headphones, Lock, Mic, PenTool, Sparkles } from "lucide-react"
 import { TrainingChoiceCard, TrainingSectionHeader } from "@/components/learning/ui"
 
 export const DELF_LEVELS: { id: DelfLevel; name: string; description: string }[] = [
@@ -18,20 +18,19 @@ export const DELF_SECTIONS: { id: DelfSection; name: string; icon: React.ReactNo
 ]
 
 interface LevelSectionSelectorProps {
-  onSelect: (level: DelfLevel, section: DelfSection) => void
+  onSelect: (level: DelfLevel) => void
   loading?: boolean
 }
 
 export function LevelSectionSelector({ onSelect, loading }: LevelSectionSelectorProps) {
   const { isGuest } = useGuest()
-  const availableSections = DELF_SECTIONS.filter((section) => section.id === "CO" || section.id === "CE")
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <TrainingSectionHeader
         eyebrow="Preparation DELF"
         title="Entrainement DELF"
-        description="Choisissez un niveau puis une competence pour lancer un entrainement cible sur A2, B1 ou B2."
+        description="Choisissez un niveau, puis le livre et la competence a travailler."
         aside={
           <div className="space-y-4 text-right">
             <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
@@ -51,7 +50,8 @@ export function LevelSectionSelector({ onSelect, loading }: LevelSectionSelector
           return (
             <TrainingChoiceCard
               key={level.id}
-              interactive={false}
+              interactive={!isLockedForGuest}
+              onClick={() => onSelect(level.id)}
               eyebrow={
                 <div className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
                   <span>Niveau {level.id}</span>
@@ -63,30 +63,31 @@ export function LevelSectionSelector({ onSelect, loading }: LevelSectionSelector
                 isLockedForGuest ? "Disponible apres connexion. Le mode invite couvre A2 et B1." : level.description
               }
               footer={<p className="text-sm font-medium text-slate-700">{level.name}</p>}
+              action={
+                <Button
+                  type="button"
+                  disabled={loading || isLockedForGuest}
+                  className="h-10 w-full justify-between rounded-full bg-emerald-100 px-4 text-emerald-700 hover:bg-emerald-200 sm:w-auto"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onSelect(level.id)
+                  }}
+                >
+                  Voir les livres
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              }
             >
-              <div className="grid gap-3">
-                <div className="grid gap-3">
-                  {availableSections.map((section) => (
-                    <Button
-                      key={section.id}
-                      type="button"
-                      variant="outline"
-                      disabled={loading || isLockedForGuest}
-                      className="h-auto justify-start rounded-[22px] border-slate-200 px-4 py-4 text-left text-slate-700 hover:border-emerald-200 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:hover:border-slate-200 disabled:hover:bg-background"
-                      onClick={() => onSelect(level.id, section.id)}
-                    >
-                      <div className="mr-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
-                        {section.icon}
-                      </div>
-                      <div>
-                        <p className="font-semibold">{section.name}</p>
-                        <p className="text-xs text-slate-500">
-                          {isLockedForGuest ? "A2 et B1 en mode invite" : section.description}
-                        </p>
-                      </div>
-                    </Button>
-                  ))}
-                </div>
+              <div className="flex flex-wrap gap-2">
+                {DELF_SECTIONS.filter((section) => section.id === "CO" || section.id === "CE").map((section) => (
+                  <div
+                    key={section.id}
+                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600"
+                  >
+                    {section.icon}
+                    {section.id}
+                  </div>
+                ))}
               </div>
             </TrainingChoiceCard>
           )

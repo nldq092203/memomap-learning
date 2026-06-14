@@ -5,19 +5,19 @@ import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { LevelSectionSelector } from "@/components/learning/delf"
 import { useGuest, GUEST_ALLOWED_DELF_LEVELS } from "@/lib/contexts/guest-context"
-import type { DelfLevel, DelfSection } from "@/lib/types/api/delf"
-import { buildDelfListRoute } from "@/lib/utils/delf-routes"
+import type { DelfLevel } from "@/lib/types/api/delf"
+import { buildDelfLevelRoute } from "@/lib/utils/delf-routes"
 
 export default function DelfPracticePage() {
   const router = useRouter()
   const { isGuest, setShowSyncModal } = useGuest()
 
-  const handleLevelSectionSelect = (lvl: DelfLevel, sec: DelfSection) => {
+  const handleLevelSelect = (lvl: DelfLevel) => {
     if (isGuest && !GUEST_ALLOWED_DELF_LEVELS.includes(lvl)) {
       setShowSyncModal(true)
       return
     }
-    router.push(buildDelfListRoute(lvl, sec))
+    router.push(buildDelfLevelRoute(lvl))
   }
 
   return (
@@ -33,7 +33,7 @@ export default function DelfPracticePage() {
           Retour à l&apos;espace d&apos;entrainement
         </Button>
 
-        <LevelSectionSelector onSelect={handleLevelSectionSelect} />
+        <LevelSectionSelector onSelect={handleLevelSelect} />
       </div>
     </div>
   )

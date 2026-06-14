@@ -17,8 +17,24 @@ export function buildDelfVariant(level: DelfLevel): string {
   return `tout-public-${level.toLowerCase()}`
 }
 
-export function buildDelfListRoute(level: DelfLevel, section: DelfSection): string {
-  return `${DELF_PRACTICE_ROOT}/${level}/${section}`
+export function formatDelfVariantLabel(variant: string): string {
+  return variant
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.toUpperCase() === part ? part : part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ")
+}
+
+export function buildDelfLevelRoute(level: DelfLevel): string {
+  return `${DELF_PRACTICE_ROOT}/${level}`
+}
+
+export function buildDelfListRoute(
+  level: DelfLevel,
+  variant: string,
+  section: DelfSection,
+): string {
+  return `${DELF_PRACTICE_ROOT}/${level}/${variant}/${section}`
 }
 
 export function buildDelfTestRoute(

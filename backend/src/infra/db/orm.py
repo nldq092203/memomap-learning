@@ -310,6 +310,13 @@ class DelfTestPaperORM(Base):
         sa.Index(
             "ix_delf_test_papers_level_section_status", "level", "section", "status"
         ),
+        sa.Index(
+            "ix_delf_test_papers_level_variant_section_status",
+            "level",
+            "variant",
+            "section",
+            "status",
+        ),
         sa.UniqueConstraint(
             "test_id", "level", "variant", "section", name="uq_delf_test_paper"
         ),
