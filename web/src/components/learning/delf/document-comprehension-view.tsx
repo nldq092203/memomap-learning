@@ -1,7 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card"
 import type { DelfExercise } from "@/lib/types/api/delf"
 import { SubQuestionView } from "./subquestion-view"
-import { Mail, User } from "lucide-react"
+import { TrueFalseTableView, getTrueFalseTableModel } from "./true-false-table-view"
+import { Mail } from "lucide-react"
 
 interface DocumentComprehensionViewProps {
   exercise: DelfExercise
@@ -21,6 +22,8 @@ export function DocumentComprehensionView({
   getAssetUrl,
 }: DocumentComprehensionViewProps) {
   const docs = exercise.documents?.length ? exercise.documents : (exercise.document ? [exercise.document] : [])
+  const questions = exercise.questions || []
+  const trueFalseTableModel = getTrueFalseTableModel(questions)
 
   return (
     <Card className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
@@ -110,16 +113,25 @@ export function DocumentComprehensionView({
             <div className="h-px flex-1 bg-border"></div>
           </div>
 
-          {exercise.questions?.map((q) => (
-            <SubQuestionView
-              key={q.id}
-              question={q}
-              answer={subQuestionAnswers[q.id]}
+          {trueFalseTableModel ? (
+            <TrueFalseTableView
+              questions={questions}
+              answers={subQuestionAnswers}
               showResults={showResults}
-              onAnswer={(val) => onAnswerSubQuestion(q.id, val)}
-              getAssetUrl={getAssetUrl}
+              onAnswer={onAnswerSubQuestion}
             />
-          ))}
+          ) : (
+            questions.map((q) => (
+              <SubQuestionView
+                key={q.id}
+                question={q}
+                answer={subQuestionAnswers[q.id]}
+                showResults={showResults}
+                onAnswer={(val) => onAnswerSubQuestion(q.id, val)}
+                getAssetUrl={getAssetUrl}
+              />
+            ))
+          )}
         </div>
 
       </CardContent>
