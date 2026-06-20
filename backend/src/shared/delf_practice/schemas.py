@@ -139,6 +139,7 @@ class DelfTestPaper(BaseModel):
     test_id: str = Field(..., min_length=1)
     section: str = Field(..., min_length=1)
     audio_filename: str | None = None
+    audio_filenames: list[str] = Field(default_factory=list)
     exercises: list[DelfExercise] = Field(default_factory=list)
     extra_transcripts: list[DelfExtraTranscript] = Field(default_factory=list)
     source_ref: DelfSourceRef | None = None

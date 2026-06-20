@@ -17,6 +17,7 @@ from src.shared.delf_practice.github_manager import GitHubDelfManager
 _AUDIO_PREFIX_BY_LEVEL: dict[str, str] = {
     "A2": "DELF_TP_A2_Piste",
     "B1": "Delf_TP_B1_Piste",
+    "B2": "DELF_TP_B2_Piste",
 }
 
 _DEFAULT_TEMPLATE = "DELF_TP_{LEVEL}_Piste"
@@ -32,9 +33,11 @@ def _audio_prefix(level: str) -> str:
 def build_audio_filename(level: str, track_number: int) -> str:
     """Build the canonical audio filename for `level` / `track_number`.
 
-    Track numbers below 10 are zero-padded to width 2.
+    B2 audio files use three-digit track numbers; other known corpora use
+    two-digit track numbers below 10.
     """
-    return f"{_audio_prefix(level)}{track_number:02d}.mp3"
+    width = 3 if level.upper() == "B2" else 2
+    return f"{_audio_prefix(level)}{track_number:0{width}d}.mp3"
 
 
 def build_audio_directory(level: str, variant: str, section: str) -> str:

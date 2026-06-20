@@ -144,7 +144,7 @@ export function ExerciseView({
                 <div className="space-y-1">
                   <span className="text-xs font-semibold uppercase text-muted-foreground">Extrait :</span>
                   <p className="text-sm italic border-l-2 border-primary/30 pl-3">
-                    "{exercise.transcript}"
+                    &ldquo;{exercise.transcript}&rdquo;
                   </p>
                 </div>
               )}

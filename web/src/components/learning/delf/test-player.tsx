@@ -49,6 +49,8 @@ export function TestPlayer({
 }: TestPlayerProps) {
   const content = test.content
   const section = test.section
+  const numericTestId = test.test_id.match(/\d+/)?.[0]
+  const exerciseLabel = numericTestId ? `Exercice ${Number(numericTestId)}` : `Exercice ${test.test_id}`
 
   const allAnswered = content.exercises.every((exercise) => {
     if (exercise.type === "matching") {
@@ -76,6 +78,11 @@ export function TestPlayer({
   })
 
   const totalExerciseCount = content.exercises.length
+  const totalQuestionCount = content.exercises.reduce((total, exercise) => {
+    if (exercise.type === "matching") return total + (exercise.documents?.length ?? 0)
+    if (isNestedQuestionExerciseType(exercise.type)) return total + (exercise.questions?.length ?? 0)
+    return total + 1
+  }, 0)
   const answeredExerciseCount = content.exercises.filter((exercise) => {
     if (exercise.type === "matching") {
       const matchAnswer = matchingAnswers.find((answer) => answer.exerciseId === exercise.id)
@@ -89,8 +96,20 @@ export function TestPlayer({
 
     return userAnswers.some((answer) => answer.exerciseId === exercise.id)
   }).length
+  const answeredQuestionCount = content.exercises.reduce((total, exercise) => {
+    if (exercise.type === "matching") {
+      const matchAnswer = matchingAnswers.find((answer) => answer.exerciseId === exercise.id)
+      return total + (exercise.documents?.filter((doc) => matchAnswer?.selections[doc.id]).length ?? 0)
+    }
 
-  const progressRatio = totalExerciseCount > 0 ? Math.round((answeredExerciseCount / totalExerciseCount) * 100) : 0
+    if (isNestedQuestionExerciseType(exercise.type)) {
+      return total + (exercise.questions?.filter((question) => subQuestionAnswers[question.id] !== undefined).length ?? 0)
+    }
+
+    return total + (userAnswers.some((answer) => answer.exerciseId === exercise.id) ? 1 : 0)
+  }, 0)
+
+  const progressRatio = totalQuestionCount > 0 ? Math.round((answeredQuestionCount / totalQuestionCount) * 100) : 0
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
@@ -98,12 +117,34 @@ export function TestPlayer({
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const progressBarRef = useRef<HTMLButtonElement | null>(null)
+  const [activeAudioIndex, setActiveAudioIndex] = useState(0)
 
-  const audioUrl = test.audio_url || (
-    content.audio_filename
-      ? learningDelfApi.getAudioProxyUrl(test.level, test.variant, test.section, content.audio_filename)
-      : undefined
-  )
+  const audioFilenames = [
+    ...(content.audio_filenames?.filter(Boolean) ?? []),
+    ...(!content.audio_filenames?.length && content.audio_filename ? [content.audio_filename] : []),
+  ]
+  const audioItems = audioFilenames.length > 0
+    ? audioFilenames.map((filename, index) => ({
+        filename,
+        label: audioFilenames.length > 1 ? `Document ${index + 1}` : "Audio",
+        url: learningDelfApi.getAudioProxyUrl(test.level, test.variant, test.section, filename),
+      }))
+    : test.audio_url
+      ? [{ filename: "audio", label: "Audio", url: test.audio_url }]
+      : []
+  const audioUrl = audioItems[activeAudioIndex]?.url
+
+  useEffect(() => {
+    setActiveAudioIndex(0)
+  }, [test.test_id])
+
+  useEffect(() => {
+    setIsPlaying(false)
+    setProgress(0)
+    setCurrentTime(0)
+    setDuration(0)
+    audioRef.current?.load()
+  }, [audioUrl])
 
   useEffect(() => {
     const audio = audioRef.current
@@ -213,7 +254,7 @@ export function TestPlayer({
             {test.section}
           </button>
           <span>/</span>
-          <span className="font-medium text-slate-700">Sujet {test.test_id}</span>
+          <span className="font-medium text-slate-700">{exerciseLabel}</span>
         </div>
 
         <div className="sticky top-4 z-20 rounded-[24px] border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
@@ -238,11 +279,31 @@ export function TestPlayer({
                   </div>
                 )}
               </div>
-              <h2 className="text-xl font-semibold tracking-tight text-slate-950">Sujet {test.test_id}</h2>
+              <h2 className="text-xl font-semibold tracking-tight text-slate-950">{exerciseLabel}</h2>
             </div>
 
             {section === "CO" && audioUrl && (
               <div className="w-full rounded-[22px] border border-slate-200 bg-[linear-gradient(135deg,#f8fafc_0%,#eef7f6_100%)] p-3 sm:p-4 lg:max-w-[560px]">
+                {audioItems.length > 1 && (
+                  <div className="mb-3 grid gap-2 sm:grid-cols-3">
+                    {audioItems.map((item, index) => (
+                      <Button
+                        key={`${item.filename}-${index}`}
+                        type="button"
+                        variant={activeAudioIndex === index ? "default" : "outline"}
+                        size="sm"
+                        className={`h-9 rounded-full text-xs ${
+                          activeAudioIndex === index
+                            ? "bg-teal-500 text-white hover:bg-teal-600"
+                            : "border-slate-200 bg-white/70 text-slate-600 hover:bg-white"
+                        }`}
+                        onClick={() => setActiveAudioIndex(index)}
+                      >
+                        {item.label}
+                      </Button>
+                    ))}
+                  </div>
+                )}
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                   <div className="flex items-center gap-2 sm:gap-3">
                     <Button
@@ -389,8 +450,8 @@ export function TestPlayer({
         <div className="flex flex-col items-center gap-3 rounded-[24px] border border-slate-200 bg-white/95 px-4 py-3 shadow-lg shadow-slate-200/60 backdrop-blur sm:flex-row sm:justify-between sm:rounded-[30px] sm:px-5 sm:py-4">
           <div className="text-center text-sm text-slate-500 sm:text-left">
             {!showResults
-              ? `${answeredExerciseCount} element${answeredExerciseCount > 1 ? "s" : ""} complete${answeredExerciseCount > 1 ? "s" : ""} sur ${totalExerciseCount}.`
-              : "Votre correction est affichee ci-dessus."}
+              ? `${answeredQuestionCount} question${answeredQuestionCount > 1 ? "s" : ""} complétée${answeredQuestionCount > 1 ? "s" : ""} sur ${totalQuestionCount}.`
+              : "Votre correction est affichée ci-dessus."}
           </div>
 
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
@@ -408,7 +469,7 @@ export function TestPlayer({
                   disabled={!allAnswered}
                   style={allAnswered ? { backgroundColor: "#14b8a6", color: "white" } : undefined}
                 >
-                  Valider le sujet
+                  Valider l&apos;exercice
                 </Button>
                 {!allAnswered && (
                   <p className="text-center text-xs text-slate-500">Répondez à toutes les questions pour valider.</p>

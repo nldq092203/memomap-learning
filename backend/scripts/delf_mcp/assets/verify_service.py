@@ -108,14 +108,23 @@ def verify_delf_asset_references(
         else:
             missing.append(ref)
 
+    audio_values: list[tuple[str, str]] = []
     if paper.audio_filename:
-        ref = {"field": "audio_filename", "value": paper.audio_filename}
+        audio_values.append(("audio_filename", paper.audio_filename))
+    audio_values.extend(("audio_filenames", value) for value in paper.audio_filenames if value)
+
+    seen_audio: set[str] = set()
+    for field_name, audio_filename in audio_values:
+        if audio_filename in seen_audio:
+            continue
+        seen_audio.add(audio_filename)
+        ref = {"field": field_name, "value": audio_filename}
         checked_refs.append(ref)
         github_path = audio_reference_github_path(
             level=level,
             variant=variant,
             section=section,
-            audio_filename=paper.audio_filename,
+            audio_filename=audio_filename,
         )
         try:
             exists = github.file_exists(github_path)
@@ -137,7 +146,7 @@ def verify_delf_asset_references(
         "missing": missing,
         "missing_count": len(missing),
         "image_directory": image_dir,
-        "audio_directory": audio_dir if paper.audio_filename else None,
+        "audio_directory": audio_dir if seen_audio else None,
     }
 
 

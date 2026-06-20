@@ -29,6 +29,10 @@ export function TestList({
   const Icon = section === "CO" ? Headphones : BookOpen
   const sectionName = section === "CO" ? "Compréhension orale" : "Compréhension écrite"
   const variantLabel = formatDelfVariantLabel(variant)
+  const formatExerciseTitle = (testId: string) => {
+    const numericId = testId.match(/\d+/)?.[0]
+    return numericId ? `Exercice ${Number(numericId)}` : `Exercice ${testId}`
+  }
 
   return (
     <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
@@ -53,7 +57,7 @@ export function TestList({
 
       <TrainingSectionHeader
         title={`DELF ${level} - ${variantLabel}`}
-        description="Choisissez un sujet pour commencer votre session d'entrainement."
+        description="Choisissez un exercice du livre. L'ordre suit la progression originale."
         badge={
           <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
             <Icon className="h-3.5 w-3.5" />
@@ -62,18 +66,18 @@ export function TestList({
         }
         aside={
           <Badge className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100">
-            {tests.length} {tests.length === 1 ? "sujet" : "sujets"}
+            {tests.length} {tests.length === 1 ? "exercice" : "exercices"}
           </Badge>
         }
         className="overflow-hidden"
       />
 
-      <GuestUpgradeHint description="Connectez-vous pour accéder à plus de sujets, davantage de niveaux et reprendre vos entrainements DELF à tout moment." />
+      <GuestUpgradeHint description="Connectez-vous pour accéder à plus d'exercices, davantage de niveaux et reprendre vos entrainements DELF à tout moment." />
 
       {loading ? (
         <TrainingSurface className="flex h-[420px] flex-col items-center justify-center space-y-4 text-slate-500">
           <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
-          <p>Chargement des sujets...</p>
+          <p>Chargement des exercices...</p>
         </TrainingSurface>
       ) : tests.length === 0 ? (
         <TrainingSurface variant="dashed" className="flex h-[420px] flex-col items-center justify-center space-y-4 p-8 text-center">
@@ -81,9 +85,9 @@ export function TestList({
             <Icon className="h-8 w-8 text-slate-400" />
           </div>
           <div>
-            <h3 className="text-lg font-medium text-slate-950">Aucun sujet disponible</h3>
+            <h3 className="text-lg font-medium text-slate-950">Aucun exercice disponible</h3>
             <p className="mt-1 max-w-sm text-sm text-slate-500">
-              Aucun sujet d&apos;entrainement n&apos;est visible pour ce niveau et cette section.
+              Aucun exercice d&apos;entrainement n&apos;est visible pour ce niveau et cette section.
             </p>
           </div>
           <Button variant="outline" onClick={onBack} className="mt-4 rounded-full">
@@ -102,7 +106,7 @@ export function TestList({
                     {sectionName}
                   </div>
                 }
-                title={`Sujet ${test.test_id}`}
+                title={formatExerciseTitle(test.test_id)}
                 meta={
                   test.status === "draft" ? (
                     <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">Brouillon</Badge>
@@ -111,7 +115,7 @@ export function TestList({
                 footer={
                   <div className="flex min-w-0 items-center gap-1.5 text-sm text-slate-500">
                     <Clock3 className="h-4 w-4" />
-                    <span>{test.exercise_count} exercice{test.exercise_count > 1 ? "s" : ""}</span>
+                    <span>{test.exercise_count} question{test.exercise_count > 1 ? "s" : ""}</span>
                   </div>
                 }
                 action={
@@ -123,7 +127,7 @@ export function TestList({
                       onSelectTest(test.test_id, test.level, test.variant, test.section)
                     }}
                   >
-                    Commencer
+                    Ouvrir
                     <PlayCircle className="h-4 w-4 transition-transform group-hover:scale-110" />
                   </Button>
                 }

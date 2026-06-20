@@ -111,6 +111,7 @@ export interface DelfTestPaperContent {
   test_id: string
   section: string
   audio_filename?: string
+  audio_filenames?: string[]
   exercises: DelfExercise[]
   extra_transcripts: DelfExtraTranscript[]
 }

@@ -81,7 +81,7 @@ export function BookSectionSelector({
 
       <TrainingSectionHeader
         title={`DELF ${level}`}
-        description="Choisissez d'abord le livre, puis la competence CE ou CO."
+        description="Choisissez le livre, puis la compétence CE ou CO. Les exercices suivent l'ordre du livre."
         badge={
           <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
             <BookMarked className="h-3.5 w-3.5" />
@@ -130,7 +130,7 @@ export function BookSectionSelector({
               }
               eyebrow={
                 <div className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-                  {summary.totalTests} {summary.totalTests === 1 ? "sujet" : "sujets"}
+                  {summary.totalTests} {summary.totalTests === 1 ? "exercice" : "exercices"}
                 </div>
               }
               title={formatDelfVariantLabel(summary.variant)}
@@ -156,10 +156,10 @@ export function BookSectionSelector({
                         <p className="font-semibold">{section}</p>
                         <p className="text-xs text-slate-500">{sectionLabels[section]}</p>
                         <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                          <span>{info?.tests ?? 0} sujets</span>
+                          <span>{info?.tests ?? 0} exercices</span>
                           <span className="inline-flex items-center gap-1">
                             <Clock3 className="h-3.5 w-3.5" />
-                            {info?.exercises ?? 0} exercices
+                            {info?.exercises ?? 0} questions
                           </span>
                         </div>
                       </div>

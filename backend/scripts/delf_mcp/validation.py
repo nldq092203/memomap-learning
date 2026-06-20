@@ -375,14 +375,17 @@ def _check_correct_answer_bounds(paper: DelfTestPaper) -> list[dict[str, str]]:
 def _check_ce_audio(paper: DelfTestPaper) -> list[dict[str, str]]:
     if paper.section.upper() != "CE":
         return []
-    audio = paper.audio_filename
-    if audio is None or audio == "":
+    audio_values = []
+    if paper.audio_filename:
+        audio_values.append(paper.audio_filename)
+    audio_values.extend(value for value in paper.audio_filenames if value)
+    if not audio_values:
         return []
     return [{
         "field": "audio_filename",
         "message": (
-            f"CE (reading comprehension) papers must not have audio_filename, "
-            f"got '{audio}'"
+            "CE (reading comprehension) papers must not have audio files, "
+            f"got {audio_values}"
         ),
         "type": "value_error",
     }]
