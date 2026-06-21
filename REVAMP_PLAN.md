@@ -1334,6 +1334,42 @@ Verification:
 - `python3 -m compileall backend/src` passes.
 - In-memory SQLAlchemy smoke test passed for CO/CE catalog progress merge, completed-status filtering, and DELF level filtering.
 
+#### REV-205 To REV-206 Implementation Note
+
+Status: Completed backend foundation.
+
+Changes made:
+
+- Extended Mongo helper in `backend/src/infra/mongo.py` with vocabulary collections:
+  - `vocab_cards`
+  - `vocab_reviews`
+- Added idempotent vocabulary index creation helper `ensure_vocabulary_indexes`.
+- Added Mongo vocabulary repository in `backend/src/domain/vocabulary_mongo.py`.
+
+Mongo card shape:
+
+- `user_id`, `text`, `text_normalized`, `item_type`, `language`, `native_language`.
+- `translation`, `notes`, `examples`, `tags`, `level`.
+- `source_context` with section, exercise id, exercise title, source type, snippet, book, and page.
+- SRS state: status, next due date, last reviewed date, interval, ease, reps, lapses, streak, last grade.
+- Soft-delete fields and flexible `extra` metadata.
+
+Indexes:
+
+- Due queue: user, language, status, next due date.
+- User text lookup: user, language, normalized text.
+- User tags.
+- User source exercise.
+- User updated date.
+- Text search across text, translation, notes, and example text.
+- Review history by user/card/reviewed date.
+
+Repository behavior:
+
+- User-scoped create, get, update, soft delete, hard delete, list, due list, and review-history insert.
+- List queries are bounded and support search/filter inputs needed by Vocabulaire.
+- Existing SQL `/api/web/vocab` route is intentionally unchanged. Switching writes/reads to Mongo remains a later compatibility/backfill step (`REV-208` to `REV-209`, then `REV-505`).
+
 ### Phase 0: Discovery And Guardrails
 
 #### REV-001: Audit Current Routes And Navigation
