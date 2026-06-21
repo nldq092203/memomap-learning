@@ -86,14 +86,14 @@ export function DocumentComprehensionView({
                         block.kind === "heading" ? (
                           <h5
                             key={`${block.text}-${blockIdx}`}
-                            className="text-base font-bold uppercase leading-7 tracking-wide text-slate-950 sm:text-lg"
+                            className="whitespace-normal text-base font-bold uppercase leading-7 tracking-wide text-slate-950 sm:text-lg"
                           >
                             {block.text}
                           </h5>
                         ) : (
                           <p
                             key={`${block.text}-${blockIdx}`}
-                            className="text-[15px] font-normal leading-8 text-slate-800 sm:text-base"
+                            className="whitespace-normal text-[15px] font-normal leading-8 text-slate-800 sm:text-base"
                           >
                             {block.text}
                           </p>

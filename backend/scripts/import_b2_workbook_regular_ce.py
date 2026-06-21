@@ -164,6 +164,23 @@ def _extract_lines(text: str) -> list[str]:
     return lines
 
 
+def _repair_pdf_line_breaks(lines: list[str]) -> list[str]:
+    repaired: list[str] = []
+    for line in lines:
+        if not line or not repaired:
+            repaired.append(line)
+            continue
+        previous = repaired[-1]
+        if not previous:
+            repaired.append(line)
+            continue
+        if previous.endswith("-") and re.match(r"^[a-zàâäéèêëîïôöùûüç]", line):
+            repaired[-1] = f"{previous}{line}"
+            continue
+        repaired.append(line)
+    return repaired
+
+
 def _is_question_instruction(line: str) -> bool:
     return (
         line.startswith("Pour répondre aux questions")
@@ -211,7 +228,7 @@ def _parse_questions(question_text: str) -> list[dict[str, Any]]:
 
 
 def _clean_document_text(text: str) -> str:
-    raw_lines = _extract_lines(text)
+    raw_lines = _repair_pdf_line_breaks(_extract_lines(text))
     lines: list[str] = []
     skip_lines = {"X", "i", "l2", "J", "I J", "l J", "k J", "V", ">", "KI", "LJ", "L J", "—", "Je m'entraîne"}
     skip_fragments = (
@@ -263,6 +280,21 @@ def _clean_document_text(text: str) -> str:
     cleaned = "\n".join(lines)
     replacements = {
         "rt-thérapie": "Art-thérapie",
+        "fra\ngiles": "fragiles",
+        "pres\ncrire": "prescrire",
+        "initia\ntive": "initiative",
+        "d’exposi\ntion": "d’exposition",
+        "d'exposi\ntion": "d’exposition",
+        "d’art-théra\npie": "d’art-thérapie",
+        "d'art-théra\npie": "d’art-thérapie",
+        "ce\nquelle ressent": "ce qu’elle ressent",
+        "Centre na\ntional": "Centre national",
+        "Celui-ci orga\nnise": "Celui-ci organise",
+        "psychia\ntrie": "psychiatrie",
+        "qui inter\nviennent": "qui interviennent",
+        "Organisation mon\ndiale": "Organisation mondiale",
+        "montre com\nment": "montre comment",
+        "pro\nblèmes": "problèmes",
         "c musée": "Ce musée",
         "osée Leclerc": "Josée Leclerc",
         "d’aArt-thérapie": "d’art-thérapie",

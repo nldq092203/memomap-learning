@@ -11,6 +11,49 @@ function isLikelyHeading(text: string) {
   return uppercaseLetters.length / letters.length > 0.72
 }
 
+function normalizeWordJoin(text: string) {
+  return text
+    .replace(/\bce quelle\b/g, "ce qu’elle")
+    .replace(/\bfra giles\b/g, "fragiles")
+    .replace(/\bpres crire\b/g, "prescrire")
+    .replace(/\binitia tive\b/g, "initiative")
+    .replace(/\bexposi tion\b/g, "exposition")
+    .replace(/\bthéra pie\b/g, "thérapie")
+    .replace(/\bna tional\b/g, "national")
+    .replace(/\borga nise\b/g, "organise")
+    .replace(/\bpsychia trie\b/g, "psychiatrie")
+    .replace(/\binter viennent\b/g, "interviennent")
+    .replace(/\bmon diale\b/g, "mondiale")
+    .replace(/\bcom ment\b/g, "comment")
+    .replace(/\bpro blèmes\b/g, "problèmes")
+}
+
+function repairPdfLineBreaks(lines: string[]) {
+  const repaired: string[] = []
+
+  for (const line of lines) {
+    if (!line || repaired.length === 0) {
+      repaired.push(line)
+      continue
+    }
+
+    const previous = repaired[repaired.length - 1]
+    if (!previous) {
+      repaired.push(line)
+      continue
+    }
+
+    if (previous.endsWith("-") && /^[\p{Ll}àâäéèêëîïôöùûüç]/u.test(line)) {
+      repaired[repaired.length - 1] = `${previous}${line}`
+      continue
+    }
+
+    repaired.push(line)
+  }
+
+  return repaired
+}
+
 function shouldStartParagraph(current: string, nextLine: string) {
   if (!current) return false
 
@@ -26,6 +69,7 @@ export function formatDelfReadingText(rawText: string | undefined): DelfTextBloc
 
   const lines = rawText
     .replace(/\r\n/g, "\n")
+    .replace(/\u00ad/g, "")
     .split("\n")
     .map((line) => line.trim())
 
@@ -34,11 +78,11 @@ export function formatDelfReadingText(rawText: string | undefined): DelfTextBloc
 
   const flush = () => {
     if (!current.trim()) return
-    paragraphs.push(current.replace(/\s+/g, " ").trim())
+    paragraphs.push(normalizeWordJoin(current.replace(/\s+/g, " ").trim()))
     current = ""
   }
 
-  for (const line of lines) {
+  for (const line of repairPdfLineBreaks(lines)) {
     if (!line) {
       flush()
       continue
