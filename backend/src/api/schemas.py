@@ -65,6 +65,22 @@ class VocabReviewRequest(BaseModel):
     reviews: list[dict[str, str]]
 
 
+class ExerciseProgressUpdateRequest(BaseModel):
+    """Create or update exercise progress."""
+
+    exercise_id: str = Field(..., min_length=1, max_length=255)
+    section: str = Field(..., min_length=2, max_length=16)
+    source_type: str = Field(..., min_length=1, max_length=32)
+    event: str = Field(default="opened")
+    level: str | None = Field(default=None, max_length=16)
+    status: str | None = Field(default=None, max_length=32)
+    score: float | None = Field(default=None, ge=0, le=100)
+    accuracy: float | None = Field(default=None, ge=0, le=100)
+    saved_vocab_count: int | None = Field(default=None, ge=0)
+    answers_snapshot: Any | None = None
+    extra: dict[str, Any] | None = None
+
+
 
 
 class AIChatRequest(BaseModel):
@@ -139,4 +155,3 @@ class MnemonicRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=200)
     learning_lang: str = Field(default="fr")
     native_lang: str = Field(default="vi")
-

@@ -17,6 +17,11 @@ from src.api.web.vocab import (
     vocab_review_batch,
     vocab_stats,
 )
+from src.api.web.progress import (
+    progress_detail,
+    progress_list_update,
+    progress_summary,
+)
 from src.api.web.ai import (
     ai_chat,
     web_ai_assist,
@@ -108,6 +113,23 @@ web_bp.add_url_rule(
 web_bp.add_url_rule(
     "/vocab/stats",
     view_func=vocab_stats,
+    methods=["GET"],
+)
+
+# ==================== Exercise Progress ====================
+web_bp.add_url_rule(
+    "/progress",
+    view_func=progress_list_update,
+    methods=["GET", "POST"],
+)
+web_bp.add_url_rule(
+    "/progress/summary",
+    view_func=progress_summary,
+    methods=["GET"],
+)
+web_bp.add_url_rule(
+    "/progress/<exercise_id>",
+    view_func=progress_detail,
     methods=["GET"],
 )
 

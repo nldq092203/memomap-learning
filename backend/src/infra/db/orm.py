@@ -65,6 +65,11 @@ class UserORM(Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
+    exercise_progress: so.Mapped[list["UserExerciseProgressORM"]] = so.relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
     vocab_cards: so.Mapped[list["VocabularyCardORM"]] = so.relationship(
         back_populates="user",
         cascade="all, delete-orphan",
@@ -235,6 +240,116 @@ class VocabularyCardORM(Base):
 
     def __repr__(self) -> str:
         return f"<VocabularyCardORM(id={self.id!r}, word={self.word!r}, language={self.language!r}, status={self.status!r})>"
+
+
+class UserExerciseProgressORM(Base):
+    """Per-user progress for one normalized exercise/catalog item."""
+
+    __tablename__ = "user_exercise_progress"
+
+    user_id: so.Mapped[str] = so.mapped_column(
+        sa.String,
+        sa.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    exercise_id: so.Mapped[str] = so.mapped_column(sa.String(255), nullable=False)
+    section: so.Mapped[str] = so.mapped_column(sa.String(16), nullable=False)
+    source_type: so.Mapped[str] = so.mapped_column(sa.String(32), nullable=False)
+    level: so.Mapped[str | None] = so.mapped_column(sa.String(16), nullable=True)
+    status: so.Mapped[str] = so.mapped_column(
+        sa.String(32),
+        default="not_started",
+        nullable=False,
+    )
+    score: so.Mapped[float | None] = so.mapped_column(sa.Float, nullable=True)
+    accuracy: so.Mapped[float | None] = so.mapped_column(sa.Float, nullable=True)
+    started_at: so.Mapped[datetime | None] = so.mapped_column(
+        sa.DateTime(timezone=True),
+        nullable=True,
+    )
+    completed_at: so.Mapped[datetime | None] = so.mapped_column(
+        sa.DateTime(timezone=True),
+        nullable=True,
+    )
+    last_opened_at: so.Mapped[datetime] = so.mapped_column(
+        sa.DateTime(timezone=True),
+        server_default=sa.func.now(),
+        nullable=False,
+    )
+    attempts_count: so.Mapped[int] = so.mapped_column(
+        sa.Integer,
+        default=0,
+        nullable=False,
+    )
+    saved_vocab_count: so.Mapped[int] = so.mapped_column(
+        sa.Integer,
+        default=0,
+        nullable=False,
+    )
+    answers_snapshot: so.Mapped[dict | list | None] = so.mapped_column(
+        sa.JSON,
+        nullable=True,
+    )
+
+    user: so.Mapped["UserORM"] = so.relationship(back_populates="exercise_progress")
+
+    __table_args__ = (
+        sa.UniqueConstraint("user_id", "exercise_id", name="uq_user_exercise_progress"),
+        sa.Index(
+            "ix_user_exercise_progress_user_status",
+            "user_id",
+            "status",
+            "last_opened_at",
+        ),
+        sa.Index(
+            "ix_user_exercise_progress_user_section",
+            "user_id",
+            "section",
+            "last_opened_at",
+        ),
+        sa.Index(
+            "ix_user_exercise_progress_catalog",
+            "section",
+            "source_type",
+            "level",
+            "status",
+        ),
+        sa.CheckConstraint(
+            "section IN ('CO', 'CE', 'PO', 'PE')",
+            name="ck_user_exercise_progress_section",
+        ),
+        sa.CheckConstraint(
+            "source_type IN ('numbers', 'video_podcast', 'delf_book', 'oral_prompt', 'writing_prompt')",
+            name="ck_user_exercise_progress_source_type",
+        ),
+        sa.CheckConstraint(
+            "level IS NULL OR level IN ('A1', 'A2', 'B1', 'B2', 'C1', 'C2')",
+            name="ck_user_exercise_progress_level",
+        ),
+        sa.CheckConstraint(
+            "status IN ('not_started', 'in_progress', 'completed', 'retry_suggested')",
+            name="ck_user_exercise_progress_status",
+        ),
+        sa.CheckConstraint(
+            "score IS NULL OR (score >= 0 AND score <= 100)",
+            name="ck_user_exercise_progress_score",
+        ),
+        sa.CheckConstraint(
+            "accuracy IS NULL OR (accuracy >= 0 AND accuracy <= 100)",
+            name="ck_user_exercise_progress_accuracy",
+        ),
+        sa.CheckConstraint(
+            "attempts_count >= 0",
+            name="ck_user_exercise_progress_attempts",
+        ),
+        sa.CheckConstraint(
+            "saved_vocab_count >= 0",
+            name="ck_user_exercise_progress_saved_vocab",
+        ),
+    )
+
+    def __repr__(self) -> str:
+        return f"<UserExerciseProgressORM(user_id={self.user_id!r}, exercise_id={self.exercise_id!r}, status={self.status!r})>"
 
 
 class CoCeExerciseORM(Base):

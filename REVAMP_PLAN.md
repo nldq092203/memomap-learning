@@ -1272,6 +1272,36 @@ Findings:
 - No user-facing `Arcueil` label was found in `web` or `backend`.
 - Existing visible label is already `Accueil`.
 
+#### REV-201 To REV-204 Implementation Note
+
+Status: Completed backend foundation.
+
+Changes made:
+
+- Added SQLAlchemy model `UserExerciseProgressORM` in `backend/src/infra/db/orm.py`.
+- Added Alembic migration `backend/alembic/versions/3c7e9a1f2b4d_add_user_exercise_progress.py`.
+- Added `ExerciseProgressQueries` in `backend/src/domain/db_queries.py`.
+- Added progress controllers in `backend/src/domain/controllers.py`.
+- Added `ExerciseProgressUpdateRequest` in `backend/src/api/schemas.py`.
+- Added authenticated web API endpoints in `backend/src/api/web/progress.py`.
+- Registered active routes:
+  - `GET /api/web/progress`
+  - `POST /api/web/progress`
+  - `GET /api/web/progress/summary`
+  - `GET /api/web/progress/<exercise_id>`
+
+Data model:
+
+- Unique progress row per `(user_id, exercise_id)`.
+- Tracks section, source type, level, status, score, accuracy, timestamps, attempts, saved vocab count, optional answer snapshot, and extra metadata.
+- Adds indexes for user/status, user/section, and catalog-style filtering.
+
+Verification:
+
+- `python3 -m compileall backend/src backend/alembic/versions/3c7e9a1f2b4d_add_user_exercise_progress.py` passes.
+- In-memory SQLAlchemy smoke test passed for create/start/complete/get/list/summary progress flow.
+- Full Flask route-map smoke test is still blocked in this local environment by missing optional runtime dependencies (`azure`, `youtube_transcript_api`, `pymongo`), but progress modules compile and controller behavior is verified.
+
 ### Phase 0: Discovery And Guardrails
 
 #### REV-001: Audit Current Routes And Navigation

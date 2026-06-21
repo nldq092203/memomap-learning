@@ -29,6 +29,11 @@ from src.domain.controllers import (
     get_due_vocab_cards_controller,
     review_vocab_cards_controller,
     get_vocab_stats_controller,
+    # Exercise progress
+    update_exercise_progress_controller,
+    get_exercise_progress_controller,
+    list_exercise_progress_controller,
+    get_exercise_progress_summary_controller,
     # Analytics
     get_analytics_summary_controller,
 )
@@ -38,6 +43,7 @@ from src.domain.db_queries import (
     SessionQueries,
     TranscriptQueries,
     VocabularyQueries,
+    ExerciseProgressQueries,
 )
 
 __all__ = [
@@ -59,11 +65,15 @@ __all__ = [
     "get_due_vocab_cards_controller",
     "review_vocab_cards_controller",
     "get_vocab_stats_controller",
+    "update_exercise_progress_controller",
+    "get_exercise_progress_controller",
+    "list_exercise_progress_controller",
+    "get_exercise_progress_summary_controller",
     "get_analytics_summary_controller",
     # Queries
     "UserQueries",
     "SessionQueries",
     "TranscriptQueries",
     "VocabularyQueries",
+    "ExerciseProgressQueries",
 ]
-
