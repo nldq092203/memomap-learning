@@ -10,8 +10,10 @@ from typing import Any, Literal
 
 from sqlalchemy.orm import Session
 
+from src.api.errors import NotFoundError
 from src.infra.db.orm import VocabularyCardORM
 from src.domain.db_queries import VocabularyQueries
+from src.domain.vocabulary_mongo import MongoVocabularyRepository
 
 
 Grade = Literal["again", "hard", "good", "easy"]
@@ -246,3 +248,109 @@ class SRSService:
         self.db.flush()
         return updated_cards
 
+
+class MongoSRSService:
+    """SRS service for Mongo-backed vocabulary cards."""
+
+    def __init__(self, repository: MongoVocabularyRepository | None = None):
+        self.repository = repository or MongoVocabularyRepository()
+        self.model = FSRSModel()
+
+    def calculate_next_review(
+        self,
+        card: dict[str, Any],
+        grade: Grade,
+        now: datetime | None = None,
+    ) -> dict[str, Any]:
+        """Calculate next review stats for a Mongo card document."""
+        now = now or datetime.now(timezone.utc)
+        interval_days = int(card.get("interval_days") or 0)
+        ease = int(card.get("ease") or 250)
+        reps = int(card.get("reps") or 0)
+        lapses = int(card.get("lapses") or 0)
+        streak_correct = int(card.get("streak_correct") or 0)
+
+        state = FSRSState(
+            stability=float(interval_days) if interval_days > 0 else 1.0,
+            difficulty=ease / 100.0 if ease > 0 else 0.5,
+            last_review_at=card.get("last_reviewed_at"),
+            last_interval=float(interval_days),
+            reps=reps,
+            lapses=lapses,
+            last_grade=card.get("last_grade"),
+        )
+
+        new_state = self.model.review(state, grade, now)
+        if grade == "again":
+            status = "learning"
+        elif reps == 0:
+            status = "learning"
+        elif new_state.stability >= 21:
+            status = "review"
+        else:
+            status = "learning"
+
+        next_due_at = now + timedelta(seconds=new_state.stability * 86400)
+        next_streak = streak_correct + 1 if grade in ("good", "easy") else 0
+
+        return {
+            "status": status,
+            "next_due_at": next_due_at,
+            "last_reviewed_at": now,
+            "interval_days": int(new_state.stability),
+            "ease": int(new_state.difficulty * 100),
+            "reps": new_state.reps,
+            "lapses": new_state.lapses,
+            "streak_correct": next_streak,
+            "last_grade": grade,
+        }
+
+    def review_card(
+        self,
+        *,
+        user_id: str,
+        card_id: str,
+        grade: Grade,
+        now: datetime | None = None,
+    ) -> dict[str, Any]:
+        """Review one card, update its SRS state, and append review history."""
+        card = self.repository.get_card_document(user_id=user_id, card_id=card_id)
+        next_state = self.calculate_next_review(card, grade, now=now)
+        review = self.repository.record_review(
+            user_id=user_id,
+            card_id=card_id,
+            grade=grade,
+            next_state=next_state,
+        )
+        updated_card = self.repository.get_card(user_id=user_id, card_id=card_id)
+        return {
+            "card": updated_card,
+            "review": review,
+        }
+
+    def batch_review(
+        self,
+        reviews: list[tuple[str, Grade]],
+        user_id: str,
+    ) -> dict[str, Any]:
+        """Process a batch of Mongo card reviews."""
+        reviewed_cards: list[dict[str, Any]] = []
+        review_events: list[dict[str, Any]] = []
+
+        for card_id, grade in reviews:
+            try:
+                result = self.review_card(
+                    user_id=user_id,
+                    card_id=card_id,
+                    grade=grade,
+                )
+            except NotFoundError:
+                continue
+            reviewed_cards.append(result["card"])
+            review_events.append(result["review"])
+
+        return {
+            "updated_count": len(reviewed_cards),
+            "cards": reviewed_cards,
+            "reviews": review_events,
+        }

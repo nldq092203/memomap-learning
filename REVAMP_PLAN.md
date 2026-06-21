@@ -1370,6 +1370,30 @@ Repository behavior:
 - List queries are bounded and support search/filter inputs needed by Vocabulaire.
 - Existing SQL `/api/web/vocab` route is intentionally unchanged. Switching writes/reads to Mongo remains a later compatibility/backfill step (`REV-208` to `REV-209`, then `REV-505`).
 
+#### REV-207 Implementation Note
+
+Status: Completed backend foundation.
+
+Changes made:
+
+- Added `MongoSRSService` in `backend/src/domain/services/srs.py`.
+- Reused the existing `FSRSModel` and `FSRSState` so SQL and Mongo review scheduling stay behaviorally aligned.
+- Added a raw-card accessor in `MongoVocabularyRepository` for backend services.
+- Updated Mongo review serialization so nested previous/next SRS states are JSON-safe.
+
+Mongo review behavior:
+
+- Reads current card SRS state from `vocab_cards`.
+- Calculates next state in application memory with the shared FSRS model.
+- Updates current card state in `vocab_cards`.
+- Inserts append-only review history into `vocab_reviews`.
+- Batch review skips missing cards, matching the existing SQL batch behavior.
+
+Current scope:
+
+- Existing SQL `/api/web/vocab:review-batch` route is intentionally unchanged.
+- Mongo SRS will be wired through the compatibility/switch layer in later tickets.
+
 ### Phase 0: Discovery And Guardrails
 
 #### REV-001: Audit Current Routes And Navigation

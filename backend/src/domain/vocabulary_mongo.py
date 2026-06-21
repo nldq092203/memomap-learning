@@ -39,6 +39,9 @@ def serialize_vocab_review(doc: dict[str, Any]) -> dict[str, Any]:
     payload["card_id"] = str(payload["card_id"])
     if isinstance(payload.get("reviewed_at"), datetime):
         payload["reviewed_at"] = payload["reviewed_at"].isoformat()
+    for state_key in ("previous_state", "next_state"):
+        if isinstance(payload.get(state_key), dict):
+            payload[state_key] = _json_safe_state(payload[state_key])
     return payload
 
 
@@ -112,6 +115,10 @@ class MongoVocabularyRepository:
     def get_card(self, *, user_id: str, card_id: str) -> dict[str, Any]:
         doc = self._get_card_doc(user_id=user_id, card_id=card_id)
         return serialize_vocab_card(doc)
+
+    def get_card_document(self, *, user_id: str, card_id: str) -> dict[str, Any]:
+        """Return a raw Mongo card document for backend services."""
+        return self._get_card_doc(user_id=user_id, card_id=card_id)
 
     def update_card(
         self,
@@ -484,6 +491,14 @@ def _extract_srs_state(card: dict[str, Any]) -> dict[str, Any]:
         "streak_correct": card.get("streak_correct"),
         "last_grade": card.get("last_grade"),
     }
+
+
+def _json_safe_state(state: dict[str, Any]) -> dict[str, Any]:
+    payload = dict(state)
+    for key in ("next_due_at", "last_reviewed_at"):
+        if isinstance(payload.get(key), datetime):
+            payload[key] = payload[key].isoformat()
+    return payload
 
 
 __all__ = [
