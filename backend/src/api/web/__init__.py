@@ -22,6 +22,7 @@ from src.api.web.progress import (
     progress_list_update,
     progress_summary,
 )
+from src.api.web.catalog import catalog_list_exercises
 from src.api.web.ai import (
     ai_chat,
     web_ai_assist,
@@ -130,6 +131,13 @@ web_bp.add_url_rule(
 web_bp.add_url_rule(
     "/progress/<exercise_id>",
     view_func=progress_detail,
+    methods=["GET"],
+)
+
+# ==================== Exercise Catalog ====================
+web_bp.add_url_rule(
+    "/catalog/exercises",
+    view_func=catalog_list_exercises,
     methods=["GET"],
 )
 

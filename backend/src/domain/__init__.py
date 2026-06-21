@@ -34,6 +34,8 @@ from src.domain.controllers import (
     get_exercise_progress_controller,
     list_exercise_progress_controller,
     get_exercise_progress_summary_controller,
+    # Exercise catalog
+    list_exercise_catalog_controller,
     # Analytics
     get_analytics_summary_controller,
 )
@@ -69,6 +71,7 @@ __all__ = [
     "get_exercise_progress_controller",
     "list_exercise_progress_controller",
     "get_exercise_progress_summary_controller",
+    "list_exercise_catalog_controller",
     "get_analytics_summary_controller",
     # Queries
     "UserQueries",

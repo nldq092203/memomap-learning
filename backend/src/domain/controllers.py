@@ -19,6 +19,7 @@ from src.domain.db_queries import (
 )
 from src.domain.errors import ResourceNotFoundError, ValidationError
 from src.domain.services.analytics import AnalyticsService
+from src.domain.services.exercise_catalog import CatalogFilters, ExerciseCatalogService
 from src.domain.services.srs import SRSService
 from src.utils.constants import LEARNING_LANGS
 
@@ -452,6 +453,37 @@ def get_exercise_progress_summary_controller(
 ) -> dict[str, Any]:
     """Get lightweight progress counts for the current user."""
     return ExerciseProgressQueries.summary_by_user(db, user_id)
+
+
+# ==================== Exercise Catalog Controllers ====================
+
+
+def list_exercise_catalog_controller(
+    db: Session,
+    user_id: str,
+    section: str | None = None,
+    level: str | None = None,
+    source_type: str | None = None,
+    status: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> dict[str, Any]:
+    """Return normalized catalog items with current-user progress."""
+    try:
+        return ExerciseCatalogService().list_catalog(
+            db=db,
+            user_id=user_id,
+            filters=CatalogFilters(
+                section=section,
+                level=level,
+                source_type=source_type,
+                status=status,
+                limit=limit,
+                offset=offset,
+            ),
+        )
+    except ValueError as exc:
+        raise ValidationError(str(exc)) from exc
 
 
 # ==================== Analytics Controllers ====================

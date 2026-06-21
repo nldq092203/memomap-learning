@@ -1302,6 +1302,38 @@ Verification:
 - In-memory SQLAlchemy smoke test passed for create/start/complete/get/list/summary progress flow.
 - Full Flask route-map smoke test is still blocked in this local environment by missing optional runtime dependencies (`azure`, `youtube_transcript_api`, `pymongo`), but progress modules compile and controller behavior is verified.
 
+#### REV-210 To REV-211 Implementation Note
+
+Status: Completed backend foundation.
+
+Changes made:
+
+- Added unified catalog service in `backend/src/domain/services/exercise_catalog.py`.
+- Added catalog controller in `backend/src/domain/controllers.py`.
+- Added authenticated web API endpoint in `backend/src/api/web/catalog.py`.
+- Registered active route:
+  - `GET /api/web/catalog/exercises`
+- Catalog service is provider-based. Adding a future exercise family should mean adding a new provider, then registering it in `ExerciseCatalogService`.
+
+Catalog sources:
+
+- Numbers blueprints as CO `numbers` items.
+- SQL `coce_exercises` as CO/CE `video_podcast` items.
+- Active SQL `delf_test_papers` as `delf_book` items.
+- Speaking-practice topics as PO `oral_prompt` items.
+
+Progress behavior:
+
+- Uses one bulk progress query for all returned `exercise_id` values before status filtering.
+- Returns `status_for_user`, score, accuracy, last opened, and completion metadata per item.
+- Supports bounded filters for section, level, source type, status, limit, and offset.
+- Catalog listing does not fetch GitHub exercise content. High-latency GitHub manifest/content reads stay behind detail endpoints after a user opens a specific exercise/topic.
+
+Verification:
+
+- `python3 -m compileall backend/src` passes.
+- In-memory SQLAlchemy smoke test passed for CO/CE catalog progress merge, completed-status filtering, and DELF level filtering.
+
 ### Phase 0: Discovery And Guardrails
 
 #### REV-001: Audit Current Routes And Navigation
