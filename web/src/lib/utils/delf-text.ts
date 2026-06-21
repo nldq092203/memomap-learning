@@ -1,9 +1,15 @@
 export type DelfTextBlock = {
-  kind: "heading" | "paragraph"
+  kind: "heading" | "paragraph" | "source"
   text: string
 }
 
+function isSourceLine(text: string) {
+  return /^D[’']après\b/i.test(text.trim())
+}
+
 function isLikelyHeading(text: string) {
+  if (isSourceLine(text)) return false
+
   const letters = Array.from(text.matchAll(/\p{L}/gu), (match) => match[0])
   if (letters.length < 3 || text.length > 90) return false
 
@@ -59,6 +65,7 @@ function shouldStartParagraph(current: string, nextLine: string) {
 
   const currentIsHeading = isLikelyHeading(current)
   const nextIsHeading = isLikelyHeading(nextLine)
+  if (isSourceLine(nextLine)) return true
   if (currentIsHeading || nextIsHeading) return currentIsHeading !== nextIsHeading
 
   return current.length > 140 && /[.!?…»]$/.test(current) && /^[A-ZÀ-Ö]/.test(nextLine)
@@ -98,7 +105,7 @@ export function formatDelfReadingText(rawText: string | undefined): DelfTextBloc
   flush()
 
   return paragraphs.map((text) => ({
-    kind: isLikelyHeading(text) ? "heading" : "paragraph",
+    kind: isSourceLine(text) ? "source" : isLikelyHeading(text) ? "heading" : "paragraph",
     text,
   }))
 }

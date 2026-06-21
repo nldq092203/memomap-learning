@@ -82,15 +82,30 @@ export function DocumentComprehensionView({
                   
                   <div className="mx-auto max-w-4xl px-4 py-6 text-slate-800 sm:px-8 sm:py-8 lg:px-10">
                     <div className="space-y-4">
-                      {textBlocks.map((block, blockIdx) => (
-                        block.kind === "heading" ? (
-                          <h5
-                            key={`${block.text}-${blockIdx}`}
-                            className="whitespace-normal text-base font-bold uppercase leading-7 tracking-wide text-slate-950 sm:text-lg"
-                          >
-                            {block.text}
-                          </h5>
-                        ) : (
+                      {textBlocks.map((block, blockIdx) => {
+                        if (block.kind === "heading") {
+                          return (
+                            <h5
+                              key={`${block.text}-${blockIdx}`}
+                              className="whitespace-normal text-base font-bold uppercase leading-7 tracking-wide text-slate-950 sm:text-lg"
+                            >
+                              {block.text}
+                            </h5>
+                          )
+                        }
+
+                        if (block.kind === "source") {
+                          return (
+                            <p
+                              key={`${block.text}-${blockIdx}`}
+                              className="whitespace-normal text-right text-sm italic leading-7 text-slate-500 sm:text-[15px]"
+                            >
+                              {block.text}
+                            </p>
+                          )
+                        }
+
+                        return (
                           <p
                             key={`${block.text}-${blockIdx}`}
                             className="whitespace-normal text-[15px] font-normal leading-8 text-slate-800 sm:text-base"
@@ -98,7 +113,7 @@ export function DocumentComprehensionView({
                             {block.text}
                           </p>
                         )
-                      ))}
+                      })}
                     </div>
                   </div>
 

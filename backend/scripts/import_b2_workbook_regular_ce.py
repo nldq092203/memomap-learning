@@ -21,6 +21,9 @@ import fitz
 from scripts.delf_mcp.draft_service import save_draft
 from scripts.delf_mcp.update_service import update_draft
 from scripts.delf_mcp.validation import validate_content
+from src.shared.delf_practice.content_service import invalidate_delf_content_cache
+from src.shared.delf_practice.github_manager import GitHubDelfManager
+from src.shared.delf_practice.schemas import DelfTestPaper
 from src.shared.delf_practice.test_paper_repository import DelfTestPaperRepository
 
 
@@ -125,6 +128,7 @@ def _clean_line(line: str) -> str:
     for bad in ("ç_j", "Si)", "(□)", "(a)", "( J)", "( j)", "(ja)", "(EJ)", "(gj)", "(f£j)"):
         line = line.replace(bad, "□")
     line = re.sub(r"^[•■*«<>\\–—\s]+", "", line)
+    line = re.sub(r"^(?:0|O|Q|f\])\s+(?=[A-ZÀ-Ö])", "", line)
     line = re.sub(
         r"[>/►.\s]*\d(?:[,.]\d)?\s*p(?:oint|aint).*$",
         "",
@@ -230,7 +234,10 @@ def _parse_questions(question_text: str) -> list[dict[str, Any]]:
 def _clean_document_text(text: str) -> str:
     raw_lines = _repair_pdf_line_breaks(_extract_lines(text))
     lines: list[str] = []
-    skip_lines = {"X", "i", "l2", "J", "I J", "l J", "k J", "V", ">", "KI", "LJ", "L J", "—", "Je m'entraîne"}
+    skip_lines = {
+        "X", "i", "l2", "J", "I J", "l J", "k J", "V", ">", "KI", "LJ", "L J", "L /", "—",
+        "Je m'entraîne",
+    }
     skip_fragments = (
         "http://",
         "https://",
@@ -267,6 +274,15 @@ def _clean_document_text(text: str) -> str:
         if normalized.startswith("d'apres ") or normalized.startswith("d’apres "):
             break
         if normalized.startswith("certaines phrases comportent des guillemets"):
+            lines.pop()
+            break
+        if normalized.startswith("qui est plutot favorable"):
+            lines.pop()
+            break
+        if normalized.startswith("pour chaque extrait de temoignage"):
+            lines.pop()
+            break
+        if normalized.startswith("associez les enonces"):
             lines.pop()
             break
         if "repondre aux questions type delf" in normalized:
@@ -321,9 +337,44 @@ def _clean_document_text(text: str) -> str:
         "surlignés (1 à 5)": "surlignés (1 à 5)",
         "prix I": "prix !",
         "\nJe ne comprends pas la politique.": "\n« Je ne comprends pas la politique.",
+        "plate forme": "plateforme",
+        "Asso ciation": "Association",
+        "pré senter": "présenter",
+        "pré\nsenter": "présenter",
+        "l’exa men": "l’examen",
+        "collabora teurs": "collaborateurs",
+        "acces sible": "accessible",
+        "parti culièrement": "particulièrement",
+        "parti\nculièrement": "particulièrement",
+        "Lidéal": "L’idéal",
+        "appii bancaire": "appli bancaire",
+        "vole'mon": "vole mon",
+        "I eolien": "l’éolien",
+        "necessite d avoir des energies": "nécessité d’avoir des énergies",
+        "nécessite d avoir des energies": "nécessité d’avoir des énergies",
+        "necessité d avoir des energies": "nécessité d’avoir des énergies",
+        "Je suis bien d accord": "Je suis bien d’accord",
+        "L’école a la maison": "L’école à la maison",
+        "pourguoi": "pourquoi",
+        "Pourguoi": "Pourquoi",
+        "Etpourgue": "Et pour que",
+        " gui ": " qui ",
+        " gu'elle": " qu’elle",
+        " xxie ": " XXIe ",
+        "6°": "6e",
+        "lefaire": "le faire",
+        "A la fin": "À la fin",
+        "A un âge": "À un âge",
+        "Etudier": "Étudier",
+        "Je m’entraîne": "",
+        "Je m'entraîne": "",
+        "|J ": "",
+        " Q L’accompagnement": " L’accompagnement",
     }
     for bad, good in replacements.items():
         cleaned = cleaned.replace(bad, good)
+    cleaned = re.sub(r"\n(?:Je m'entraîne|Je m’entraîne)\s*", "\n", cleaned)
+    cleaned = re.sub(r"\n(?:0|O|Q|f\])\s+(?=[A-ZÀ-Ö])", "\n", cleaned)
     cleaned = re.sub(
         r"\n(?:L ?J\n)?(?:Bernard\nCatherine|Saloua\nBernadette|Abdoula)\s*$",
         "",
@@ -353,6 +404,115 @@ def _finalize_document_text(text: str) -> str:
     return text.strip()
 
 
+def _normalized_for_match(text: str) -> str:
+    text = _strip_accents(text).lower()
+    text = re.sub(r"[^\w\s]", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _is_source_line(line: str) -> bool:
+    normalized = _strip_accents(line).lower()
+    return normalized.startswith("d'apres ") or normalized.startswith("d’apres ")
+
+
+def _is_intro_line(line: str) -> bool:
+    return (
+        line.startswith("Vous lisez ")
+        or line.startswith("Lisez cet article")
+    )
+
+
+def _is_person_heading(line: str) -> bool:
+    if len(line) > 28 or re.search(r"[.!?;:»«]", line):
+        return False
+    words = line.split()
+    if not 1 <= len(words) <= 3:
+        return False
+    return all(word[:1].isupper() for word in words if word)
+
+
+def _remove_repeated_article_title(lines: list[str], title: str, source_part: str) -> list[str]:
+    if source_part not in {"A", "B"}:
+        return lines
+
+    start = 1 if lines and _is_intro_line(lines[0]) else 0
+    title_key = _normalized_for_match(title)
+    if not title_key:
+        return lines
+
+    best_count = 0
+    for count in range(1, min(5, len(lines) - start) + 1):
+        candidate = _normalized_for_match(" ".join(lines[start : start + count]))
+        if not candidate:
+            continue
+        if candidate == title_key:
+            best_count = count
+            break
+        if candidate in title_key and len(candidate) >= min(16, len(title_key)):
+            best_count = count
+            continue
+        if title_key in candidate and len(candidate) <= len(title_key) + 80:
+            best_count = count
+            continue
+
+    if best_count:
+        return lines[:start] + lines[start + best_count :]
+
+    return lines
+
+
+def _format_document_paragraphs(text: str, *, title: str, source_part: str) -> str:
+    raw_lines = [line.strip() for line in text.splitlines() if line.strip()]
+    raw_lines = [line for line in raw_lines if line not in {"J", "I J", "l J", "k J", "L J", "L /", "—", ">"}]
+    lines = _remove_repeated_article_title(raw_lines, title, source_part)
+
+    paragraphs: list[str] = []
+    current = ""
+
+    def flush() -> None:
+        nonlocal current
+        cleaned = re.sub(r"\s+", " ", current).strip()
+        if cleaned:
+            paragraphs.append(cleaned)
+        current = ""
+
+    for line in lines:
+        if _is_source_line(line):
+            flush()
+            paragraphs.append(line)
+            continue
+
+        if _is_person_heading(line):
+            flush()
+            paragraphs.append(line)
+            continue
+
+        if current and source_part in {"A", "B"} and _is_intro_line(current):
+            flush()
+
+        if (
+            current
+            and len(current) >= 170
+            and re.search(r"[.!?…»]$", current)
+            and re.match(r"^[A-ZÀ-Ö«]", line)
+        ):
+            flush()
+
+        if (
+            current
+            and source_part == "C"
+            and len(current) >= 40
+            and re.search(r"[?»]$", current)
+            and re.match(r"^[A-ZÀ-Ö0-9«]", line)
+        ):
+            flush()
+
+        current = f"{current} {line}".strip() if current else line
+
+    flush()
+    return "\n\n".join(paragraphs)
+
+
 def build_paper(spec: CeExerciseSpec, doc: fitz.Document) -> dict[str, Any]:
     raw_text = _page_text(doc, spec.pages)
     scoped = _slice_from_marker(raw_text, spec.document_start)
@@ -362,6 +522,12 @@ def build_paper(spec: CeExerciseSpec, doc: fitz.Document) -> dict[str, Any]:
         raise ValueError(f"{spec.test_id} question marker not found")
 
     document_text = _finalize_document_text(_clean_document_text(scoped[:question_index]))
+    document_title = spec.title.split(" : ", 1)[-1]
+    document_text = _format_document_paragraphs(
+        document_text,
+        title=document_title,
+        source_part=spec.source_part,
+    )
     question_text = scoped[question_index:]
     questions = _parse_questions(question_text)
     if len(questions) != len(spec.answers):
@@ -407,7 +573,7 @@ def build_paper(spec: CeExerciseSpec, doc: fitz.Document) -> dict[str, Any]:
                 "instruction": "Lisez le document puis répondez aux questions.",
                 "document": {
                     "type": "article" if spec.source_part in {"A", "B"} else "forum",
-                    "title": spec.title.split(" : ", 1)[-1],
+                    "title": document_title,
                     "content": document_text,
                 },
                 "questions": subquestions,
@@ -419,7 +585,7 @@ def build_paper(spec: CeExerciseSpec, doc: fitz.Document) -> dict[str, Any]:
     }
 
 
-def upsert_paper(content: dict[str, Any], *, dry_run: bool) -> dict[str, Any]:
+def upsert_paper(content: dict[str, Any], *, dry_run: bool, update_active: bool) -> dict[str, Any]:
     validation = validate_content(content)
     if not validation.get("valid"):
         return {
@@ -439,6 +605,33 @@ def upsert_paper(content: dict[str, Any], *, dry_run: bool) -> dict[str, Any]:
     repo = DelfTestPaperRepository()
     existing = repo.get_by_test_id(content["test_id"], LEVEL, VARIANT, "CE")
     if existing:
+        if existing.status == "active" and update_active:
+            paper_model = DelfTestPaper.model_validate(content)
+            GitHubDelfManager().create_or_update_file(
+                file_path=existing.github_path,
+                content=paper_model.model_dump_json(indent=2, by_alias=True).encode("utf-8"),
+                commit_message=f"chore(delf): update active B2 CE {existing.test_id}",
+            )
+            repo.update(
+                existing.id,
+                exercise_count=len(paper_model.exercises),
+                audio_filename=paper_model.audio_filename,
+            )
+            invalidate_delf_content_cache(
+                level=existing.level,
+                variant=existing.variant,
+                section=existing.section,
+                test_id=existing.test_id,
+            )
+            return {
+                "success": True,
+                "draft_id": str(existing.id),
+                "test_id": existing.test_id,
+                "status": "active",
+                "github_path": existing.github_path,
+                "mode": "update_active",
+            }
+
         result = update_draft(draft_id=str(existing.id), content=content)
         result["mode"] = "update"
         return result
@@ -452,6 +645,11 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument(
+        "--update-active",
+        action="store_true",
+        help="Overwrite active B2 CE GitHub JSON after validation instead of requiring draft status.",
+    )
     parser.add_argument(
         "--out",
         default=".local/delf-extracts/b2-regular-ce-import-summary.json",
@@ -477,7 +675,11 @@ def main() -> int:
             try:
                 content = build_paper(spec, doc)
                 built_papers.append(content)
-                result = upsert_paper(content, dry_run=args.dry_run)
+                result = upsert_paper(
+                    content,
+                    dry_run=args.dry_run,
+                    update_active=args.update_active,
+                )
                 result["test_id"] = spec.test_id
                 result["title"] = spec.title
                 result["section"] = "CE"
