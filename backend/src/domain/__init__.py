@@ -47,6 +47,7 @@ from src.domain.db_queries import (
     VocabularyQueries,
     ExerciseProgressQueries,
 )
+from src.domain.vocabulary_compat import VocabularyCompatibilityService
 
 __all__ = [
     # Controllers
@@ -79,4 +80,5 @@ __all__ = [
     "TranscriptQueries",
     "VocabularyQueries",
     "ExerciseProgressQueries",
+    "VocabularyCompatibilityService",
 ]

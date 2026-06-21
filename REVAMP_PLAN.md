@@ -1394,6 +1394,33 @@ Current scope:
 - Existing SQL `/api/web/vocab:review-batch` route is intentionally unchanged.
 - Mongo SRS will be wired through the compatibility/switch layer in later tickets.
 
+#### REV-208 Implementation Note
+
+Status: Completed backend foundation.
+
+Changes made:
+
+- Added `VocabularyCompatibilityService` in `backend/src/domain/vocabulary_compat.py`.
+- Exported the service from `backend/src/domain/__init__.py`.
+
+Compatibility behavior:
+
+- New vocabulary writes go to Mongo through `MongoVocabularyRepository`.
+- Reads can resolve prefixed ids:
+  - `mongo:<id>`
+  - `sql:<id>`
+- Unprefixed ids try Mongo first, then SQL legacy fallback.
+- List and due-list responses merge Mongo cards with SQL legacy cards into a unified card shape.
+- SQL cards are mapped into Mongo-compatible fields where possible:
+  - `word` becomes `text`.
+  - `due_at` becomes `next_due_at`.
+  - `extra.source_context`, `extra.examples`, and `extra.level` are preserved when present.
+
+Current scope:
+
+- Existing `/api/web/vocab` routes remain SQL-backed until the switch ticket.
+- This service is the bridge for `REV-209` backfill and the later Mongo write-path switch.
+
 ### Phase 0: Discovery And Guardrails
 
 #### REV-001: Audit Current Routes And Navigation
