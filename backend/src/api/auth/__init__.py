@@ -12,7 +12,7 @@ High-level frontend flow:
 1. Client completes Google OAuth authorization code flow and obtains a
    short-lived `code`.
 2. Client calls `POST /api/auth/token` with that code.
-3. Backend exchanges the code with Google, stores Google OAuth tokens,
+3. Backend exchanges the code with Google, stores Google auth metadata,
    finds/creates the user, and returns an application JWT.
 4. Client stores the JWT and sends it in all subsequent API calls:
    `Authorization: Bearer <jwt>`.
@@ -43,8 +43,9 @@ def create_token():
     POST /auth/token
 
     Exchange a **Google OAuth authorization code** for an application **JWT**.
-    The backend also stores the Google access + refresh token pair for
-    later Drive refreshes.
+    The backend stores Google auth metadata for account continuity. Legacy
+    Drive-backed endpoints may use stored OAuth tokens while they remain
+    available during the revamp.
 
     Authentication:
     - This endpoint is **public** (no JWT required).
@@ -150,15 +151,6 @@ def create_token():
                 google_tokens,
                 existing_refresh_token=existing_refresh_token,
             )
-            if not google_auth.get("refresh_token"):
-                return (
-                    ResponseBuilder()
-                    .error(
-                        message="Google offline access was not granted. Please sign in with Google again.",
-                        status_code=401,
-                    )
-                    .build()
-                )
             UserQueries.update_google_oauth(
                 db,
                 user,

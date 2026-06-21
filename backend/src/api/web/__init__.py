@@ -1,19 +1,14 @@
 """
 Web API Blueprint - Full Learning API.
 
-Provides all learning endpoints for web application:
-- Sessions
-- Transcripts
+Provides all active learning endpoints for web application:
 - Vocabulary (with SRS)
-- Analytics
 - AI
 - Numbers Dictation
 """
 
 from flask import Blueprint
 
-from src.api.web.sessions import sessions_list_create, sessions_detail
-from src.api.web.transcripts import transcripts_list_create, transcripts_detail
 from src.api.web.vocab import (
     vocab_list_create,
     vocab_detail,
@@ -22,7 +17,6 @@ from src.api.web.vocab import (
     vocab_review_batch,
     vocab_stats,
 )
-from src.api.web.analytics import analytics_summary
 from src.api.web.ai import (
     ai_chat,
     web_ai_assist,
@@ -39,23 +33,7 @@ from src.api.web.numbers import (
     numbers_get_summary,
     numbers_audio_stream,
 )
-from src.api.web.numbers_admin import (
-    numbers_admin_generate,
-    numbers_admin_list,
-    numbers_admin_cleanup_manifest,
-    numbers_admin_mark_guest_preview_manifest,
-)
-from src.api.web.audio_lessons import (
-    audio_lessons_list,
-    audio_lesson_transcript,
-    audio_lesson_stream,
-    audio_lesson_create,
-    audio_lesson_generate_tts,
-    audio_lesson_generate_conversation_tts,
-    audio_lesson_save_questions,
-)
 from src.api.web.speaking_practice import (
-    speaking_practice_create,
     speaking_practice_list_topics,
     speaking_practice_get_manifest,
     speaking_practice_get_content,
@@ -94,35 +72,12 @@ from src.api.web.delf_practice import (
 )
 from src.api.web.community import community_list_create, community_detail
 from src.api.errors import register_error_handlers
+from src.api.web.legacy import register_legacy_web_routes
 
 
 # Web blueprint
 web_bp = Blueprint("web", __name__)
 register_error_handlers(web_bp)
-
-# ==================== Sessions ====================
-web_bp.add_url_rule(
-    "/sessions",
-    view_func=sessions_list_create,
-    methods=["GET", "POST"],
-)
-web_bp.add_url_rule(
-    "/sessions/<session_id>",
-    view_func=sessions_detail,
-    methods=["GET"],
-)
-
-# ==================== Transcripts ====================
-web_bp.add_url_rule(
-    "/transcripts",
-    view_func=transcripts_list_create,
-    methods=["GET", "POST"],
-)
-web_bp.add_url_rule(
-    "/transcripts/<transcript_id>",
-    view_func=transcripts_detail,
-    methods=["GET", "PUT", "DELETE"],
-)
 
 # ==================== Vocabulary ====================
 web_bp.add_url_rule(
@@ -153,13 +108,6 @@ web_bp.add_url_rule(
 web_bp.add_url_rule(
     "/vocab/stats",
     view_func=vocab_stats,
-    methods=["GET"],
-)
-
-# ==================== Analytics ====================
-web_bp.add_url_rule(
-    "/analytics",
-    view_func=analytics_summary,
     methods=["GET"],
 )
 
@@ -227,73 +175,7 @@ web_bp.add_url_rule(
     methods=["GET"],
 )
 
-# ==================== Numbers Dictation (Admin) ====================
-web_bp.add_url_rule(
-    "/numbers/admin/datasets",
-    view_func=numbers_admin_generate,
-    methods=["POST"],
-)
-web_bp.add_url_rule(
-    "/numbers/admin/datasets",
-    view_func=numbers_admin_list,
-    methods=["GET"],
-)
-web_bp.add_url_rule(
-    "/numbers/admin/manifests:cleanup",
-    view_func=numbers_admin_cleanup_manifest,
-    methods=["POST"],
-)
-web_bp.add_url_rule(
-    "/numbers/admin/manifests:guest-preview",
-    view_func=numbers_admin_mark_guest_preview_manifest,
-    methods=["POST"],
-)
-
-# ==================== Audio Lessons (Drive-backed) ====================
-web_bp.add_url_rule(
-    "/audio-lessons",
-    view_func=audio_lessons_list,
-    methods=["GET"],
-)
-web_bp.add_url_rule(
-    "/audio-lessons",
-    view_func=audio_lesson_create,
-    methods=["POST"],
-)
-web_bp.add_url_rule(
-    "/audio-lessons/tts",
-    view_func=audio_lesson_generate_tts,
-    methods=["POST"],
-)
-web_bp.add_url_rule(
-    "/audio-lessons/conversation",
-    view_func=audio_lesson_generate_conversation_tts,
-    methods=["POST"],
-)
-web_bp.add_url_rule(
-    "/audio-lessons/<lesson_id>/transcript",
-    view_func=audio_lesson_transcript,
-    methods=["GET"],
-)
-web_bp.add_url_rule(
-    "/audio-lessons/<lesson_id>/audio",
-    view_func=audio_lesson_stream,
-    methods=["GET"],
-)
-web_bp.add_url_rule(
-    "/audio-lessons/<lesson_id>/questions",
-    view_func=audio_lesson_save_questions,
-    methods=["POST"],
-)
-
 # ==================== Speaking Practice ====================
-# Create (Drive-backed)
-web_bp.add_url_rule(
-    "/speaking-practice/sets",
-    view_func=speaking_practice_create,
-    methods=["POST"],
-)
-
 # Retrieval (GitHub-backed)
 web_bp.add_url_rule(
     "/speaking-practice/topics",
@@ -381,8 +263,6 @@ web_bp.add_url_rule(
     methods=["POST"],
 )
 
-__all__ = ["web_bp"]
-
 # ==================== DELF Exam Practice (GitHub + DB backed) ====================
 # User endpoints
 web_bp.add_url_rule(
@@ -459,3 +339,9 @@ web_bp.add_url_rule(
     view_func=community_detail,
     methods=["PUT", "DELETE"],
 )
+
+# Legacy routes remain registered during the revamp, but new revamp APIs
+# should not import from or depend on these modules.
+register_legacy_web_routes(web_bp)
+
+__all__ = ["web_bp"]
