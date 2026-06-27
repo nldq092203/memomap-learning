@@ -2956,6 +2956,28 @@ Dependencies:
 
 - REV-005, REV-106, REV-601, REV-602, REV-603, REV-605, REV-706.
 
+#### REV-707A Implementation Note
+
+Status: Completed backend write shutdown.
+
+Changes made:
+
+- Added a shared `410 Gone` response for disabled legacy write routes in `backend/src/api/web/legacy.py`.
+- Disabled legacy session creation: `POST /api/web/sessions`.
+- Disabled legacy transcript mutations: `POST /api/web/transcripts`, `PUT /api/web/transcripts/<transcript_id>`, and `DELETE /api/web/transcripts/<transcript_id>`.
+- Disabled Drive-backed audio lesson writes: `POST /api/web/audio-lessons`, `POST /api/web/audio-lessons/tts`, `POST /api/web/audio-lessons/conversation`, and `POST /api/web/audio-lessons/<lesson_id>/questions`.
+- Disabled Drive-backed numbers admin mutations: `POST /api/web/numbers/admin/datasets`, `POST /api/web/numbers/admin/manifests:cleanup`, and `POST /api/web/numbers/admin/manifests:guest-preview`.
+- Disabled Drive-backed speaking practice creation: `POST /api/web/speaking-practice/sets`.
+
+Temporary retention:
+
+- Legacy read routes remain registered for now where they may still be needed during cleanup: `GET /sessions`, `GET /sessions/<session_id>`, `GET /transcripts`, `GET /transcripts/<transcript_id>`, `GET /analytics`, `GET /audio-lessons`, audio lesson read/stream endpoints, and `GET /numbers/admin/datasets`.
+- GitHub-backed revamp/admin content publishing routes are unchanged.
+
+Next deletion point:
+
+- After frontend calls and production traffic confirm no dependency on these disabled writes, delete the route modules, controllers, SQL helpers, Drive helpers, and stale client calls listed in `REV-005`.
+
 ### Suggested First Sprint
 
 Start backend-first so legacy dependencies are understood before UI routes are hidden:

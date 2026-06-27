@@ -7,27 +7,59 @@ by new revamp features.
 
 from __future__ import annotations
 
+from typing import Any, Callable
+
 from flask import Blueprint
 
 from src.api.web.analytics import analytics_summary
 from src.api.web.audio_lessons import (
-    audio_lesson_create,
-    audio_lesson_generate_conversation_tts,
-    audio_lesson_generate_tts,
-    audio_lesson_save_questions,
     audio_lesson_stream,
     audio_lesson_transcript,
     audio_lessons_list,
 )
-from src.api.web.numbers_admin import (
-    numbers_admin_cleanup_manifest,
-    numbers_admin_generate,
-    numbers_admin_list,
-    numbers_admin_mark_guest_preview_manifest,
-)
+from src.api.web.numbers_admin import numbers_admin_list
 from src.api.web.sessions import sessions_detail, sessions_list_create
-from src.api.web.speaking_practice import speaking_practice_create
 from src.api.web.transcripts import transcripts_detail, transcripts_list_create
+from src.utils.response_builder import ResponseBuilder
+
+
+LEGACY_WRITE_DISABLED_MESSAGE = (
+    "This legacy write flow has been disabled during the revamp."
+)
+
+
+def _legacy_write_disabled_handler(flow: str) -> Callable[..., Any]:
+    """Build a uniquely named handler for a disabled legacy write route."""
+
+    def handler(*args: Any, **kwargs: Any):
+        del args, kwargs
+        return (
+            ResponseBuilder()
+            .error(
+                error={"code": "legacy_write_disabled", "flow": flow},
+                message=LEGACY_WRITE_DISABLED_MESSAGE,
+                status_code=410,
+            )
+            .build()
+        )
+
+    handler.__name__ = f"{flow}_disabled"
+    return handler
+
+
+def _add_disabled_legacy_write(
+    web_bp: Blueprint,
+    rule: str,
+    *,
+    endpoint: str,
+    methods: list[str],
+) -> None:
+    web_bp.add_url_rule(
+        rule,
+        endpoint=endpoint,
+        view_func=_legacy_write_disabled_handler(endpoint),
+        methods=methods,
+    )
 
 
 def register_legacy_web_routes(web_bp: Blueprint) -> None:
@@ -37,7 +69,13 @@ def register_legacy_web_routes(web_bp: Blueprint) -> None:
     web_bp.add_url_rule(
         "/sessions",
         view_func=sessions_list_create,
-        methods=["GET", "POST"],
+        methods=["GET"],
+    )
+    _add_disabled_legacy_write(
+        web_bp,
+        "/sessions",
+        endpoint="legacy_sessions_create",
+        methods=["POST"],
     )
     web_bp.add_url_rule(
         "/sessions/<session_id>",
@@ -49,12 +87,24 @@ def register_legacy_web_routes(web_bp: Blueprint) -> None:
     web_bp.add_url_rule(
         "/transcripts",
         view_func=transcripts_list_create,
-        methods=["GET", "POST"],
+        methods=["GET"],
+    )
+    _add_disabled_legacy_write(
+        web_bp,
+        "/transcripts",
+        endpoint="legacy_transcripts_create",
+        methods=["POST"],
     )
     web_bp.add_url_rule(
         "/transcripts/<transcript_id>",
         view_func=transcripts_detail,
-        methods=["GET", "PUT", "DELETE"],
+        methods=["GET"],
+    )
+    _add_disabled_legacy_write(
+        web_bp,
+        "/transcripts/<transcript_id>",
+        endpoint="legacy_transcripts_update_delete",
+        methods=["PUT", "DELETE"],
     )
 
     # ==================== Analytics (Legacy) ====================
@@ -65,9 +115,10 @@ def register_legacy_web_routes(web_bp: Blueprint) -> None:
     )
 
     # ==================== Numbers Dictation Admin (Legacy/Drive-backed) ====================
-    web_bp.add_url_rule(
+    _add_disabled_legacy_write(
+        web_bp,
         "/numbers/admin/datasets",
-        view_func=numbers_admin_generate,
+        endpoint="legacy_numbers_admin_generate",
         methods=["POST"],
     )
     web_bp.add_url_rule(
@@ -75,14 +126,16 @@ def register_legacy_web_routes(web_bp: Blueprint) -> None:
         view_func=numbers_admin_list,
         methods=["GET"],
     )
-    web_bp.add_url_rule(
+    _add_disabled_legacy_write(
+        web_bp,
         "/numbers/admin/manifests:cleanup",
-        view_func=numbers_admin_cleanup_manifest,
+        endpoint="legacy_numbers_admin_cleanup_manifest",
         methods=["POST"],
     )
-    web_bp.add_url_rule(
+    _add_disabled_legacy_write(
+        web_bp,
         "/numbers/admin/manifests:guest-preview",
-        view_func=numbers_admin_mark_guest_preview_manifest,
+        endpoint="legacy_numbers_admin_guest_preview_manifest",
         methods=["POST"],
     )
 
@@ -92,19 +145,22 @@ def register_legacy_web_routes(web_bp: Blueprint) -> None:
         view_func=audio_lessons_list,
         methods=["GET"],
     )
-    web_bp.add_url_rule(
+    _add_disabled_legacy_write(
+        web_bp,
         "/audio-lessons",
-        view_func=audio_lesson_create,
+        endpoint="legacy_audio_lesson_create",
         methods=["POST"],
     )
-    web_bp.add_url_rule(
+    _add_disabled_legacy_write(
+        web_bp,
         "/audio-lessons/tts",
-        view_func=audio_lesson_generate_tts,
+        endpoint="legacy_audio_lesson_generate_tts",
         methods=["POST"],
     )
-    web_bp.add_url_rule(
+    _add_disabled_legacy_write(
+        web_bp,
         "/audio-lessons/conversation",
-        view_func=audio_lesson_generate_conversation_tts,
+        endpoint="legacy_audio_lesson_generate_conversation_tts",
         methods=["POST"],
     )
     web_bp.add_url_rule(
@@ -117,16 +173,18 @@ def register_legacy_web_routes(web_bp: Blueprint) -> None:
         view_func=audio_lesson_stream,
         methods=["GET"],
     )
-    web_bp.add_url_rule(
+    _add_disabled_legacy_write(
+        web_bp,
         "/audio-lessons/<lesson_id>/questions",
-        view_func=audio_lesson_save_questions,
+        endpoint="legacy_audio_lesson_save_questions",
         methods=["POST"],
     )
 
     # ==================== Speaking Practice Create (Legacy/Drive-backed) ====================
-    web_bp.add_url_rule(
+    _add_disabled_legacy_write(
+        web_bp,
         "/speaking-practice/sets",
-        view_func=speaking_practice_create,
+        endpoint="legacy_speaking_practice_create",
         methods=["POST"],
     )
 
