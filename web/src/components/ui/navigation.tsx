@@ -26,13 +26,17 @@ import { cn } from "@/lib/utils"
 const primaryNavItems = [
   { label: "Accueil", href: "/", icon: Home, guestAllowed: true },
   { label: "Communauté", href: "/learning/community", icon: MessageSquare, guestAllowed: false },
-  { label: "Vocabulaire", href: "/learning/vocab", icon: BookOpen, guestAllowed: false },
+  { label: "Vocabulaire", href: "/learning/review-hub", icon: BookOpen, guestAllowed: false },
   { label: "Profil", href: "/learning/profile", icon: User, guestAllowed: false },
 ] as const
 
 function isNavItemActive(pathname: string, href: string) {
   if (href === "/") {
     return pathname === "/" || pathname === "/learning"
+  }
+
+  if (href === "/learning/review-hub") {
+    return pathname === href || pathname === "/learning/vocab"
   }
 
   return pathname === href

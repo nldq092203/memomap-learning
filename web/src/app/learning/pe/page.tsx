@@ -10,8 +10,8 @@ export default function PePage() {
       description="Contenu à venir."
       visualIcon={PenLine}
       actions={[]}
-      emptyTitle="Contenu à venir"
-      emptyDescription="Les exercices PE seront ajoutés après."
+      emptyTitle="Fonctionnalité à venir"
+      emptyDescription="Cette section sera ajoutée dans les prochaines mises à jour."
     />
   )
 }

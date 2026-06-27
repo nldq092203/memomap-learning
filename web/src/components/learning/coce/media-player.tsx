@@ -36,19 +36,19 @@ export function MediaPlayer({
   const isAudio = exercise.media_type === "audio"
 
   return (
-    <div className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="rounded-[30px] border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)] p-5 shadow-[0_18px_42px_rgba(74,51,35,0.08)]">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--vintage-muted-ink)]">
             Support
           </p>
-          <h2 className="text-lg font-semibold text-slate-950">
+          <h2 className="text-lg font-semibold text-[var(--vintage-ink)]">
             {isVideo ? "Vidéo d'examen" : "Audio d'examen"}
           </h2>
         </div>
 
         <div className="flex items-center gap-2">
-          <Badge className="rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700 hover:bg-teal-50">
+          <Badge className="rounded-full bg-[var(--vintage-porcelain-mist)] px-3 py-1 text-xs font-semibold text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-porcelain-mist)]">
             {isVideo ? "Vidéo" : "Audio"}
           </Badge>
           {onCollapseToggle && (
@@ -57,7 +57,7 @@ export function MediaPlayer({
               variant="outline"
               size="icon"
               onClick={onCollapseToggle}
-              className="rounded-full border-slate-200 text-slate-600 hover:bg-slate-100"
+              className="rounded-full border-[var(--vintage-soft-sandstone)] text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-porcelain-mist)]"
               aria-label={isCollapsed ? "Ouvrir le panneau média" : "Réduire le panneau média"}
             >
               {isCollapsed ? <MonitorPlay className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
@@ -66,7 +66,7 @@ export function MediaPlayer({
         </div>
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-[24px] border border-slate-200 bg-slate-950">
+      <div className="mt-4 overflow-hidden rounded-[24px] border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-ink)]">
         {isVideo && exercise.video_url && (
           <div className="relative aspect-video w-full">
             <iframe
@@ -80,10 +80,10 @@ export function MediaPlayer({
         )}
 
         {isAudio && exercise.audio_url && (
-          <div className="space-y-4 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-5 text-white">
+          <div className="space-y-4 bg-gradient-to-br from-[#4a3323] via-[#5f4634] to-[#3c2b22] p-5 text-white">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-sm text-white/75">
-                <Volume2 className="h-4 w-4 text-teal-300" />
+                <Volume2 className="h-4 w-4 text-[var(--vintage-cream)]" />
                 Lecture interactive
               </div>
               <div className="flex items-center gap-1 text-xs text-white/55">
@@ -99,7 +99,7 @@ export function MediaPlayer({
                   key={index}
                   className={cn(
                     "rounded-full",
-                    index % 4 === 0 ? "bg-teal-300" : "bg-white/55"
+                    index % 4 === 0 ? "bg-[var(--vintage-cream)]" : "bg-white/55"
                   )}
                   style={{ height }}
                 />
@@ -113,7 +113,7 @@ export function MediaPlayer({
         )}
 
         {!exercise.video_url && !exercise.audio_url && (
-          <div className="flex min-h-[180px] items-center justify-center bg-slate-100 p-6 text-center text-sm text-slate-500">
+          <div className="flex min-h-[180px] items-center justify-center bg-[var(--vintage-porcelain-mist)] p-6 text-center text-sm text-[var(--vintage-muted-ink)]">
             Support indisponible pour cet exercice.
           </div>
         )}
@@ -129,15 +129,15 @@ export function MediaPlayer({
           className={cn(
             "rounded-full px-4",
             showTranscript
-              ? "bg-teal-500 text-white hover:bg-teal-500/90"
-              : "border-slate-200 text-slate-700 hover:bg-slate-100"
+              ? "bg-[var(--vintage-desert-rock)] text-white hover:bg-[#8f7763]"
+              : "border-[var(--vintage-soft-sandstone)] text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-porcelain-mist)]"
           )}
         >
           {isLoadingTranscript ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
           {showTranscript ? "Masquer la transcription" : "Afficher la transcription"}
         </Button>
 
-        <div className="flex items-center gap-2 text-sm text-slate-500">
+        <div className="flex items-center gap-2 text-sm text-[var(--vintage-muted-ink)]">
           {isVideo ? <Video className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
           Réécoute libre pendant l'exercice
         </div>

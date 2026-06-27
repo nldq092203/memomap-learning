@@ -20,7 +20,7 @@ export default function CePage() {
         {
           title: "DELF CE",
           description: "Épreuves de lecture DELF.",
-          href: "/learning/delf-practice/A2/tout-public-a2/CE",
+          href: "/learning/delf-practice/A2?section=CE",
           icon: BookOpen,
           label: "DELF",
         },

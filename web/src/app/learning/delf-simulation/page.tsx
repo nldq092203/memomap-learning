@@ -10,8 +10,8 @@ export default function DelfSimulationPage() {
       description="À venir."
       visualIcon={GraduationCap}
       actions={[]}
-      emptyTitle="Next time"
-      emptyDescription="La simulation complète sera ajoutée après."
+      emptyTitle="Fonctionnalité à venir"
+      emptyDescription="Cette section sera ajoutée dans les prochaines mises à jour."
     />
   )
 }

@@ -23,7 +23,7 @@ const PRACTICE_TYPES = [
 
 export function PracticeTypeSelector({ activeType, onSelectType }: PracticeTypeSelectorProps) {
   return (
-    <div className="rounded-[24px] border border-slate-200 bg-white/95 p-2 shadow-sm">
+    <div className="rounded-[24px] border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/95 p-2 shadow-[0_18px_42px_rgba(74,51,35,0.08)]">
       <div
         className="grid gap-2 sm:grid-cols-2"
         role="tablist"
@@ -43,21 +43,21 @@ export function PracticeTypeSelector({ activeType, onSelectType }: PracticeTypeS
               className={cn(
                 "flex items-center gap-3 rounded-[18px] px-4 py-3 text-left transition-all",
                 isActive
-                  ? "bg-teal-500 text-white shadow-sm"
-                  : "bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  ? "bg-[var(--vintage-desert-rock)] text-white shadow-sm"
+                  : "bg-[var(--vintage-porcelain-mist)] text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-cream)] hover:text-[var(--vintage-ink)]"
               )}
             >
               <div
                 className={cn(
                   "flex h-10 w-10 items-center justify-center rounded-2xl transition-colors",
-                  isActive ? "bg-white/20 text-white" : "bg-white text-teal-600"
+                  isActive ? "bg-white/20 text-white" : "bg-[var(--vintage-feather-white)] text-[var(--vintage-desert-rock)]"
                 )}
               >
                 <Icon className="h-5 w-5" />
               </div>
               <div>
                 <p className="text-sm font-semibold">{type.label}</p>
-                <p className={cn("text-xs", isActive ? "text-white/80" : "text-slate-500")}>
+                <p className={cn("text-xs", isActive ? "text-white/80" : "text-[var(--vintage-muted-ink)]")}>
                   {type.description}
                 </p>
               </div>

@@ -2,10 +2,33 @@ from __future__ import annotations
 
 """Schemas for CO/CE practice manifest, transcript and questions files."""
 
+import re
 from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+
+_FIELD_LABEL_RE = re.compile(
+    r"\s+(Nom|Origine|Ville actuelle|Occupation|À propos de moi|Objectif professionnel|"
+    r"Objectif|Adresse|Date|Lieu|Source|Titre)\s*:",
+    re.IGNORECASE,
+)
+
+
+def _format_readable_text(value: str | None) -> str | None:
+    """Normalize long learning text for GitHub storage and frontend display."""
+
+    if value is None:
+        return None
+
+    text = value.replace("\r\n", "\n").replace("\r", "\n")
+    text = "\n".join(re.sub(r"[ \t]+", " ", line).strip() for line in text.split("\n"))
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    text = re.sub(r"\s+Texte\s*:\s*", "\n\nTexte :\n", text, flags=re.IGNORECASE)
+    text = _FIELD_LABEL_RE.sub(r"\n\1 :", text)
+    text = re.sub(r"([.!?])\s+(?=[A-ZÀÂÇÉÈÊËÎÏÔÙÛÜŸ])", r"\1\n", text)
+    return text.strip()
 
 
 class ExerciseTopic(str, Enum):
@@ -61,6 +84,11 @@ class CoCeTranscript(BaseModel):
     audio_filename: str = Field(..., min_length=1)
     audio_mime_type: str = Field(..., min_length=1)
 
+    @field_validator("transcript")
+    @classmethod
+    def normalize_transcript(cls, value: str) -> str:
+        return _format_readable_text(value) or value
+
 
 class CoCeQuestion(BaseModel):
     """Single QCM question."""
@@ -72,6 +100,11 @@ class CoCeQuestion(BaseModel):
     correct_indices: list[int] = Field(default_factory=list)
     explanation: str | None = None
 
+    @field_validator("question", "explanation")
+    @classmethod
+    def normalize_long_text(cls, value: str | None) -> str | None:
+        return _format_readable_text(value)
+
 
 class CoCeQuestionsMeta(BaseModel):
     """Meta section for CO/CE questions file."""
@@ -81,6 +114,11 @@ class CoCeQuestionsMeta(BaseModel):
     titre: str = Field(..., min_length=1)
     consigne: str | None = None
     total_questions: int | None = None
+
+    @field_validator("consigne")
+    @classmethod
+    def normalize_consigne(cls, value: str | None) -> str | None:
+        return _format_readable_text(value)
 
 
 class CoCeQuestionsFile(BaseModel):
@@ -185,5 +223,3 @@ class ExerciseDetail(ExerciseResponse):
     co_github_url: str | None = None
     ce_github_url: str | None = None
     transcript_github_url: str | None = None
-
-

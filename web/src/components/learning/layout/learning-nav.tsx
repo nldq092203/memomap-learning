@@ -41,9 +41,9 @@ const primaryNavItems: NavItem[] = [
   },
   { 
     label: "Vocabulary", 
-    href: "/learning/vocab", 
+    href: "/learning/review-hub", 
     icon: BookOpen,
-    description: "Browse and manage cards",
+    description: "Review and manage cards",
   },
   { 
     label: "Training", 

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { ArrowLeft, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BookSectionSelector, TestList, TestPlayer } from "@/components/learning/delf"
@@ -36,6 +36,7 @@ type ResolvedRoute =
 export default function DelfLevelRoutePage() {
   const params = useParams<{ level: string; slug?: string[] }>()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { isGuest, setShowLoginPrompt } = useGuest()
   const {
     currentTest,
@@ -56,6 +57,10 @@ export default function DelfLevelRoutePage() {
   const [tests, setTests] = useState<DelfTestPaperResponse[]>([])
   const [loadingList, setLoadingList] = useState(false)
   const [loadingTest, setLoadingTest] = useState(false)
+  const preferredSectionRaw = searchParams.get("section")?.toUpperCase()
+  const preferredSection = preferredSectionRaw && isDelfSection(preferredSectionRaw)
+    ? preferredSectionRaw
+    : null
 
   const route = useMemo<ResolvedRoute>(() => {
     const level = params.level?.toUpperCase()
@@ -201,18 +206,21 @@ export default function DelfLevelRoutePage() {
     }
   }, [isGuest, loadTest, resetTest, route, router])
 
-  const commonShell = route.kind === "test" && currentTest
-    ? "min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef8f3_100%)]"
-    : "min-h-screen bg-slate-50"
+  const commonShell = "min-h-screen bg-[#f5eee5]"
+  const commonShellStyle = {
+    backgroundImage: "linear-gradient(180deg, rgba(245,238,229,0.94), rgba(245,238,229,0.98)), url('/UI/map.png')",
+    backgroundPosition: "center top",
+    backgroundSize: "cover",
+  }
 
   if (route.kind === "list") {
     return (
-      <div className={commonShell}>
+      <div className={commonShell} style={commonShellStyle}>
         <div className="mx-auto max-w-6xl px-4 py-6 md:py-8">
           <Button
             type="button"
             variant="ghost"
-            className="mb-6 rounded-full px-3 text-slate-600 hover:bg-white hover:text-slate-900"
+            className="mb-6 rounded-full px-3 text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-feather-white)] hover:text-[var(--vintage-ink)]"
             onClick={() => router.back()}
           >
             <ArrowLeft className="mr-1.5 h-4 w-4" />
@@ -237,12 +245,12 @@ export default function DelfLevelRoutePage() {
 
   if (route.kind === "books") {
     return (
-      <div className={commonShell}>
+      <div className={commonShell} style={commonShellStyle}>
         <div className="mx-auto max-w-6xl px-4 py-6 md:py-8">
           <Button
             type="button"
             variant="ghost"
-            className="mb-6 rounded-full px-3 text-slate-600 hover:bg-white hover:text-slate-900"
+            className="mb-6 rounded-full px-3 text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-feather-white)] hover:text-[var(--vintage-ink)]"
             onClick={() => router.back()}
           >
             <ArrowLeft className="mr-1.5 h-4 w-4" />
@@ -253,6 +261,7 @@ export default function DelfLevelRoutePage() {
             level={route.level}
             tests={tests}
             loading={loadingList}
+            preferredSection={preferredSection}
             onSelectSection={(variant, section) => {
               router.push(buildDelfListRoute(route.level, variant, section))
             }}
@@ -265,12 +274,12 @@ export default function DelfLevelRoutePage() {
 
   if (route.kind === "test") {
     return (
-      <div className={commonShell}>
+      <div className={commonShell} style={commonShellStyle}>
         <div className="mx-auto max-w-5xl px-4 py-6 md:px-6 md:py-8">
           <Button
             type="button"
             variant="ghost"
-            className="mb-6 rounded-full px-3 text-slate-600 hover:bg-white hover:text-slate-900"
+            className="mb-6 rounded-full px-3 text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-feather-white)] hover:text-[var(--vintage-ink)]"
             onClick={() => router.back()}
           >
             <ArrowLeft className="mr-1.5 h-4 w-4" />
@@ -294,7 +303,7 @@ export default function DelfLevelRoutePage() {
               onBackToRoot={() => router.push(DELF_PRACTICE_ROOT)}
             />
           ) : (
-            <div className="flex min-h-[50vh] items-center justify-center text-slate-500">
+            <div className="flex min-h-[50vh] items-center justify-center text-[var(--vintage-muted-ink)]">
               <Loader2 className="h-6 w-6 animate-spin" />
             </div>
           )}
@@ -304,8 +313,8 @@ export default function DelfLevelRoutePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="flex min-h-screen items-center justify-center text-slate-500">
+    <div className={commonShell} style={commonShellStyle}>
+      <div className="flex min-h-screen items-center justify-center text-[var(--vintage-muted-ink)]">
         <Loader2 className="h-6 w-6 animate-spin" />
       </div>
     </div>

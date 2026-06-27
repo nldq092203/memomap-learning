@@ -3,25 +3,25 @@ import { Button } from "@/components/ui/button"
 import type { CEFRLevel } from "@/lib/types/api/coce"
 import { GUEST_ALLOWED_LEVEL, useGuest } from "@/lib/contexts/guest-context"
 import { cn } from "@/lib/utils"
-import { BookOpen, Lock } from "lucide-react"
+import { BookOpen, Headphones, Lock } from "lucide-react"
 
 const LEVEL_INFO: Record<CEFRLevel, { name: string; description: string; color: string; enabled: boolean }> = {
   A2: {
     name: "A2 - Elementaire",
     description: "Comprendre des phrases simples et frequentes",
-    color: "bg-emerald-500/10 border-emerald-500/30 hover:border-emerald-500/50",
+    color: "border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/78 hover:border-[var(--vintage-desert-rock)]",
     enabled: true,
   },
   B1: {
     name: "B1 - Intermediaire",
     description: "Comprendre les points essentiels d'un contenu clair",
-    color: "bg-emerald-500/10 border-emerald-500/30 hover:border-emerald-500/50",
+    color: "border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/78 hover:border-[var(--vintage-desert-rock)]",
     enabled: true,
   },
   B2: {
     name: "B2 - Intermediaire avance",
     description: "Comprendre des textes plus complexes et interagir avec aisance",
-    color: "bg-emerald-500/10 border-emerald-500/30 hover:border-emerald-500/50",
+    color: "border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/78 hover:border-[var(--vintage-desert-rock)]",
     enabled: true,
   },
   C1: {
@@ -36,27 +36,42 @@ const AVAILABLE_COCE_LEVELS: CEFRLevel[] = ["A2", "B1", "B2"]
 
 interface LevelSelectionProps {
   onSelectLevel: (level: CEFRLevel) => void
+  mode?: "co" | "ce" | null
 }
 
-export function LevelSelection({ onSelectLevel }: LevelSelectionProps) {
+export function LevelSelection({ onSelectLevel, mode }: LevelSelectionProps) {
   const { isGuest } = useGuest()
+  const Icon = mode === "co" ? Headphones : BookOpen
+  const title = mode === "co"
+    ? "Audio CO"
+    : mode === "ce"
+      ? "Audio CE"
+      : "CO / CE"
+  const description = mode === "co"
+    ? "Choisissez un niveau pour travailler la compréhension orale."
+    : mode === "ce"
+      ? "Choisissez un niveau pour travailler la compréhension écrite."
+      : "Choisissez un niveau."
 
   return (
-    <div className="space-y-6">
-      <Card className="border-border/60 bg-card/70 backdrop-blur-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl md:text-2xl">
-            <BookOpen className="h-6 w-6 text-primary" />
-            Entrainement CO / CE
-          </CardTitle>
-          <p className="text-sm text-muted-foreground md:text-base">
-            Travaillez la comprehension orale et ecrite en francais avec des exercices cibles.
-          </p>
-        </CardHeader>
-      </Card>
+    <div className="space-y-8">
+      <header className="space-y-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--vintage-desert-rock)]">
+          {mode === "co" ? "Compréhension orale" : mode === "ce" ? "Compréhension écrite" : "CO / CE"}
+        </p>
+        <div className="flex items-center gap-3">
+          <Icon className="h-8 w-8 text-[var(--vintage-desert-rock)]" />
+          <h1 className="text-4xl font-semibold tracking-tight text-[var(--vintage-ink)]">
+            {title}
+          </h1>
+        </div>
+        <p className="max-w-xl text-base text-[var(--vintage-muted-ink)]">
+          {description}
+        </p>
+      </header>
 
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold">Choisissez votre niveau</h2>
+        <h2 className="text-lg font-semibold text-[var(--vintage-ink)]">Choisissez votre niveau</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {AVAILABLE_COCE_LEVELS.map((lvl) => {
             const info = LEVEL_INFO[lvl]
@@ -69,7 +84,7 @@ export function LevelSelection({ onSelectLevel }: LevelSelectionProps) {
                   "border-2 transition-all",
                   isLockedForGuest
                     ? "cursor-not-allowed border-slate-200 bg-slate-50 opacity-60"
-                    : "cursor-pointer hover:shadow-md",
+                    : "cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(74,51,35,0.12)]",
                   info.color
                 )}
                 onClick={() => {
@@ -82,7 +97,7 @@ export function LevelSelection({ onSelectLevel }: LevelSelectionProps) {
                     <CardTitle className="text-lg">{info.name}</CardTitle>
                     {isLockedForGuest && <Lock className="h-4 w-4 text-slate-400" />}
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-[var(--vintage-muted-ink)]">
                     {isLockedForGuest ? "Disponible apres connexion" : info.description}
                   </p>
                 </CardHeader>
@@ -93,7 +108,7 @@ export function LevelSelection({ onSelectLevel }: LevelSelectionProps) {
                     size="sm"
                     disabled={isLockedForGuest}
                   >
-                    {isLockedForGuest ? `A2 seulement en mode invite` : `Choisir ${lvl}`}
+                    {isLockedForGuest ? `A2 seulement en mode invite` : `Continuer`}
                   </Button>
                 </CardContent>
               </Card>

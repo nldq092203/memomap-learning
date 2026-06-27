@@ -33,7 +33,7 @@ const mapSections: MapSection[] = [
   {
     id: "vocab",
     title: "Vocabulaire",
-    href: "/learning/vocab",
+    href: "/learning/review-hub",
     image: "/UI/arc-de-triomphe.webp",
     icon: BookOpen,
     position: "left-[20%] top-[24%]",

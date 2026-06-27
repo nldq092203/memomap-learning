@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { ArrowLeft, BookOpen, ChevronLeft, Headphones, ListChecks, PanelLeftClose, PanelLeftOpen } from "lucide-react"
+import { ArrowLeft, ListChecks, PanelLeftClose, PanelLeftOpen } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
@@ -66,19 +66,7 @@ export default function CoCePracticePage() {
     if (section === "ce") return "ce"
     return null
   }, [searchParams])
-  const lockedQuestionMeta = lockedQuestionType === "co"
-    ? {
-        label: "CO",
-        description: "Compréhension orale",
-        Icon: Headphones,
-      }
-    : lockedQuestionType === "ce"
-      ? {
-          label: "CE",
-          description: "Compréhension écrite",
-          Icon: BookOpen,
-        }
-      : null
+  const hasLockedQuestionType = lockedQuestionType !== null
 
   const handleLevelSelect = (selectedLevel: CEFRLevel) => {
     // Guest: only allow A2
@@ -182,13 +170,16 @@ export default function CoCePracticePage() {
   if (exercises.length === 0 && !currentExercise) {
     if (hasChosenLevel && !loading) {
       return (
-        <div className="min-h-screen bg-slate-50">
+        <div className="min-h-screen bg-[#f5eee5]">
           <div className="mx-auto max-w-6xl px-4 py-6 md:py-8">
             <Button
               type="button"
               variant="ghost"
-              className="mb-6 rounded-full px-3 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              onClick={() => router.back()}
+              className="mb-6 rounded-full px-3 text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-porcelain-mist)] hover:text-[var(--vintage-ink)]"
+              onClick={() => {
+                setHasChosenLevel(false)
+                backToLevelSelection()
+              }}
             >
               <ArrowLeft className="mr-1.5 h-4 w-4" />
               Retour
@@ -224,18 +215,18 @@ export default function CoCePracticePage() {
     }
 
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-[#f5eee5]">
         <div className="mx-auto max-w-6xl px-4 py-6 md:py-8">
           <Button
             type="button"
             variant="ghost"
-            className="mb-6 rounded-full px-3 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-            onClick={() => router.back()}
+            className="mb-6 rounded-full px-3 text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-porcelain-mist)] hover:text-[var(--vintage-ink)]"
+            onClick={() => router.push("/")}
           >
             <ArrowLeft className="mr-1.5 h-4 w-4" />
             Retour
           </Button>
-          <LevelSelection onSelectLevel={handleLevelSelect} />
+          <LevelSelection onSelectLevel={handleLevelSelect} mode={lockedQuestionType} />
         </div>
       </div>
     )
@@ -243,13 +234,16 @@ export default function CoCePracticePage() {
 
   if (exercises.length > 0 && !currentExercise) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-[#f5eee5]">
         <div className="mx-auto max-w-6xl px-4 py-6 md:py-8">
           <Button
             type="button"
             variant="ghost"
-            className="mb-6 rounded-full px-3 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-            onClick={() => router.back()}
+            className="mb-6 rounded-full px-3 text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-porcelain-mist)] hover:text-[var(--vintage-ink)]"
+            onClick={() => {
+              setHasChosenLevel(false)
+              backToLevelSelection()
+            }}
           >
             <ArrowLeft className="mr-1.5 h-4 w-4" />
             Retour
@@ -259,10 +253,6 @@ export default function CoCePracticePage() {
             exercises={exercises}
             loading={loading}
             onSelectExercise={handleExerciseSelect}
-            onBackToLevelSelection={() => {
-              setHasChosenLevel(false)
-              backToLevelSelection()
-            }}
             currentTopic={topic}
             onSelectTopic={(selectedTopic) => void loadExercises(level, selectedTopic, isGuest)}
           />
@@ -276,63 +266,45 @@ export default function CoCePracticePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef6f6_100%)]">
-      <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-6 md:py-8">
+    <div className="relative min-h-screen overflow-hidden bg-[#f5eee5]">
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.16]"
+        style={{
+          backgroundImage: "url('/UI/map.png')",
+          backgroundPosition: "center top",
+          backgroundSize: "cover",
+        }}
+      />
+      <div className="relative mx-auto max-w-[1360px] px-4 py-6 md:px-6 md:py-8">
         <Button
           type="button"
           variant="ghost"
-          className="mb-6 rounded-full px-3 text-slate-600 hover:bg-white hover:text-slate-900"
-          onClick={() => router.back()}
+          className="mb-6 rounded-full px-3 text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-feather-white)] hover:text-[var(--vintage-ink)]"
+          onClick={backToList}
         >
           <ArrowLeft className="mr-1.5 h-4 w-4" />
           Retour
         </Button>
 
-        <div className="mb-6 rounded-[30px] border border-slate-200 bg-white/90 px-5 py-5 shadow-sm backdrop-blur">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge className="rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700 hover:bg-teal-50">
-                  {LEVEL_INFO[level].name}
-                </Badge>
-                <Badge className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100">
-                  {currentExercise.media_type === "video" ? "Support vidéo" : "Support audio"}
-                </Badge>
-              </div>
-              <h1 className="text-2xl font-semibold tracking-tight text-slate-950 md:text-3xl">
-                {currentExercise.name}
-              </h1>
-              <p className="text-sm text-slate-500">
-                {Math.floor(currentExercise.duration_seconds / 60)}:
-                {String(currentExercise.duration_seconds % 60).padStart(2, "0")} d&apos;ecoute
-              </p>
+        <div className="mb-7 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className="rounded-full bg-[var(--vintage-cream)] px-3 py-1 text-xs font-semibold text-[var(--vintage-desert-rock)] hover:bg-[var(--vintage-cream)]">
+                {LEVEL_INFO[level].name}
+              </Badge>
+              <Badge className="rounded-full bg-[var(--vintage-porcelain-mist)] px-3 py-1 text-xs font-semibold text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-porcelain-mist)]">
+                {currentExercise.media_type === "video" ? "Support vidéo" : "Support audio"}
+              </Badge>
             </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={backToList}
-                className="rounded-full border-slate-200 text-slate-700 hover:bg-slate-100"
-              >
-                <ChevronLeft className="mr-2 h-4 w-4" />
-                Retour à la liste
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsMediaPaneCollapsed((current) => !current)}
-                className="rounded-full border-slate-200 text-slate-700 hover:bg-slate-100"
-              >
-                {isMediaPaneCollapsed ? (
-                  <PanelLeftOpen className="mr-2 h-4 w-4" />
-                ) : (
-                  <PanelLeftClose className="mr-2 h-4 w-4" />
-                )}
-                {isMediaPaneCollapsed ? "Afficher le support" : "Réduire le support"}
-              </Button>
-            </div>
+            <h1 className="text-3xl font-semibold tracking-tight text-[var(--vintage-ink)] md:text-5xl">
+              {currentExercise.name}
+            </h1>
+            <p className="text-sm font-medium text-[var(--vintage-muted-ink)]">
+              {Math.floor(currentExercise.duration_seconds / 60)}:
+              {String(currentExercise.duration_seconds % 60).padStart(2, "0")} d&apos;écoute
+            </p>
           </div>
+
         </div>
 
         <div
@@ -343,12 +315,22 @@ export default function CoCePracticePage() {
         >
           {!isMediaPaneCollapsed && (
             <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsMediaPaneCollapsed(true)}
+                  className="rounded-full border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)] px-4 text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-porcelain-mist)] hover:text-[var(--vintage-ink)]"
+                >
+                  <PanelLeftClose className="mr-2 h-4 w-4" />
+                  Réduire le support
+                </Button>
+              </div>
               <MediaPlayer
                 exercise={currentExercise}
                 showTranscript={showTranscript}
                 onTranscriptToggle={handleTranscriptToggle}
                 isLoadingTranscript={loading && !transcript}
-                onCollapseToggle={() => setIsMediaPaneCollapsed((current) => !current)}
               />
 
               {showTranscript && <TranscriptView transcript={transcript} loading={loading} />}
@@ -356,68 +338,53 @@ export default function CoCePracticePage() {
           )}
 
           <section className="min-w-0 space-y-5">
-            <div className="sticky top-4 z-20 rounded-[30px] border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
-              <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-                    Navigation
-                  </p>
-                  {lockedQuestionMeta ? (
-                    <div className="rounded-[24px] border border-slate-200 bg-white/95 p-2 shadow-sm">
-                      <div className="flex items-center gap-3 rounded-[18px] bg-teal-500 px-4 py-3 text-white">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/20 text-white">
-                          <lockedQuestionMeta.Icon className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold">{lockedQuestionMeta.label}</p>
-                          <p className="text-xs text-white/80">{lockedQuestionMeta.description}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
+            {(!hasLockedQuestionType || questions) && (
+              <div className="sticky top-4 z-20 rounded-[28px] border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/95 p-4 shadow-[0_18px_42px_rgba(74,51,35,0.08)] backdrop-blur">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  {!hasLockedQuestionType && (
                     <PracticeTypeSelector
                       activeType={activeQuestionType}
                       onSelectType={handleQuestionTypeChange}
                     />
                   )}
+
+                  {questions && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--vintage-muted-ink)]">
+                        <ListChecks className="h-4 w-4" />
+                        Questions
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {questions.questions.map((question, index) => {
+                          const answered = userAnswers.some(
+                            (answer) =>
+                              answer.questionId === question.id && answer.selectedIndices.length > 0
+                          )
+
+                          return (
+                            <button
+                              key={question.id}
+                              type="button"
+                              onClick={() => jumpToQuestion(index)}
+                              className={cn(
+                                "flex h-10 w-10 items-center justify-center rounded-full border text-sm font-semibold transition-colors",
+                                activeQuestionIndex === index
+                                  ? "border-[var(--vintage-desert-rock)] bg-[var(--vintage-cream)] text-[var(--vintage-ink)]"
+                                  : answered
+                                    ? "border-[var(--vintage-desert-rock)] bg-[var(--vintage-desert-rock)] text-white"
+                                    : "border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-porcelain-mist)] text-[var(--vintage-muted-ink)] hover:border-[var(--vintage-desert-rock)]"
+                              )}
+                            >
+                              {index + 1}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
-
-                {questions && (
-                  <div className="space-y-2 xl:max-w-md">
-                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                      <ListChecks className="h-4 w-4" />
-                      Questions
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {questions.questions.map((question, index) => {
-                        const answered = userAnswers.some(
-                          (answer) =>
-                            answer.questionId === question.id && answer.selectedIndices.length > 0
-                        )
-
-                        return (
-                          <button
-                            key={question.id}
-                            type="button"
-                            onClick={() => jumpToQuestion(index)}
-                            className={cn(
-                              "flex h-10 w-10 items-center justify-center rounded-full border text-sm font-semibold transition-colors",
-                              activeQuestionIndex === index
-                                ? "border-indigo-300 bg-indigo-50 text-indigo-700"
-                                : answered
-                                  ? "border-teal-500 bg-teal-500 text-white"
-                                  : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-                            )}
-                          >
-                            {index + 1}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
               </div>
-            </div>
+            )}
 
             <QuestionsView
               questions={questions}
@@ -431,22 +398,22 @@ export default function CoCePracticePage() {
             />
 
             <div className="sticky bottom-4 z-20">
-              <div className="rounded-[30px] border border-slate-200 bg-white/95 p-4 shadow-lg shadow-slate-200/60 backdrop-blur">
+              <div className="rounded-[30px] border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/95 p-4 shadow-[0_18px_42px_rgba(74,51,35,0.12)] backdrop-blur">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                   <div className="min-w-0 flex-1 space-y-3">
                     <div className="flex items-center justify-between gap-4">
-                      <p className="text-sm font-semibold text-slate-900">
+                      <p className="text-sm font-semibold text-[var(--vintage-ink)]">
                         {showResults ? "Résultat final" : "Progression"}
                       </p>
-                      <p className="text-sm font-semibold text-teal-700">{currentProgress}%</p>
+                      <p className="text-sm font-semibold text-[var(--vintage-desert-rock)]">{currentProgress}%</p>
                     </div>
-                    <div className="h-2 rounded-full bg-slate-100">
+                    <div className="h-2 rounded-full bg-[var(--vintage-cream)]">
                       <div
-                        className="h-2 rounded-full bg-gradient-to-r from-indigo-500 via-teal-500 to-teal-400 transition-all"
+                        className="h-2 rounded-full bg-[var(--vintage-desert-rock)] transition-all"
                         style={{ width: `${currentProgress}%` }}
                       />
                     </div>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-[var(--vintage-muted-ink)]">
                       {showResults && score
                         ? `${score.correct} bonne${score.correct > 1 ? "s" : ""} réponse${score.correct > 1 ? "s" : ""} sur ${score.total}.`
                         : `${answeredCount} réponse${answeredCount > 1 ? "s" : ""} renseignée${answeredCount > 1 ? "s" : ""} sur ${questionCount || 0}.`}
@@ -463,7 +430,7 @@ export default function CoCePracticePage() {
                           type="button"
                           variant="outline"
                           onClick={() => activeQuestionType && void loadQuestions(activeQuestionType)}
-                          className="rounded-full border-slate-200 px-5 text-slate-700 hover:bg-slate-100"
+                          className="rounded-full border-[var(--vintage-soft-sandstone)] px-5 text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-porcelain-mist)]"
                         >
                           Recommencer
                         </Button>
@@ -473,7 +440,7 @@ export default function CoCePracticePage() {
                         type="button"
                         onClick={submitAnswers}
                         disabled={!questions || questionCount === 0 || answeredCount !== questionCount}
-                        className="rounded-full bg-teal-500 px-5 text-white hover:bg-teal-500/90 disabled:bg-slate-200 disabled:text-slate-400"
+                        className="rounded-full bg-[var(--vintage-desert-rock)] px-5 text-white hover:bg-[#8f7763] disabled:bg-[var(--vintage-cream)] disabled:text-[var(--vintage-muted-ink)]"
                       >
                         Valider l&apos;exercice
                       </Button>
@@ -487,11 +454,11 @@ export default function CoCePracticePage() {
       </div>
 
       {isMediaPaneCollapsed && (
-        <div className="fixed bottom-6 left-6 z-40 hidden w-[320px] rounded-[28px] border border-slate-200 bg-white/95 p-4 shadow-xl shadow-slate-300/40 backdrop-blur lg:block">
+        <div className="fixed bottom-6 left-6 z-40 hidden w-[320px] rounded-[28px] border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/95 p-4 shadow-[0_18px_42px_rgba(74,51,35,0.16)] backdrop-blur lg:block">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-slate-950">{currentExercise.name}</p>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="truncate text-sm font-semibold text-[var(--vintage-ink)]">{currentExercise.name}</p>
+              <p className="mt-1 text-xs text-[var(--vintage-muted-ink)]">
                 {currentExercise.media_type === "video" ? "Mini lecteur vidéo" : "Mini lecteur audio"}
               </p>
             </div>
@@ -500,14 +467,14 @@ export default function CoCePracticePage() {
               variant="outline"
               size="icon"
               onClick={() => setIsMediaPaneCollapsed(false)}
-              className="rounded-full border-slate-200 text-slate-700 hover:bg-slate-100"
+              className="rounded-full border-[var(--vintage-soft-sandstone)] text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-porcelain-mist)]"
               aria-label="Rouvrir le support"
             >
               <PanelLeftOpen className="h-4 w-4" />
             </Button>
           </div>
 
-          <div className="mt-4 overflow-hidden rounded-[20px] border border-slate-200 bg-slate-950">
+          <div className="mt-4 overflow-hidden rounded-[20px] border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-ink)]">
             {currentExercise.media_type === "audio" && currentExercise.audio_url ? (
               <div className="p-3">
                 <audio controls src={currentExercise.audio_url} preload="metadata" className="w-full">
@@ -533,7 +500,7 @@ export default function CoCePracticePage() {
             type="button"
             variant="outline"
             onClick={handleTranscriptToggle}
-            className="mt-3 w-full rounded-full border-slate-200 text-slate-700 hover:bg-slate-100"
+            className="mt-3 w-full rounded-full border-[var(--vintage-soft-sandstone)] text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-porcelain-mist)]"
           >
             {showTranscript ? "Masquer la transcription" : "Afficher la transcription"}
           </Button>

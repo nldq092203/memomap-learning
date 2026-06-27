@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import type { CoCeExercise, CEFRLevel, ExerciseTopic } from "@/lib/types/api/coce"
 import { LEVEL_INFO } from "./level-selection"
 import { TopicSelector, TOPICS } from "./topic-selector"
-import { ChevronLeft, Headphones, Play, Volume2, RefreshCw, Video, Sparkles } from "lucide-react"
+import { Headphones, Play, Volume2, RefreshCw, Video, Sparkles } from "lucide-react"
 import { GuestUpgradeHint } from "@/components/auth/guest-upgrade-hint"
 
 interface ExerciseListProps {
@@ -12,7 +12,6 @@ interface ExerciseListProps {
   exercises: CoCeExercise[]
   loading: boolean
   onSelectExercise: (exerciseId: string) => void
-  onBackToLevelSelection: () => void
   currentTopic: ExerciseTopic | null
   onSelectTopic: (topic: ExerciseTopic | null) => void
 }
@@ -22,23 +21,18 @@ export function ExerciseList({
   exercises,
   loading,
   onSelectExercise,
-  onBackToLevelSelection,
   currentTopic,
   onSelectTopic,
 }: ExerciseListProps) {
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div>
         <div>
           <h1 className="text-2xl font-bold">{LEVEL_INFO[level].name}</h1>
           <p className="text-sm text-muted-foreground">
             {exercises.length} exercice{exercises.length !== 1 ? "s" : ""} disponible{exercises.length !== 1 ? "s" : ""}
           </p>
         </div>
-        <Button variant="outline" onClick={onBackToLevelSelection}>
-          <ChevronLeft className="mr-2 h-4 w-4" />
-          Changer de niveau
-        </Button>
       </div>
 
       <TopicSelector currentTopic={currentTopic} onSelectTopic={onSelectTopic} />

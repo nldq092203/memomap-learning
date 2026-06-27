@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { CoCeQuestion } from "@/lib/types/api/coce"
+import { formatReadableText } from "@/lib/text/readable-text"
 import { cn } from "@/lib/utils"
 import { Check, CheckCircle2, XCircle } from "lucide-react"
 
@@ -29,28 +30,28 @@ export function QuestionCard({
     <Card
       id={`question-${index}`}
       className={cn(
-        "scroll-mt-40 rounded-[28px] border border-slate-200 bg-white shadow-sm",
+        "scroll-mt-40 rounded-[28px] border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)] shadow-[0_18px_42px_rgba(74,51,35,0.08)]",
         showResults &&
           (isCorrect
-            ? "border-emerald-200 bg-emerald-50/50"
+            ? "border-[var(--vintage-desert-rock)] bg-[var(--vintage-cream)]/45"
             : "border-rose-200 bg-rose-50/40")
       )}
     >
       <CardHeader className="space-y-4 pb-4">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--vintage-muted-ink)]">
               Question {index + 1}
             </p>
-            <CardTitle className="text-lg font-semibold leading-7 text-slate-950">
-              {question.question}
+            <CardTitle className="whitespace-pre-line text-lg font-semibold leading-7 text-[var(--vintage-ink)]">
+              {formatReadableText(question.question)}
             </CardTitle>
           </div>
 
           {showResults && (
             <div className="shrink-0">
               {isCorrect ? (
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--vintage-cream)] text-[var(--vintage-desert-rock)]">
                   <CheckCircle2 className="h-5 w-5" />
                 </div>
               ) : (
@@ -63,7 +64,7 @@ export function QuestionCard({
         </div>
 
         {isMultiple && !showResults && (
-          <p className="text-sm text-slate-500">Plusieurs réponses possibles.</p>
+          <p className="text-sm text-[var(--vintage-muted-ink)]">Plusieurs réponses possibles.</p>
         )}
       </CardHeader>
 
@@ -81,10 +82,10 @@ export function QuestionCard({
               onClick={() => onAnswerChange(question.id, optionIndex, isMultiple)}
               className={cn(
                 "flex w-full items-start gap-4 rounded-[22px] border px-4 py-4 text-left transition-all",
-                "border-slate-200 bg-white text-slate-700 hover:border-teal-200 hover:bg-teal-50/60",
-                isSelected && !showResults && "border-teal-300 bg-teal-50 text-slate-950 shadow-sm",
-                showResults && isCorrectOption && "border-emerald-300 bg-emerald-50 text-slate-950",
-                showResults && isSelected && !isCorrectOption && "border-rose-300 bg-rose-50 text-slate-950",
+                "border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-porcelain-mist)] text-[var(--vintage-ink)] hover:border-[var(--vintage-desert-rock)] hover:bg-[var(--vintage-cream)]/60",
+                isSelected && !showResults && "border-[var(--vintage-desert-rock)] bg-[var(--vintage-cream)] text-[var(--vintage-ink)] shadow-sm",
+                showResults && isCorrectOption && "border-[var(--vintage-desert-rock)] bg-[var(--vintage-cream)] text-[var(--vintage-ink)]",
+                showResults && isSelected && !isCorrectOption && "border-rose-300 bg-rose-50 text-[var(--vintage-ink)]",
                 showResults && "cursor-default"
               )}
               aria-pressed={isSelected}
@@ -93,9 +94,9 @@ export function QuestionCard({
                 className={cn(
                   "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-semibold transition-colors",
                   isSelected
-                    ? "border-teal-500 bg-teal-500 text-white"
-                    : "border-slate-200 bg-slate-50 text-slate-500",
-                  showResults && isCorrectOption && "border-emerald-500 bg-emerald-500 text-white",
+                    ? "border-[var(--vintage-desert-rock)] bg-[var(--vintage-desert-rock)] text-white"
+                    : "border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)] text-[var(--vintage-muted-ink)]",
+                  showResults && isCorrectOption && "border-[var(--vintage-desert-rock)] bg-[var(--vintage-desert-rock)] text-white",
                   showResults && isSelected && !isCorrectOption && "border-rose-500 bg-rose-500 text-white"
                 )}
               >
@@ -114,11 +115,13 @@ export function QuestionCard({
         })}
 
         {showResults && question.explanation && (
-          <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <div className="rounded-[22px] border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-porcelain-mist)] px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--vintage-muted-ink)]">
               Explication
             </p>
-            <p className="mt-2 text-sm leading-7 text-slate-700">{question.explanation}</p>
+            <p className="mt-2 whitespace-pre-line text-sm leading-7 text-[var(--vintage-ink)]">
+              {formatReadableText(question.explanation)}
+            </p>
           </div>
         )}
       </CardContent>
