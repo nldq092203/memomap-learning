@@ -20,6 +20,7 @@ from src.domain.controllers import (
 )
 from src.domain.vocabulary_compat import VocabularyCompatibilityService
 from src.utils.response_builder import ResponseBuilder
+from src.extensions import logger
 
 
 def _use_vocab_compat() -> bool:
@@ -43,6 +44,7 @@ def vocab_list_create(user_id: str, db: Session):
         search_query = request.args.get("q", "").strip() or None
 
         if _use_vocab_compat():
+            logger.info("Using vocabulary compatibility service")
             data = _vocab_compat_service(db).list_cards(
                 user_id=user_id,
                 language=language,
@@ -71,6 +73,7 @@ def vocab_list_create(user_id: str, db: Session):
             raise BadRequestError(str(e))
 
         if _use_vocab_compat():
+            logger.info("Using vocabulary compatibility service")
             data = _vocab_compat_service(db).create_card(
                 user_id=user_id,
                 language=req.language,
@@ -81,6 +84,7 @@ def vocab_list_create(user_id: str, db: Session):
                 extra=req.extra,
             )
         else:
+            logger.info("Using standard vocabulary controller")
             data = create_vocab_card_controller(
                 db=db,
                 user_id=user_id,
@@ -140,9 +144,9 @@ def vocab_detail(card_id: str, user_id: str, db: Session):
             )
         else:
             soft_delete_vocab_card_controller(db=db, user_id=user_id, card_id=card_id)
-        return ResponseBuilder().success(
-            message="Card suspended", status_code=204
-        ).build()
+        return (
+            ResponseBuilder().success(message="Card suspended", status_code=204).build()
+        )
 
 
 @require_auth
@@ -156,9 +160,11 @@ def vocab_hard_delete(card_id: str, user_id: str, db: Session):
         )
     else:
         hard_delete_vocab_card_controller(db=db, user_id=user_id, card_id=card_id)
-    return ResponseBuilder().success(
-        message="Card deleted permanently", status_code=204
-    ).build()
+    return (
+        ResponseBuilder()
+        .success(message="Card deleted permanently", status_code=204)
+        .build()
+    )
 
 
 @require_auth
