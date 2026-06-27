@@ -44,7 +44,7 @@ function LoginButtonInner({
   const redirectUri = getGoogleRedirectUri()
 
   const googleLogin = useGoogleLogin({
-    scope: "openid email profile https://www.googleapis.com/auth/drive.file",
+    scope: "openid email profile",
     onSuccess: async (response) => {
       try {
         setError(null)
