@@ -3080,6 +3080,20 @@ Temporary retention:
 
 - The table mappings remain in active SQLAlchemy metadata until a separate data-retention and migration-schema decision is made.
 
+#### REV-707G Implementation Note
+
+Status: Completed extension vocabulary Mongo switch.
+
+Changes made:
+
+- Updated `backend/src/api/ext/vocab.py` so extension vocabulary list/create/update uses `MongoVocabularyRepository`.
+- Removed the extension vocabulary dependency on `with_db`, SQL `VocabularyQueries`, and SQL vocabulary controllers.
+- Kept the extension response shape compatible with the old vocabulary payload while returning Mongo-backed IDs with the `mongo:` prefix.
+
+Next archive point:
+
+- Archive the remaining SQL vocabulary internals (`VocabularyQueries`, SQL vocabulary controllers, SQL `SRSService`, and `VocabularyCompatibilityService`) after confirming no active route imports them.
+
 ### Suggested First Sprint
 
 Start backend-first so legacy dependencies are understood before UI routes are hidden:
