@@ -3027,6 +3027,25 @@ Next deletion point:
 
 - After frontend calls and production traffic confirm no dependency on these disabled writes, delete the route modules, controllers, SQL helpers, Drive helpers, and stale client calls listed in `REV-005`.
 
+#### REV-707D Implementation Note
+
+Status: Completed backend legacy read shutdown.
+
+Changes made:
+
+- Disabled remaining legacy SQL-backed read routes with `410 Gone`:
+  - `GET /api/web/sessions`
+  - `GET /api/web/sessions/<session_id>`
+  - `GET /api/web/transcripts`
+  - `GET /api/web/transcripts/<transcript_id>`
+  - `GET /api/web/analytics`
+- Removed active route-registry imports for `src.api.web.sessions`, `src.api.web.transcripts`, and `src.api.web.analytics`.
+- Kept the URL paths registered so any stale client call receives an explicit sunset response instead of a generic 404.
+
+Next archive point:
+
+- Move `sessions.py`, `transcripts.py`, `analytics.py`, related SQL controllers/query helpers, and old ORM models into a legacy SQL learning archive after confirming no active backend import still depends on them.
+
 ### Suggested First Sprint
 
 Start backend-first so legacy dependencies are understood before UI routes are hidden:

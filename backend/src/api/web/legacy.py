@@ -11,14 +11,14 @@ from typing import Any, Callable
 
 from flask import Blueprint
 
-from src.api.web.analytics import analytics_summary
-from src.api.web.sessions import sessions_detail, sessions_list_create
-from src.api.web.transcripts import transcripts_detail, transcripts_list_create
 from src.utils.response_builder import ResponseBuilder
 
 
 LEGACY_WRITE_DISABLED_MESSAGE = (
     "This legacy write flow has been disabled during the revamp."
+)
+LEGACY_SQL_DISABLED_MESSAGE = (
+    "This legacy SQL-backed learning flow has been disabled during the revamp."
 )
 LEGACY_DRIVE_DISABLED_MESSAGE = (
     "This legacy Drive-backed flow has been disabled during the revamp."
@@ -64,10 +64,12 @@ def register_legacy_web_routes(web_bp: Blueprint) -> None:
     """Register web routes that are being sunset by the revamp."""
 
     # ==================== Sessions (Legacy) ====================
-    web_bp.add_url_rule(
+    _add_disabled_legacy_route(
+        web_bp,
         "/sessions",
-        view_func=sessions_list_create,
         methods=["GET"],
+        endpoint="legacy_sessions_list",
+        message=LEGACY_SQL_DISABLED_MESSAGE,
     )
     _add_disabled_legacy_route(
         web_bp,
@@ -75,17 +77,21 @@ def register_legacy_web_routes(web_bp: Blueprint) -> None:
         endpoint="legacy_sessions_create",
         methods=["POST"],
     )
-    web_bp.add_url_rule(
+    _add_disabled_legacy_route(
+        web_bp,
         "/sessions/<session_id>",
-        view_func=sessions_detail,
         methods=["GET"],
+        endpoint="legacy_sessions_detail",
+        message=LEGACY_SQL_DISABLED_MESSAGE,
     )
 
     # ==================== Transcripts (Legacy) ====================
-    web_bp.add_url_rule(
+    _add_disabled_legacy_route(
+        web_bp,
         "/transcripts",
-        view_func=transcripts_list_create,
         methods=["GET"],
+        endpoint="legacy_transcripts_list",
+        message=LEGACY_SQL_DISABLED_MESSAGE,
     )
     _add_disabled_legacy_route(
         web_bp,
@@ -93,10 +99,12 @@ def register_legacy_web_routes(web_bp: Blueprint) -> None:
         endpoint="legacy_transcripts_create",
         methods=["POST"],
     )
-    web_bp.add_url_rule(
+    _add_disabled_legacy_route(
+        web_bp,
         "/transcripts/<transcript_id>",
-        view_func=transcripts_detail,
         methods=["GET"],
+        endpoint="legacy_transcripts_detail",
+        message=LEGACY_SQL_DISABLED_MESSAGE,
     )
     _add_disabled_legacy_route(
         web_bp,
@@ -106,10 +114,12 @@ def register_legacy_web_routes(web_bp: Blueprint) -> None:
     )
 
     # ==================== Analytics (Legacy) ====================
-    web_bp.add_url_rule(
+    _add_disabled_legacy_route(
+        web_bp,
         "/analytics",
-        view_func=analytics_summary,
         methods=["GET"],
+        endpoint="legacy_analytics_summary",
+        message=LEGACY_SQL_DISABLED_MESSAGE,
     )
 
     # ==================== Numbers Dictation Admin (Legacy/Drive-backed) ====================
