@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 
-from src.api.errors import BadRequestError, NotFoundError
+from src.domain.errors import ResourceNotFoundError, ValidationError
 
 if TYPE_CHECKING:
     from pymongo.collection import Collection
@@ -130,7 +130,7 @@ class MongoVocabularyRepository:
         oid = _object_id(card_id)
         set_updates = self._normalize_card_updates(updates)
         if not set_updates:
-            raise BadRequestError("Nothing to update")
+            raise ValidationError("Nothing to update")
         set_updates["updated_at"] = _now()
 
         doc = self.cards.find_one_and_update(
@@ -139,7 +139,7 @@ class MongoVocabularyRepository:
             return_document=_return_document_after(),
         )
         if not doc:
-            raise NotFoundError("Vocabulary card not found")
+            raise ResourceNotFoundError("Vocabulary card not found")
         return serialize_vocab_card(doc)
 
     def soft_delete_card(self, *, user_id: str, card_id: str) -> None:
@@ -156,13 +156,13 @@ class MongoVocabularyRepository:
             },
         )
         if result.matched_count == 0:
-            raise NotFoundError("Vocabulary card not found")
+            raise ResourceNotFoundError("Vocabulary card not found")
 
     def hard_delete_card(self, *, user_id: str, card_id: str) -> None:
         oid = _object_id(card_id)
         result = self.cards.delete_one({"_id": oid, "user_id": user_id})
         if result.deleted_count == 0:
-            raise NotFoundError("Vocabulary card not found")
+            raise ResourceNotFoundError("Vocabulary card not found")
         self.reviews.delete_many({"card_id": oid, "user_id": user_id})
 
     def list_cards(
@@ -252,7 +252,7 @@ class MongoVocabularyRepository:
             return_document=_return_document_after(),
         )
         if not updated_card:
-            raise NotFoundError("Vocabulary card not found")
+            raise ResourceNotFoundError("Vocabulary card not found")
 
         review_doc = {
             "user_id": user_id,
@@ -270,7 +270,7 @@ class MongoVocabularyRepository:
         oid = _object_id(card_id)
         doc = self.cards.find_one({"_id": oid, "user_id": user_id, "deleted_at": None})
         if not doc:
-            raise NotFoundError("Vocabulary card not found")
+            raise ResourceNotFoundError("Vocabulary card not found")
         return doc
 
     def _normalize_card_updates(self, updates: dict[str, Any]) -> dict[str, Any]:
@@ -372,7 +372,7 @@ def _object_id(value: str) -> Any:
     try:
         return ObjectId(value)
     except Exception as exc:
-        raise BadRequestError("Invalid vocabulary card ID") from exc
+        raise ValidationError("Invalid vocabulary card ID") from exc
 
 
 def _return_document_after() -> Any:
@@ -384,7 +384,7 @@ def _return_document_after() -> Any:
 def _require_text(value: str) -> str:
     text = (value or "").strip()
     if not text:
-        raise BadRequestError("text is required")
+        raise ValidationError("text is required")
     return text
 
 
@@ -395,28 +395,28 @@ def _normalize_text(value: str) -> str:
 def _normalize_language(value: str) -> str:
     language = (value or "").strip().lower()
     if not language:
-        raise BadRequestError("language is required")
+        raise ValidationError("language is required")
     return language
 
 
 def _normalize_item_type(value: str) -> str:
     item_type = (value or "").strip().lower()
     if item_type not in VALID_ITEM_TYPES:
-        raise BadRequestError("item_type must be word or phrase")
+        raise ValidationError("item_type must be word or phrase")
     return item_type
 
 
 def _normalize_status(value: str) -> str:
     status = (value or "").strip().lower()
     if status not in VALID_VOCAB_STATUSES:
-        raise BadRequestError("status must be new, learning, review, or suspended")
+        raise ValidationError("status must be new, learning, review, or suspended")
     return status
 
 
 def _normalize_grade(value: str) -> str:
     grade = (value or "").strip().lower()
     if grade not in VALID_REVIEW_GRADES:
-        raise BadRequestError("grade must be again, hard, good, or easy")
+        raise ValidationError("grade must be again, hard, good, or easy")
     return grade
 
 

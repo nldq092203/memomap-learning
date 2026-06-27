@@ -10,7 +10,7 @@ from typing import Any, Literal
 
 from sqlalchemy.orm import Session
 
-from src.api.errors import NotFoundError
+from src.domain.errors import ResourceNotFoundError
 from src.infra.db.orm import VocabularyCardORM
 from src.domain.db_queries import VocabularyQueries
 from src.domain.vocabulary_mongo import MongoVocabularyRepository
@@ -344,7 +344,7 @@ class MongoSRSService:
                     card_id=card_id,
                     grade=grade,
                 )
-            except NotFoundError:
+            except ResourceNotFoundError:
                 continue
             reviewed_cards.append(result["card"])
             review_events.append(result["review"])

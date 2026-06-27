@@ -7,8 +7,8 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from src.api.errors import NotFoundError
 from src.domain.db_queries import VocabularyQueries
+from src.domain.errors import ResourceNotFoundError
 from src.domain.services.srs import MongoSRSService, SRSService
 from src.domain.vocabulary_mongo import MongoVocabularyRepository
 
@@ -271,14 +271,14 @@ class VocabularyCompatibilityService:
             return
         if source == "sql":
             if not VocabularyQueries.soft_delete(self.db, raw_id, user_id):
-                raise NotFoundError("Vocabulary card not found")
+                raise ResourceNotFoundError("Vocabulary card not found")
             return
 
         try:
             self.mongo_repository.soft_delete_card(user_id=user_id, card_id=raw_id)
         except Exception:
             if not VocabularyQueries.soft_delete(self.db, raw_id, user_id):
-                raise NotFoundError("Vocabulary card not found")
+                raise ResourceNotFoundError("Vocabulary card not found")
 
     def hard_delete_card(self, *, user_id: str, card_id: str) -> None:
         """Hard delete one Mongo or SQL legacy card."""
@@ -288,14 +288,14 @@ class VocabularyCompatibilityService:
             return
         if source == "sql":
             if not VocabularyQueries.hard_delete(self.db, raw_id, user_id):
-                raise NotFoundError("Vocabulary card not found")
+                raise ResourceNotFoundError("Vocabulary card not found")
             return
 
         try:
             self.mongo_repository.hard_delete_card(user_id=user_id, card_id=raw_id)
         except Exception:
             if not VocabularyQueries.hard_delete(self.db, raw_id, user_id):
-                raise NotFoundError("Vocabulary card not found")
+                raise ResourceNotFoundError("Vocabulary card not found")
 
     def get_stats(self, *, user_id: str, language: str | None = None) -> dict[str, Any]:
         """Return combined lightweight stats across Mongo and SQL legacy cards."""
@@ -343,7 +343,7 @@ class VocabularyCompatibilityService:
     def _get_sql_card(self, *, user_id: str, card_id: str) -> dict[str, Any]:
         card = VocabularyQueries.get_by_id(self.db, card_id, user_id)
         if not card:
-            raise NotFoundError("Vocabulary card not found")
+            raise ResourceNotFoundError("Vocabulary card not found")
         return self._sql_card_to_unified(card)
 
     def _update_sql_card(
@@ -361,7 +361,7 @@ class VocabularyCompatibilityService:
             **sql_updates,
         )
         if not card:
-            raise NotFoundError("Vocabulary card not found")
+            raise ResourceNotFoundError("Vocabulary card not found")
         return self._sql_card_to_unified(card)
 
     def _mongo_card_to_unified(self, card: dict[str, Any]) -> dict[str, Any]:
