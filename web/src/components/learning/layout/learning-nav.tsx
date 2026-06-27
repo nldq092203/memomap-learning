@@ -8,10 +8,8 @@ import {
   Target,
   BookOpen,
   Layers,
-  RefreshCw,
   ChevronRight,
   ArrowLeft,
-  Mic,
   List,
   Lock,
 } from "lucide-react"
@@ -49,7 +47,7 @@ const primaryNavItems: NavItem[] = [
   },
   { 
     label: "Training", 
-    href: "/learning/workspace", 
+    href: "/learning/coce-practice",
     icon: Layers,
     description: "Guided practice activities",
     guestAllowed: true,
@@ -60,20 +58,6 @@ const primaryNavItems: NavItem[] = [
     icon: List,
     description: "Numbers Dictation practice",
     guestAllowed: true,
-  },
-  { 
-    label: "Transcribe", 
-    href: "/learning/transcribe", 
-    icon: Mic, 
-    description: "Record and transcribe audio",
-  },
-]
-
-const secondaryNavItems: NavItem[] = [
-  {
-    label: "Sync",
-    href: "/learning/sync",
-    icon: RefreshCw,
   },
 ]
 
@@ -90,7 +74,7 @@ export const LearningNav = ({
 }: LearningNavProps) => {
   const pathname = usePathname()
   const router = useRouter()
-  const { isGuest, setShowSyncModal } = useGuest()
+  const { isGuest, setShowLoginPrompt } = useGuest()
 
   const handleBack = () => {
     if (customBackAction) {
@@ -180,7 +164,7 @@ export const LearningNav = ({
                     type="button"
                     onClick={() => {
                       if (isLocked) {
-                        setShowSyncModal(true)
+                        setShowLoginPrompt(true)
                       } else {
                         router.push(item.href)
                       }
@@ -208,36 +192,9 @@ export const LearningNav = ({
               })}
             </nav>
 
-            {/* Right controls: Secondary Navigation + Guest Badge */}
+            {/* Right controls */}
             <div className="flex items-center justify-between gap-3 sm:justify-end">
               <GuestModeBadge />
-              {/* Hide secondary nav (Sync) for guests */}
-              {!isGuest && (
-                <div className="flex items-center gap-1">
-                  {secondaryNavItems.map((item) => {
-                    const Icon = item.icon
-                    const isActive = pathname === item.href
-                    return (
-                      <button
-                        key={item.href}
-                        type="button"
-                        onClick={() => router.push(item.href)}
-                        className={cn(
-                          "flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all",
-                          "hover:bg-muted/50",
-                          isActive 
-                            ? "text-primary bg-primary/10" 
-                            : "text-muted-foreground"
-                        )}
-                        aria-label={item.label}
-                      >
-                        <Icon className="h-4 w-4" />
-                        <span className="hidden md:inline">{item.label}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
             </div>
           </div>
         )}

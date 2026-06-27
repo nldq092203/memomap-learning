@@ -1,231 +1,208 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useAuth } from "@/lib/hooks/use-auth"
-import { useGuest } from "@/lib/contexts/guest-context"
-import { LoginButton } from "@/components/auth/login-button"
 import {
-  ArrowRight,
   BookOpen,
-  ChevronRight,
-  Layers,
-  LineChart,
-  Lock,
+  GraduationCap,
+  Headphones,
+  MapPin,
   Mic,
-  Target,
+  PenLine,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { useAuth } from "@/lib/contexts/auth-context"
 import { cn } from "@/lib/utils"
 
-const featureCards = [
+type MapSection = {
+  id: string
+  title: string
+  href: string
+  image: string
+  icon: React.ComponentType<{ className?: string }>
+  position: string
+  mobilePosition: string
+}
+
+const assetCacheVersion = "20260627-6"
+
+function versionedBackgroundAsset(path: string) {
+  return `${path}?v=${assetCacheVersion}`
+}
+
+const mapSections: MapSection[] = [
   {
-    href: "/learning/review-hub",
-    icon: Target,
-    label: "Révisions",
-    description: "Pratiquez ce que vous avez appris aujourd'hui.",
-    accent: "bg-blue-50",
-    iconClassName: "bg-blue-100/80 text-blue-600",
-    guestAllowed: false,
-  },
-  {
+    id: "vocab",
+    title: "Vocabulaire",
     href: "/learning/vocab",
+    image: "/UI/arc-de-triomphe.webp",
     icon: BookOpen,
-    label: "Vocabulaire",
-    description: "Gérez et révisez votre liste de mots.",
-    accent: "bg-emerald-50",
-    iconClassName: "bg-emerald-100/80 text-emerald-600",
-    guestAllowed: false,
+    position: "left-[20%] top-[24%]",
+    mobilePosition: "left-[16%] top-[22%]",
   },
   {
-    href: "/learning/workspace",
-    icon: Layers,
-    label: "Entraînement",
-    description: "Exercices quotidiens de langue et dictée.",
-    accent: "bg-amber-50",
-    iconClassName: "bg-amber-100/80 text-amber-600",
-    guestAllowed: true,
+    id: "co",
+    title: "Compréhension Orale",
+    href: "/learning/co",
+    image: "/UI/northe-dame.webp",
+    icon: Headphones,
+    position: "left-[52%] top-[17%]",
+    mobilePosition: "left-[56%] top-[17%]",
   },
   {
-    href: "/learning/transcribe",
+    id: "ce",
+    title: "Compréhension Écrite",
+    href: "/learning/ce",
+    image: "/UI/louvre.webp",
+    icon: BookOpen,
+    position: "left-[44%] top-[42%]",
+    mobilePosition: "left-[42%] top-[41%]",
+  },
+  {
+    id: "pe",
+    title: "Production Écrite",
+    href: "/learning/pe",
+    image: "/UI/patheon.webp",
+    icon: PenLine,
+    position: "left-[15%] top-[58%]",
+    mobilePosition: "left-[13%] top-[58%]",
+  },
+  {
+    id: "po",
+    title: "Production Orale",
+    href: "/learning/speaking-practice",
+    image: "/UI/patheon.webp",
     icon: Mic,
-    label: "Transcrire",
-    description: "Convertissez la voix en texte et retravaillez-la.",
-    accent: "bg-violet-50",
-    iconClassName: "bg-violet-100/80 text-violet-600",
-    guestAllowed: false,
+    position: "left-[55%] top-[63%]",
+    mobilePosition: "left-[55%] top-[65%]",
   },
-] as const
+  {
+    id: "delf",
+    title: "DELF Simulation",
+    href: "/learning/delf-simulation",
+    image: "/UI/effiel.webp",
+    icon: GraduationCap,
+    position: "left-[78%] top-[45%]",
+    mobilePosition: "left-[70%] top-[79%]",
+  },
+]
 
 export default function HomePage() {
-  const router = useRouter()
-  const { isAuthenticated, isLoading } = useAuth()
-  const { isGuest } = useGuest()
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/10">
-        <p className="text-sm text-muted-foreground">Préparation de votre espace…</p>
-      </div>
-    )
-  }
+  const { user } = useAuth()
+  const displayName = user?.name?.trim() || user?.email?.split("@")[0] || "vous"
 
   return (
-    <div className="min-h-screen bg-muted/10">
-      <div className="mx-auto flex min-h-screen max-w-6xl items-center px-6 py-16">
-        <div className="grid w-full gap-10 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-center">
-          <div className="space-y-8">
-            <h1 className="text-5xl font-semibold tracking-tight text-slate-950 sm:text-6xl md:text-7xl">
-              MemoMap
-            </h1>
+    <div className="relative min-h-screen overflow-hidden bg-[#f5eee5] text-[var(--vintage-ink)]">
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-[length:min(1220px,88vw)_auto] bg-[center_58%] bg-no-repeat opacity-55"
+        style={{
+          backgroundImage: `url('${versionedBackgroundAsset("/UI/map.webp")}')`,
+        }}
+      />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_48%_52%,rgba(245,238,229,0.28),rgba(245,238,229,0.86)_66%,rgba(245,238,229,0.96)_100%)]" />
 
-            <p className="max-w-3xl text-2xl font-medium leading-tight text-slate-800 sm:text-3xl md:text-4xl">
-              Votre espace unifié pour progresser en français, chaque jour.
+      <div className="relative mx-auto min-h-screen w-full max-w-[1540px] px-5 py-8 sm:px-8 lg:px-12">
+        <section className="relative min-h-[720px] lg:min-h-[840px]">
+          <div className="relative z-20 max-w-[620px] pt-4 sm:pt-8 lg:pt-0">
+            <p className="text-sm font-medium text-[var(--vintage-muted-ink)]">
+              Bonjour, {displayName} ! 👋
             </p>
-
-            {isAuthenticated ? (
-              <Button asChild size="lg" className="h-12 rounded-full px-6 text-base">
-                <Link href="/learning">
-                  Continuer l&apos;apprentissage
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-            ) : (
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <LoginButton size="lg" className="h-12 rounded-full px-6 text-base">
-                  Login
-                </LoginButton>
-                <Button
-                  asChild
-                  variant="outline"
-                  size="lg"
-                  className="h-12 rounded-full border-teal-200 px-6 text-base text-teal-700 hover:bg-teal-50 hover:border-teal-300"
-                >
-                  <Link href="/learning">
-                    Essayer en mode invité
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </div>
-            )}
+            <h1 className="mt-5 text-4xl font-semibold leading-[1.05] tracking-normal text-[var(--vintage-ink)] sm:text-5xl lg:text-6xl">
+              Bienvenue dans votre{" "}
+              <span className="text-[var(--vintage-desert-rock)]">
+                voyage en français.
+              </span>
+            </h1>
           </div>
 
-          <Card className="overflow-hidden border-border/70 bg-white py-0 shadow-[0_22px_50px_-38px_rgba(15,23,42,0.3)]">
-            <CardContent className="px-5 py-5 sm:px-6 sm:py-6">
-              <div className="mb-5 flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-                    Accueil
-                  </p>
-                  <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
-                    Espace d&apos;apprentissage
-                  </h2>
-                </div>
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                  <LineChart className="h-5 w-5" />
-                </div>
-              </div>
+          <div className="absolute inset-x-[-2%] bottom-0 top-[118px] hidden lg:block">
+            {mapSections.map((section, index) => (
+              <MapLandmark
+                key={section.id}
+                section={section}
+                index={index + 1}
+              />
+            ))}
+          </div>
 
-              <div className="space-y-3">
-                {featureCards.map(item => (
-                  <HomeRow
-                    key={item.href}
-                    {...item}
-                    locked={isGuest && !item.guestAllowed}
-                    onNavigate={(target) => router.push(target)}
-                  />
-                ))}
-              </div>
-
-              <div className="mt-5">
-                <Button
-                  asChild
-                  variant="outline"
-                  className="h-12 w-full rounded-2xl border-dashed border-slate-300 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-50"
-                >
-                  <Link href={isGuest ? "/learning/workspace" : "/learning"}>
-                    {isGuest ? "Accéder à l'entraînement invité" : "Explorer toutes les fonctionnalités"}
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+          <div className="relative mt-8 min-h-[620px] overflow-hidden rounded-[28px] lg:hidden">
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-70"
+              style={{
+                backgroundImage: `url('${versionedBackgroundAsset("/UI/map-mobile.webp")}')`,
+              }}
+            />
+            {mapSections.map((section, index) => (
+              <MapLandmark
+                key={section.id}
+                section={section}
+                index={index + 1}
+                mobile
+              />
+            ))}
+          </div>
+        </section>
       </div>
     </div>
   )
 }
 
-type HomeRowProps = {
-  href: string
-  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>
-  label: string
-  description: string
-  accent: string
-  iconClassName: string
-  guestAllowed?: boolean
-  locked?: boolean
-  onNavigate?: (href: string) => void
-}
+function MapLandmark({
+  section,
+  index,
+  mobile = false,
+}: {
+  section: MapSection
+  index: number
+  mobile?: boolean
+}) {
+  const Icon = section.icon
 
-function HomeRow({
-  href,
-  icon: Icon,
-  label,
-  description,
-  accent,
-  iconClassName,
-  locked = false,
-  onNavigate,
-}: HomeRowProps) {
   return (
-    <button
-      type="button"
-      disabled={locked}
-      aria-disabled={locked}
-      onClick={() => {
-        onNavigate?.(href)
-      }}
+    <Link
+      href={section.href}
       className={cn(
-        "group block w-full rounded-[1.75rem] border border-slate-200/80 bg-white p-2 text-left shadow-sm transition-all duration-200",
-        locked
-          ? "cursor-not-allowed opacity-40"
-          : "hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+        "group absolute w-[142px] -translate-x-1/2 rounded-[14px] bg-[var(--vintage-feather-white)]/88 p-2 shadow-[0_16px_28px_rgba(74,51,35,0.18)] backdrop-blur-sm transition duration-200 hover:-translate-y-1 hover:shadow-[0_20px_36px_rgba(74,51,35,0.22)]",
+        mobile ? section.mobilePosition : section.position,
+        mobile && "w-[122px] p-1.5",
       )}
     >
-      <div className={cn("rounded-[1.2rem] p-0", accent)}>
-        <div className="flex items-center gap-4 rounded-[1.15rem] border border-white/80 bg-white/90 px-4 py-4">
-          <div
-            className={cn(
-              "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl",
-              iconClassName,
-            )}
-          >
-            <Icon className="h-6 w-6" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="flex items-center gap-2 text-xl font-semibold tracking-tight text-slate-950">
-              {label}
-              {locked && <Lock className="h-4 w-4 text-slate-400" />}
-            </p>
-            <p className="mt-1 max-w-xs text-sm leading-6 text-slate-500">
-              {description}
-            </p>
-          </div>
-          <div
-            className={cn(
-              "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-300 transition-colors",
-              locked
-                ? "border-slate-200/70 text-slate-300"
-                : "group-hover:border-slate-300 group-hover:text-slate-600",
-            )}
-          >
-            {locked ? <Lock className="h-4 w-4" /> : <ChevronRight className="h-5 w-5" />}
-          </div>
-        </div>
+      <div
+        className={cn(
+          "absolute left-1/2 z-0 flex -translate-x-1/2 items-center justify-center rounded-full border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/72 text-[var(--vintage-desert-rock)] shadow-[0_8px_18px_rgba(74,51,35,0.14)] backdrop-blur-[1px]",
+          mobile ? "-bottom-6 h-8 w-8" : "-bottom-8 h-10 w-10",
+        )}
+        aria-hidden="true"
+      >
+        <MapPin className={cn("fill-current", mobile ? "h-4 w-4" : "h-5 w-5")} />
       </div>
-    </button>
+      <div className="absolute -left-2 -top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full border-2 border-[var(--vintage-feather-white)] bg-[var(--vintage-desert-rock)] text-xs font-bold text-white shadow-sm">
+        {index}
+      </div>
+      <div
+        className={cn(
+          "relative h-[96px] w-full overflow-hidden rounded-[10px] bg-[var(--vintage-cream)]/45",
+          mobile && "h-[78px]",
+        )}
+      >
+        <Image
+          src={section.image}
+          alt=""
+          fill
+          sizes={mobile ? "122px" : "142px"}
+          className="object-contain transition duration-300 group-hover:scale-[1.04]"
+        />
+      </div>
+      <div
+        className={cn(
+          "flex items-center justify-center gap-1.5 px-1 pb-1 pt-2 text-center font-bold uppercase leading-[1.15] text-[var(--vintage-desert-rock)]",
+          mobile ? "text-[9px]" : "text-[10px]",
+        )}
+      >
+        <Icon className={cn("shrink-0", mobile ? "h-3 w-3" : "h-3.5 w-3.5")} />
+        <span>{section.title}</span>
+      </div>
+    </Link>
   )
 }

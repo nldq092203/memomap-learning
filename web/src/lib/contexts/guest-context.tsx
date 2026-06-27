@@ -16,9 +16,9 @@ interface GuestContextValue {
   setPendingAction: (action: () => Promise<void>) => void
   /** Execute the buffered action (call after login) */
   executePendingAction: () => Promise<void>
-  /** Show / hide the Sync & Save modal */
-  showSyncModal: boolean
-  setShowSyncModal: (v: boolean) => void
+  /** Show / hide the login prompt */
+  showLoginPrompt: boolean
+  setShowLoginPrompt: (v: boolean) => void
 }
 
 const GuestContext = createContext<GuestContextValue | undefined>(undefined)
@@ -28,7 +28,7 @@ export function GuestProvider({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth()
   const isGuest = !isAuthenticated && !isLoading
 
-  const [showSyncModal, setShowSyncModal] = useState(false)
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
   const pendingActionRef = useRef<(() => Promise<void>) | null>(null)
 
   const setPendingAction = useCallback((action: () => Promise<void>) => {
@@ -47,8 +47,8 @@ export function GuestProvider({ children }: { children: React.ReactNode }) {
     isGuest,
     setPendingAction,
     executePendingAction,
-    showSyncModal,
-    setShowSyncModal,
+    showLoginPrompt,
+    setShowLoginPrompt,
   }
 
   return <GuestContext.Provider value={value}>{children}</GuestContext.Provider>

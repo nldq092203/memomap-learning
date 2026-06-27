@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname, useSearchParams, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import {
   BookOpen,
@@ -9,12 +9,9 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Home,
-  Layers,
-  LineChart,
   Menu,
   MessageSquare,
-  Mic,
-  Target,
+  User,
   X,
   Lock,
 } from "lucide-react"
@@ -27,35 +24,25 @@ import { useGuest } from "@/lib/contexts/guest-context"
 import { cn } from "@/lib/utils"
 
 const primaryNavItems = [
-  { label: "Accueil", href: "/learning", icon: Home, guestAllowed: true },
-  { label: "Révisions", href: "/learning/review-hub", icon: Target, guestAllowed: false },
-  { label: "Vocabulaire", href: "/learning/vocab", icon: BookOpen, guestAllowed: false },
-  { label: "Entraînement", href: "/learning/workspace", icon: Layers, guestAllowed: true },
-  { label: "Transcrire", href: "/learning/transcribe", icon: Mic, guestAllowed: false },
+  { label: "Accueil", href: "/", icon: Home, guestAllowed: true },
   { label: "Communauté", href: "/learning/community", icon: MessageSquare, guestAllowed: false },
+  { label: "Vocabulaire", href: "/learning/vocab", icon: BookOpen, guestAllowed: false },
+  { label: "Profil", href: "/learning/profile", icon: User, guestAllowed: false },
 ] as const
 
 function isNavItemActive(pathname: string, href: string) {
-  if (href === "/learning/workspace") {
-    return (
-      pathname === href ||
-      pathname.startsWith("/learning/coce-practice") ||
-      pathname.startsWith("/learning/delf-practice") ||
-      pathname.startsWith("/learning/speaking-practice") ||
-      pathname.startsWith("/learning/numbers-dictation")
-    )
+  if (href === "/") {
+    return pathname === "/" || pathname === "/learning"
   }
 
   return pathname === href
 }
 
 export function Navigation() {
-  const router = useRouter()
   const isAuthenticated = useIsAuthenticated()
   const isLoading = useAuthLoading()
   const pathname = usePathname()
-  const searchParams = useSearchParams()
-  const { isGuest, setShowSyncModal } = useGuest()
+  const { isGuest, setShowLoginPrompt } = useGuest()
   
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
@@ -98,30 +85,20 @@ export function Navigation() {
     return null
   }
 
-  const isWorkspaceEditor =
-    pathname === "/learning/workspace" && searchParams.get("open") === "editor"
-
-  if (isWorkspaceEditor) {
-    return null
-  }
-
   return (
     <>
-      <div className="fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between border-b border-border/60 bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:hidden">
+      <div className="fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between border-b border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-[var(--vintage-feather-white)]/85 lg:hidden">
         <Link href="/" className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
-            <LineChart className="h-5 w-5" />
-          </div>
           <div>
-            <p className="text-sm font-semibold">MemoMap</p>
-            <p className="text-xs text-muted-foreground">Espace d&apos;apprentissage</p>
+            <p className="text-lg font-semibold italic leading-none text-[var(--vintage-ink)]">Paris</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--vintage-desert-rock)]">Journey</p>
           </div>
         </Link>
 
         <button
           type="button"
           onClick={() => setIsMobileOpen(true)}
-          className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/70 bg-background text-foreground shadow-sm"
+          className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/70 text-[var(--vintage-ink)] shadow-sm"
           aria-label="Ouvrir la navigation"
         >
           <Menu className="h-5 w-5" />
@@ -146,26 +123,23 @@ export function Navigation() {
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-[60] flex w-[84vw] max-w-[320px] flex-col border-r border-border/70 bg-background shadow-2xl transition-transform duration-300 lg:z-auto lg:max-w-none lg:translate-x-0 lg:shadow-none",
+          "fixed inset-y-0 left-0 z-[60] flex w-[84vw] max-w-[320px] flex-col border-r border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)] shadow-2xl transition-transform duration-300 lg:z-auto lg:max-w-none lg:translate-x-0 lg:shadow-none",
           isMobileOpen ? "translate-x-0" : "-translate-x-full",
           isCollapsed ? "lg:w-24" : "lg:w-72",
         )}
       >
-        <div className="flex items-center justify-between border-b border-border/60 px-4 py-4 lg:px-5">
+        <div className="flex items-center justify-between border-b border-[var(--vintage-soft-sandstone)] px-4 py-5 lg:px-5">
           <Link
             href="/"
             className={cn(
-              "flex items-center gap-3 overflow-hidden",
+              "flex items-center overflow-hidden",
               isCollapsed && "lg:justify-center",
             )}
           >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
-              <LineChart className="h-5 w-5" />
-            </div>
             <div className={cn("min-w-0", isCollapsed && "lg:hidden")}>
-              <p className="font-semibold tracking-tight">MemoMap</p>
-              <p className="text-xs text-muted-foreground">
-                Espace d&apos;apprentissage
+              <p className="text-2xl font-semibold italic leading-none text-[var(--vintage-ink)]">Paris</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--vintage-desert-rock)]">
+                Journey
               </p>
             </div>
           </Link>
@@ -174,7 +148,7 @@ export function Navigation() {
             <button
               type="button"
               onClick={() => setIsMobileOpen(false)}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/70 lg:hidden"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--vintage-soft-sandstone)] text-[var(--vintage-desert-rock)] lg:hidden"
               aria-label="Fermer la navigation"
             >
               <X className="h-4 w-4" />
@@ -182,7 +156,7 @@ export function Navigation() {
             <button
               type="button"
               onClick={() => setIsCollapsed(prev => !prev)}
-              className="hidden h-9 w-9 items-center justify-center rounded-xl border border-border/70 text-muted-foreground transition hover:text-foreground lg:flex"
+              className="hidden h-9 w-9 items-center justify-center rounded-xl border border-[var(--vintage-soft-sandstone)] text-[var(--vintage-desert-rock)] transition hover:bg-[var(--vintage-porcelain-mist)] hover:text-[var(--vintage-ink)] lg:flex"
               aria-label={isCollapsed ? "Ouvrir la barre latérale" : "Réduire la barre latérale"}
             >
               {isCollapsed ? (
@@ -196,7 +170,7 @@ export function Navigation() {
 
         <div className="flex-1 overflow-y-auto px-3 py-4">
           <div className={cn("mb-4 px-2", isCollapsed && "lg:hidden")}>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--vintage-desert-rock)]">
               Navigation
             </p>
           </div>
@@ -210,7 +184,7 @@ export function Navigation() {
                 return (
                   <button
                     key={href}
-                    onClick={() => setShowSyncModal(true)}
+                    onClick={() => setShowLoginPrompt(true)}
                     className={cn(
                       "w-full group flex items-center gap-3 rounded-2xl px-3 py-3 transition-all",
                       "opacity-40 cursor-not-allowed hover:opacity-50",
@@ -221,14 +195,14 @@ export function Navigation() {
                     <div
                       className={cn(
                         "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl",
-                        "bg-muted/80 text-muted-foreground group-hover:text-foreground",
+                        "bg-[var(--vintage-porcelain-mist)] text-[var(--vintage-desert-rock)] group-hover:text-[var(--vintage-ink)]",
                       )}
                     >
                       <Icon className="h-5 w-5" />
                     </div>
 
                     <div className={cn("min-w-0 flex-1 text-left", isCollapsed && "lg:hidden")}>
-                      <p className="font-medium flex items-center gap-2 text-muted-foreground">
+                      <p className="font-medium flex items-center gap-2 text-[var(--vintage-desert-rock)]">
                         {label}
                         <Lock className="h-3 w-3" />
                       </p>
@@ -236,7 +210,7 @@ export function Navigation() {
 
                     <ChevronRight
                       className={cn(
-                        "h-4 w-4 shrink-0 text-muted-foreground/60",
+                        "h-4 w-4 shrink-0 text-[var(--vintage-desert-rock)]/70",
                         isCollapsed && "lg:hidden",
                       )}
                     />
@@ -251,8 +225,8 @@ export function Navigation() {
                   className={cn(
                     "group flex items-center gap-3 rounded-2xl px-3 py-3 transition-all",
                     isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
+                      ? "bg-[var(--vintage-cream)] text-[var(--vintage-ink)]"
+                      : "text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-porcelain-mist)] hover:text-[var(--vintage-ink)]",
                     isCollapsed && "lg:justify-center lg:px-2",
                   )}
                   title={label}
@@ -261,8 +235,8 @@ export function Navigation() {
                     className={cn(
                       "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl",
                       isActive
-                        ? "bg-primary/15"
-                        : "bg-muted/80 text-muted-foreground group-hover:text-foreground",
+                        ? "bg-[var(--vintage-desert-rock)] text-white"
+                        : "bg-[var(--vintage-porcelain-mist)] text-[var(--vintage-desert-rock)] group-hover:text-[var(--vintage-ink)]",
                     )}
                   >
                     <Icon className="h-5 w-5" />
@@ -274,7 +248,7 @@ export function Navigation() {
 
                   <ChevronRight
                     className={cn(
-                      "h-4 w-4 shrink-0 text-muted-foreground/60",
+                      "h-4 w-4 shrink-0 text-[var(--vintage-desert-rock)]/70",
                       isCollapsed && "lg:hidden",
                     )}
                   />
@@ -284,23 +258,23 @@ export function Navigation() {
           </nav>
         </div>
 
-        <div className="space-y-3 border-t border-border/60 p-3">
+        <div className="space-y-3 border-t border-[var(--vintage-soft-sandstone)] p-3">
           <div className={cn(isCollapsed && "lg:hidden")}>
             <SupportProjectTrigger variant="nav" />
           </div>
 
           {isLoading ? (
-            <div className="flex items-center gap-3 rounded-2xl bg-muted/60 px-3 py-3">
-              <div className="h-10 w-10 animate-pulse rounded-full bg-muted" />
+            <div className="flex items-center gap-3 rounded-2xl bg-[var(--vintage-porcelain-mist)] px-3 py-3">
+              <div className="h-10 w-10 animate-pulse rounded-full bg-[var(--vintage-cream)]" />
               <div className={cn("space-y-2", isCollapsed && "lg:hidden")}>
-                <div className="h-3 w-24 animate-pulse rounded bg-muted" />
-                <div className="h-3 w-32 animate-pulse rounded bg-muted" />
+                <div className="h-3 w-24 animate-pulse rounded bg-[var(--vintage-cream)]" />
+                <div className="h-3 w-32 animate-pulse rounded bg-[var(--vintage-cream)]" />
               </div>
             </div>
           ) : isAuthenticated ? (
             <div
               className={cn(
-                "min-w-0 overflow-hidden rounded-2xl border border-border/70 bg-muted/40 p-3",
+                "min-w-0 overflow-hidden rounded-2xl border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-porcelain-mist)]/70 p-3",
                 isCollapsed && "lg:px-2",
               )}
             >

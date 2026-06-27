@@ -56,10 +56,10 @@ export default function SpeakingPracticePage() {
           type="button"
           variant="ghost"
           className="mb-6 rounded-full px-3 text-slate-600 hover:bg-white hover:text-slate-900"
-          onClick={() => router.push("/learning/workspace")}
+          onClick={() => router.back()}
         >
           <ArrowLeft className="mr-1.5 h-4 w-4" />
-          Retour à l&apos;espace d&apos;entrainement
+          Retour
         </Button>
 
         {!currentTopic && !currentContent && (

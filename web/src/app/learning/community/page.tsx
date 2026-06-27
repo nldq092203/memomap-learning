@@ -3,54 +3,61 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 import {
   EyeOff,
+  Feather,
   Lightbulb,
-  MessageSquareQuote,
+  MessageSquare,
   PencilLine,
-  Rocket,
-  Sparkles,
   Trash2,
+  Users,
 } from "lucide-react"
 
-import { SupportProjectTrigger } from "@/components/auth/support-project-trigger"
 import { useAuth } from "@/lib/contexts/auth-context"
 import {
   communityApi,
   type CommunityFeedback,
 } from "@/lib/services/learning-community-api"
 import { useAsyncAction } from "@/lib/hooks/use-async-action"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 
-const STATUS_STYLES: Record<string, { chip: string; dot: string; label: string }> = {
+const STATUS_STYLES: Record<string, { label: string; className: string }> = {
   planned: {
-    chip: "border-amber-200 bg-amber-50 text-amber-700",
-    dot: "bg-amber-400",
-    label: "Planned",
+    label: "À planifier",
+    className: "border-[#cda866] bg-[#fff7df] text-[#9b6b22]",
   },
   "in-progress": {
-    chip: "border-sky-200 bg-sky-50 text-sky-700",
-    dot: "bg-sky-400",
-    label: "In Progress",
+    label: "En cours",
+    className: "border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-cream)]/70 text-[var(--vintage-desert-rock)]",
   },
   done: {
-    chip: "border-emerald-200 bg-emerald-50 text-emerald-700",
-    dot: "bg-emerald-400",
-    label: "Done",
+    label: "Réalisé",
+    className: "border-[#b8aa8c] bg-[#f4f1ea] text-[#6f654f]",
   },
 }
 
 const feedbackDateFormatter = new Intl.DateTimeFormat("fr-FR", {
   day: "numeric",
-  month: "short",
+  month: "long",
   year: "numeric",
 })
+
+const assetCacheVersion = "20260627-7"
+
+function versionedBackgroundAsset(path: string) {
+  return `${path}?v=${assetCacheVersion}`
+}
 
 function StatusBadge({ status }: { status: string }) {
   const style = STATUS_STYLES[status] ?? STATUS_STYLES.planned
 
   return (
     <span
-      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${style.chip}`}
+      className={cn(
+        "inline-flex shrink-0 items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em]",
+        style.className,
+      )}
     >
-      <span className={`h-2 w-2 rounded-full ${style.dot}`} />
       {style.label}
     </span>
   )
@@ -86,33 +93,39 @@ function FeedbackCard({
     setEditing(false)
   }
 
-  return (
-    <article className="group relative overflow-hidden rounded-[28px] border border-slate-200 bg-white/90 p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-30px_rgba(15,23,42,0.26)]">
-      <div className="absolute inset-x-0 top-0 h-20 bg-[radial-gradient(circle_at_top,rgba(45,212,191,0.10),transparent_72%)]" />
+  const initial = (fb.display_name || "?").slice(0, 1).toUpperCase()
 
-      <div className="relative flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="truncate text-sm font-semibold text-slate-900">{fb.display_name}</p>
-            {fb.is_incognito ? (
-              <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-slate-500">
-                <EyeOff className="h-3 w-3" />
-                Incognito
-              </span>
-            ) : null}
+  return (
+    <article className="rounded-[22px] border border-[var(--vintage-cream)] bg-[var(--vintage-feather-white)]/78 p-5 shadow-[0_12px_28px_rgba(74,51,35,0.08)]">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--vintage-desert-rock)] text-sm font-semibold text-white">
+            {initial}
           </div>
-          <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
-            <MessageSquareQuote className="h-3.5 w-3.5" />
-            <time>{feedbackDateFormatter.format(new Date(fb.created_at))}</time>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="truncate text-sm font-semibold text-[var(--vintage-ink)]">
+                {fb.display_name}
+              </p>
+              {fb.is_incognito ? (
+                <span className="inline-flex items-center gap-1 rounded-full border border-[var(--vintage-cream)] bg-[var(--vintage-porcelain-mist)] px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--vintage-muted-ink)]">
+                  <EyeOff className="h-3 w-3" />
+                  Incognito
+                </span>
+              ) : null}
+            </div>
+            <time className="mt-1 block text-xs text-[var(--vintage-muted-ink)]">
+              {feedbackDateFormatter.format(new Date(fb.created_at))}
+            </time>
           </div>
         </div>
         <StatusBadge status={fb.status} />
       </div>
 
       {editing ? (
-        <div className="relative mt-4 space-y-3">
+        <div className="mt-4 space-y-3">
           <textarea
-            className="min-h-28 w-full resize-none rounded-[22px] border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-800 outline-none ring-0 transition focus:border-primary/40 focus:ring-2 focus:ring-primary/15"
+            className="min-h-28 w-full resize-none rounded-2xl border border-[var(--vintage-cream)] bg-[var(--vintage-feather-white)] px-4 py-3 text-sm leading-6 text-[var(--vintage-ink)] outline-none transition focus:border-[var(--vintage-desert-rock)] focus:ring-2 focus:ring-[var(--vintage-desert-rock)]/15"
             rows={4}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
@@ -123,9 +136,9 @@ function FeedbackCard({
             <button
               onClick={handleSave}
               disabled={isEditingPending}
-              className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-full bg-[var(--vintage-desert-rock)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#8f7763] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isEditingPending ? "Saving..." : "Save changes"}
+              {isEditingPending ? "Enregistrement..." : "Enregistrer"}
             </button>
             <button
               onClick={() => {
@@ -133,27 +146,30 @@ function FeedbackCard({
                 setDraft(fb.content)
               }}
               disabled={isEditingPending}
-              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-full border border-[var(--vintage-cream)] bg-[var(--vintage-feather-white)] px-4 py-2 text-xs font-semibold text-[var(--vintage-muted-ink)] transition hover:border-[var(--vintage-soft-sandstone)] hover:text-[var(--vintage-ink)] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Cancel
+              Annuler
             </button>
           </div>
         </div>
       ) : (
-        <p className="relative mt-4 whitespace-pre-wrap text-sm leading-7 text-slate-700">
-          {fb.content}
-        </p>
+        <div className="mt-5 flex gap-3">
+          <MessageSquare className="mt-1 h-4 w-4 shrink-0 text-[var(--vintage-desert-rock)]" />
+          <p className="whitespace-pre-wrap text-sm leading-7 text-[var(--vintage-ink)]">
+            {fb.content}
+          </p>
+        </div>
       )}
 
       {isOwn && !editing ? (
-        <div className="relative mt-5 flex justify-end gap-2 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100">
+        <div className="mt-5 flex justify-end gap-2">
           <button
             onClick={() => setEditing(true)}
             disabled={isDeleting || isEditingPending}
-            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[var(--vintage-cream)] bg-[var(--vintage-feather-white)] px-3 py-1.5 text-xs font-medium text-[var(--vintage-muted-ink)] transition hover:border-[var(--vintage-soft-sandstone)] hover:text-[var(--vintage-ink)]"
           >
             <PencilLine className="h-3.5 w-3.5" />
-            Edit
+            Modifier
           </button>
           <button
             onClick={() => onDelete(fb._id)}
@@ -161,7 +177,7 @@ function FeedbackCard({
             className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-600 transition hover:border-rose-300 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Trash2 className="h-3.5 w-3.5" />
-            {isDeleting ? "Deleting..." : "Delete"}
+            {isDeleting ? "Suppression..." : "Supprimer"}
           </button>
         </div>
       ) : null}
@@ -186,7 +202,7 @@ export default function CommunityPage() {
       setFeedbacks(data)
     } catch (err) {
       console.error("Failed to load feedbacks:", err)
-      setErrorMessage("Impossible de charger les retours pour le moment.")
+      setErrorMessage("Impossible de charger les idées pour le moment.")
     } finally {
       setLoading(false)
     }
@@ -215,7 +231,7 @@ export default function CommunityPage() {
       await submitFeedback()
     } catch (err) {
       console.error("Failed to post feedback:", err)
-      setErrorMessage("Votre message n'a pas pu être envoyé. Réessayez dans un instant.")
+      setErrorMessage("Votre idée n'a pas pu être envoyée. Réessayez dans un instant.")
     }
   }
 
@@ -256,192 +272,156 @@ export default function CommunityPage() {
     [feedbacks, user?.sub]
   )
 
-  const helperNotes = [
-    "Proposez une fonctionnalité concrète ou un petit irritant du quotidien.",
-    "Décrivez le contexte d'usage pour aider à prioriser.",
-    "Un retour court et précis est souvent le plus utile.",
-  ]
+  const activeMemberCount = useMemo(() => {
+    const unique = new Set(feedbacks.map((fb) => fb.user_id))
+    return unique.size
+  }, [feedbacks])
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-      <section className="relative overflow-hidden rounded-[34px] border border-slate-200 bg-surface-gradient-transcribe-hero px-6 py-8 shadow-sm sm:px-8">
-        <div className="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_top_right,rgba(45,212,191,0.14),transparent_60%)]" />
-
-        <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_280px]">
-          <div className="space-y-5">
-            <div className="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-teal-700">
-              <Sparkles className="h-3.5 w-3.5" />
-              Community Board
-            </div>
-
-            <div className="space-y-3">
-              <h1 className="max-w-3xl text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-                Construisons MemoMap avec les vrais besoins des apprenants.
-              </h1>
-              <p className="max-w-2xl text-sm leading-7 text-slate-600 sm:text-[15px]">
-                Déposez une idée, un irritant ou une amélioration concrète. Les retours ici
-                servent à prioriser ce qui mérite d&apos;être construit ensuite.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {helperNotes.map((note) => (
-                <span
-                  key={note}
-                  className="rounded-full border border-slate-200 bg-white/80 px-3 py-1.5 text-xs text-slate-600 shadow-sm"
-                >
-                  {note}
-                </span>
-              ))}
-            </div>
-
-            <div className="pt-1">
-              <SupportProjectTrigger className="max-w-md" />
-            </div>
+    <main className="relative min-h-screen overflow-hidden bg-[#f5eee5] px-4 py-8 text-[var(--vintage-ink)] sm:px-6 lg:px-8">
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-[length:1180px_auto] bg-top bg-no-repeat opacity-[0.08]"
+        style={{
+          backgroundImage: `url('${versionedBackgroundAsset("/UI/map.webp")}')`,
+        }}
+      />
+      <div className="relative mx-auto max-w-6xl">
+        <section className="py-10 text-left">
+          <div className="inline-flex items-center gap-4 rounded-none border-y border-[var(--vintage-soft-sandstone)] px-1 py-3 text-xs font-semibold uppercase tracking-[0.34em] text-[var(--vintage-desert-rock)] sm:px-2">
+            <span>Communauté</span>
           </div>
+          <h1 className="mt-8 max-w-4xl text-5xl font-semibold leading-tight tracking-normal text-[var(--vintage-ink)] sm:text-6xl">
+            Forum des idées
+          </h1>
+          <p className="mt-4 max-w-2xl text-xl leading-8 text-[var(--vintage-muted-ink)]">
+            Vos idées construisent MemoMap.
+          </p>
+          <div className="mt-8 h-px w-44 bg-[var(--vintage-soft-sandstone)]" />
+        </section>
 
-          <aside className="grid grid-cols-2 gap-3 self-start lg:grid-cols-1">
-            <div className="rounded-[26px] border border-slate-200 bg-white/90 p-4 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
-                  <Lightbulb className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    Shared ideas
-                  </p>
-                  <p className="text-2xl font-semibold text-slate-900">{feedbacks.length}</p>
-                </div>
+        <section className="rounded-[28px] border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/76 p-5 shadow-[0_22px_60px_rgba(74,51,35,0.14)] backdrop-blur-sm sm:p-7">
+          <div className="grid gap-4 md:grid-cols-3">
+            <StatCard icon={Lightbulb} value={feedbacks.length} label="Idées partagées" />
+            <StatCard icon={Feather} value={ownFeedbackCount} label="Vos publications" />
+            <StatCard icon={Users} value={activeMemberCount} label="Membres actifs" />
+          </div>
+        </section>
+
+        <section className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.25fr)]">
+          <section className="rounded-[28px] border border-[var(--vintage-cream)] bg-[var(--vintage-feather-white)]/78 p-6 shadow-[0_18px_45px_rgba(74,51,35,0.12)] backdrop-blur-sm">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--vintage-porcelain-mist)] text-[var(--vintage-desert-rock)]">
+                <Feather className="h-6 w-6" />
               </div>
+              <h2 className="text-2xl font-semibold text-[var(--vintage-ink)]">
+                Partager une idée
+              </h2>
             </div>
 
-            <div className="rounded-[26px] border border-slate-200 bg-white/90 p-4 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-teal-50 text-teal-600">
-                  <Rocket className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    Your posts
-                  </p>
-                  <p className="text-2xl font-semibold text-slate-900">{ownFeedbackCount}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="col-span-2 rounded-[26px] border border-slate-200 bg-white/80 p-4 text-sm leading-6 text-slate-600 shadow-sm lg:col-span-1">
-              Les suggestions les plus claires sont plus simples à transformer en roadmap.
-            </div>
-          </aside>
-        </div>
-      </section>
-
-      <section className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
-        <div className="space-y-4">
-          <div className="rounded-[30px] border border-slate-200 bg-white/90 p-5 shadow-sm">
-            <div className="mb-4 flex items-start gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-900 text-white">
-                <PencilLine className="h-5 w-5" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900">Share feedback</h2>
-                <p className="text-sm text-slate-500">
-                  Une idée claire, un bug gênant ou une amélioration simple.
-                </p>
-              </div>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-5">
               <textarea
                 id="feedback-input"
-                className="min-h-40 w-full resize-none rounded-[24px] border border-slate-200 bg-white px-4 py-4 text-sm leading-7 text-slate-800 outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-primary/15"
-                rows={6}
-                placeholder="Exemple: ajouter un mode review plus rapide pour réviser 20 cartes en 5 minutes, avec raccourcis clavier."
+                className="min-h-56 w-full resize-none rounded-[20px] border border-[var(--vintage-soft-sandstone)]/55 bg-[var(--vintage-porcelain-mist)]/86 px-4 py-4 text-sm leading-7 text-[var(--vintage-ink)] shadow-inner shadow-[rgba(74,51,35,0.035)] outline-none transition placeholder:text-[var(--vintage-muted-ink)]/62 focus:border-[var(--vintage-desert-rock)] focus:bg-[var(--vintage-feather-white)]/62 focus:ring-2 focus:ring-[var(--vintage-desert-rock)]/15"
+                rows={8}
+                placeholder="Écrivez votre idée ici..."
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
               />
 
-              <label className="flex items-start gap-3 rounded-[22px] border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-700">
-                <input
-                  type="checkbox"
+              <label
+                htmlFor="feedback-incognito"
+                className="flex w-fit cursor-pointer items-center gap-3 text-sm text-[var(--vintage-ink)]"
+              >
+                <Checkbox
+                  id="feedback-incognito"
                   checked={isIncognito}
-                  onChange={(e) => setIsIncognito(e.target.checked)}
-                  className="mt-1 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-300"
+                  onCheckedChange={(checked) => setIsIncognito(checked === true)}
+                  className="h-5 w-5 rounded-md border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-cream)] text-[var(--vintage-feather-white)] shadow-sm shadow-[rgba(74,51,35,0.08)] focus-visible:ring-[var(--vintage-desert-rock)]/25 data-[state=checked]:border-[var(--vintage-desert-rock)] data-[state=checked]:bg-[var(--vintage-desert-rock)]"
                 />
-                <span>
-                  <span className="block font-medium text-slate-900">Post in incognito mode</span>
-                  <span className="block text-xs leading-5 text-slate-500">
-                    Your post stays linked to your account for editing and deletion, but the community only sees “Incognito”.
-                  </span>
-                </span>
+                <span>Publier en mode anonyme</span>
               </label>
 
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs text-slate-500">
-                  {content.trim().length > 0
-                    ? `${content.trim().length} caractères prêts à être envoyés${isIncognito ? " en mode incognito" : ""}`
-                    : "Plus c'est concret, plus c'est exploitable."}
-                </p>
-                <button
+              <div className="flex justify-end">
+                <Button
                   type="submit"
                   disabled={!content.trim() || submitting}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                  loading={submitting}
+                  className="h-12 min-w-44 rounded-full bg-[var(--vintage-desert-rock)] px-7 text-sm font-semibold text-[var(--vintage-feather-white)] shadow-[0_14px_28px_rgba(164,141,120,0.26)] transition hover:bg-[#8f7763] disabled:bg-[var(--vintage-soft-sandstone)] disabled:text-[var(--vintage-feather-white)] disabled:opacity-80"
                 >
-                  <Rocket className="h-4 w-4" />
-                  {submitting ? "Sending..." : "Send feedback"}
-                </button>
+                  <Feather className="h-4 w-4" />
+                  Publier
+                </Button>
               </div>
             </form>
-          </div>
 
-          {errorMessage ? (
-            <div className="rounded-[22px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-              {errorMessage}
-            </div>
-          ) : null}
-        </div>
-
-        <div className="space-y-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900">Latest feedback</h2>
-              <p className="text-sm text-slate-500">Newest first, visible to the whole community.</p>
-            </div>
-          </div>
-
-          {loading ? (
-            <div className="rounded-[30px] border border-slate-200 bg-white/85 p-10 shadow-sm">
-              <div className="flex justify-center py-10">
-                <div className="h-7 w-7 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            {errorMessage ? (
+              <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                {errorMessage}
               </div>
+            ) : null}
+          </section>
+
+          <section className="rounded-[28px] border border-[var(--vintage-cream)] bg-[var(--vintage-feather-white)]/78 p-6 shadow-[0_18px_45px_rgba(74,51,35,0.12)] backdrop-blur-sm">
+            <div className="mb-5 text-center">
+              <h2 className="text-2xl font-semibold text-[var(--vintage-ink)]">
+                Dernières idées
+              </h2>
+              <div className="mx-auto mt-4 h-px w-40 bg-[var(--vintage-soft-sandstone)]" />
             </div>
-          ) : feedbacks.length === 0 ? (
-            <div className="rounded-[30px] border border-dashed border-slate-300 bg-white/85 px-6 py-12 text-center shadow-sm">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-50 text-teal-600">
-                <MessageSquareQuote className="h-6 w-6" />
+
+            {loading ? (
+              <div className="flex justify-center py-14">
+                <div className="h-7 w-7 animate-spin rounded-full border-2 border-[var(--vintage-desert-rock)] border-t-transparent" />
               </div>
-              <h3 className="mt-4 text-lg font-semibold text-slate-900">Aucune idée postée pour l&apos;instant</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                Lancez la discussion avec une suggestion concrète ou un petit bug à corriger.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {feedbacks.map((fb) => (
-                <FeedbackCard
-                  key={fb._id}
-                  fb={fb}
-                  isOwn={user?.sub === fb.user_id}
-                  onDelete={handleDelete}
-                  onEdit={handleEdit}
-                  isDeleting={deletingId === fb._id}
-                  isEditingPending={editingId === fb._id}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
+            ) : feedbacks.length === 0 ? (
+              <div className="rounded-[22px] border border-dashed border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/70 px-6 py-12 text-center">
+                <MessageSquare className="mx-auto h-7 w-7 text-[var(--vintage-desert-rock)]" />
+                <h3 className="mt-4 text-lg font-semibold text-[var(--vintage-ink)]">
+                  Aucune idée postée pour l&apos;instant
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-[var(--vintage-muted-ink)]">
+                  Lancez la discussion avec une suggestion concrète.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                {feedbacks.map((fb) => (
+                  <FeedbackCard
+                    key={fb._id}
+                    fb={fb}
+                    isOwn={user?.sub === fb.user_id}
+                    onDelete={handleDelete}
+                    onEdit={handleEdit}
+                    isDeleting={deletingId === fb._id}
+                    isEditingPending={editingId === fb._id}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        </section>
+      </div>
     </main>
+  )
+}
+
+function StatCard({
+  icon: Icon,
+  value,
+  label,
+}: {
+  icon: React.ComponentType<{ className?: string }>
+  value: number
+  label: string
+}) {
+  return (
+    <div className="rounded-[24px] border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/58 px-5 py-8 text-center">
+      <Icon className="mx-auto h-8 w-8 text-[var(--vintage-desert-rock)]" />
+      <p className="mt-5 text-4xl font-semibold text-[var(--vintage-ink)]">{value}</p>
+      <p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--vintage-desert-rock)]">
+        {label}
+      </p>
+    </div>
   )
 }

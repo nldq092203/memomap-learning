@@ -1,6 +1,5 @@
-// Legacy sync page removed now that local LearningDB has been retired.
-// This file is intentionally empty to avoid exposing a broken route.
+import { redirect } from "next/navigation"
 
 export default function SyncPage() {
-  return null
+  redirect("/")
 }

@@ -15,7 +15,7 @@ export function GuestUpgradeHint({
   description,
   className,
 }: GuestUpgradeHintProps) {
-  const { isGuest, setShowSyncModal } = useGuest()
+  const { isGuest, setShowLoginPrompt } = useGuest()
 
   if (!isGuest) return null
 
@@ -40,7 +40,7 @@ export function GuestUpgradeHint({
       <Button
         type="button"
         className="w-full rounded-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto sm:shrink-0"
-        onClick={() => setShowSyncModal(true)}
+        onClick={() => setShowLoginPrompt(true)}
       >
         Se connecter
         <ArrowRight className="ml-2 h-4 w-4" />

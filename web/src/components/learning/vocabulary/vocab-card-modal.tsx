@@ -9,7 +9,7 @@ import { aiService } from "@/lib/services/ai"
 import { X, Tag, Sparkles, ChevronDown, Wand2 } from "lucide-react"
 
 import type { ExplainResponse } from "@/lib/types/api/ai"
-import type { LocalVocabCard } from "@/lib/types/learning-session"
+import type { LocalVocabCard } from "@/lib/types/local-vocab-card"
 import { FloatingWindow } from "@/components/ui/floating-windows"
 import { getModalZIndex } from "@/lib/utils/z-index-manager"
 import { useAsyncAction } from "@/lib/hooks/use-async-action"

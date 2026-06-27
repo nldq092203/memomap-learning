@@ -34,7 +34,7 @@ export default function OnboardingPage() {
 
   const handleStartLearning = () => {
     completeOnboarding()
-    router.push("/learning/workspace")
+    router.push("/")
   }
 
   const handleSkip = () => {

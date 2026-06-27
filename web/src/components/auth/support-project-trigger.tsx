@@ -17,7 +17,7 @@ export function SupportProjectTrigger({
   const [open, setOpen] = useState(false)
 
   const triggerCardClassName =
-    "rounded-2xl border border-teal-200/80 bg-gradient-to-r from-teal-50 via-white to-teal-50/70 shadow-[0_10px_30px_-24px_rgba(13,148,136,0.5)]"
+    "rounded-2xl border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-porcelain-mist)]/80 shadow-[0_10px_30px_-24px_rgba(74,51,35,0.35)]"
 
   if (variant === "nav") {
     return (
@@ -26,17 +26,17 @@ export function SupportProjectTrigger({
           type="button"
           onClick={() => setOpen(true)}
           className={cn(
-            "flex w-full items-center gap-3 px-3 py-3 text-left transition-colors hover:border-teal-300",
+            "flex w-full items-center gap-3 px-3 py-3 text-left transition-colors hover:border-[var(--vintage-desert-rock)]",
             triggerCardClassName,
             className
           )}
         >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-teal-600 shadow-sm">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--vintage-feather-white)] text-[var(--vintage-desert-rock)] shadow-sm">
             <Coffee className="h-4.5 w-4.5" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-slate-900">Soutenir MemoMap</p>
-            <p className="text-xs text-slate-600">Un café pour garder le projet vivant.</p>
+            <p className="text-sm font-semibold text-[var(--vintage-ink)]">Soutenir MemoMap</p>
+            <p className="text-xs text-[var(--vintage-muted-ink)]">Un café pour garder le projet vivant.</p>
           </div>
         </button>
         <SupportProjectModal open={open} onOpenChange={setOpen} />
@@ -50,17 +50,17 @@ export function SupportProjectTrigger({
         type="button"
         onClick={() => setOpen(true)}
         className={cn(
-          "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:border-teal-300",
+          "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:border-[var(--vintage-desert-rock)]",
           triggerCardClassName,
           className
         )}
       >
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-teal-600 shadow-sm">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--vintage-feather-white)] text-[var(--vintage-desert-rock)] shadow-sm">
           <Coffee className="h-4.5 w-4.5" />
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-slate-900">Vous avez trouvé cela utile ?</p>
-          <p className="text-xs text-slate-600">
+          <p className="text-sm font-semibold text-[var(--vintage-ink)]">Vous avez trouvé cela utile ?</p>
+          <p className="text-xs text-[var(--vintage-muted-ink)]">
             Un petit café aide à financer l&apos;API Gemini et le serveur.
           </p>
         </div>

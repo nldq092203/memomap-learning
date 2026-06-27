@@ -10,11 +10,11 @@ import { buildDelfLevelRoute } from "@/lib/utils/delf-routes"
 
 export default function DelfPracticePage() {
   const router = useRouter()
-  const { isGuest, setShowSyncModal } = useGuest()
+  const { isGuest, setShowLoginPrompt } = useGuest()
 
   const handleLevelSelect = (lvl: DelfLevel) => {
     if (isGuest && !GUEST_ALLOWED_DELF_LEVELS.includes(lvl)) {
-      setShowSyncModal(true)
+      setShowLoginPrompt(true)
       return
     }
     router.push(buildDelfLevelRoute(lvl))
@@ -27,7 +27,7 @@ export default function DelfPracticePage() {
           type="button"
           variant="ghost"
           className="mb-6 rounded-full px-3 text-slate-600 hover:bg-white hover:text-slate-900"
-          onClick={() => router.push("/learning/workspace")}
+          onClick={() => router.push("/")}
         >
           <ArrowLeft className="mr-1.5 h-4 w-4" />
           Retour à l&apos;espace d&apos;entrainement

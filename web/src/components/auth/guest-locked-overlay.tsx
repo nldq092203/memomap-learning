@@ -6,7 +6,7 @@ import { useGuest } from "@/lib/contexts/guest-context"
 
 // ─── GuestLockedOverlay ──────────────────────────────────────────────
 // Reusable overlay that dims a card/module and shows a 🔒 pill.
-// Clicking on the overlaid item triggers the Sync & Save modal.
+// Clicking on the overlaid item asks the guest to sign in.
 //
 // Usage:
 //   <GuestLockedOverlay label="Connectez-vous">
@@ -30,7 +30,7 @@ export function GuestLockedOverlay({
   className,
   allowed = false,
 }: GuestLockedOverlayProps) {
-  const { isGuest, setShowSyncModal } = useGuest()
+  const { isGuest, setShowLoginPrompt } = useGuest()
 
   // Not a guest or explicitly allowed → render normally
   if (!isGuest || allowed) {
@@ -43,7 +43,7 @@ export function GuestLockedOverlay({
       onClick={(e) => {
         e.preventDefault()
         e.stopPropagation()
-        setShowSyncModal(true)
+        setShowLoginPrompt(true)
       }}
     >
       {/* Dimmed content */}

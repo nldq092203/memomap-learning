@@ -5,72 +5,80 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ---------- THEME VARIABLES ---------- */
-/* Soft Jade Theme - Light Mode */
+/* Vintage Paris Theme - Light Mode */
 :root {
-  --app-surface-hex: #ffffff;
-  --app-surface-rgb: 255 255 255;
-  --app-surface-hsl: 0 0% 100%;
+  --vintage-desert-rock: #a48d78;
+  --vintage-soft-sandstone: #cbb9a4;
+  --vintage-cream: #e6dac8;
+  --vintage-porcelain-mist: #f4f1ea;
+  --vintage-feather-white: #faf9f6;
+  --vintage-ink: #40342b;
+  --vintage-muted-ink: #7b7068;
+
+  --app-surface-hex: #faf9f6;
+  --app-surface-rgb: 250 249 246;
+  --app-surface-hsl: 45 29% 97%;
 
   --background: var(--app-surface-hsl);
-  --foreground: 215 25% 27%;
+  --foreground: 28 20% 21%;
 
   --card: var(--app-surface-hsl);
-  --card-foreground: 215 25% 27%;
+  --card-foreground: 28 20% 21%;
 
   --popover: var(--app-surface-hsl);
-  --popover-foreground: 215 25% 27%;
+  --popover-foreground: 28 20% 21%;
 
-  --primary: 156 56% 60%;           /* softer jade green */
+  --primary: 30 18% 56%;            /* Desert Rock */
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 156 52% 92%;         /* pale green accent surface */
-  --secondary-foreground: 0 0% 100%;
+  --secondary: 34 27% 72%;          /* Soft Sandstone */
+  --secondary-foreground: 28 20% 21%;
 
-  --muted: 210 40% 96%;
-  --muted-foreground: 215 16% 43%;
+  --muted: 35 35% 84%;              /* Cream */
+  --muted-foreground: 27 8% 45%;
 
-  --accent: 210 40% 92%;
-  --accent-foreground: 215 25% 27%;
+  --accent: 42 22% 94%;             /* Porcelain Mist */
+  --accent-foreground: 28 20% 21%;
 
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 214 32% 91%;
-  --input: 214 32% 91%;
-  --ring: 156 56% 60%;
+  --border: 34 27% 72%;
+  --input: 34 27% 72%;
+  --ring: 30 18% 56%;
 
-  --radius: 14px; /* nice rounded cards/buttons */
+  --radius: 12px;
 }
 
-/* Optional Dark Mode (keeps softer jade primary) */
+/* Optional Dark Mode (keeps vintage warmth without high saturation) */
 .dark {
-  --background: 222 47% 8%;
-  --foreground: 210 40% 98%;
+  --background: 28 22% 12%;
+  --foreground: 45 29% 97%;
 
-  --card: 222 47% 10%;
-  --card-foreground: 210 40% 98%;
+  --card: 28 20% 15%;
+  --card-foreground: 45 29% 97%;
 
-  --popover: 222 47% 10%;
-  --popover-foreground: 210 40% 98%;
+  --popover: 28 20% 15%;
+  --popover-foreground: 45 29% 97%;
 
-  --primary: 156 56% 60%;
+  --primary: 30 18% 56%;
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 156 44% 24%;
-  --secondary-foreground: 0 0% 100%;
+  --secondary: 28 18% 24%;
+  --secondary-foreground: 45 29% 97%;
 
-  --muted: 217 33% 17%;
-  --muted-foreground: 214 32% 75%;
+  --muted: 28 16% 20%;
+  --muted-foreground: 35 20% 72%;
 
-  --accent: 217 33% 18%;
-  --accent-foreground: 210 40% 98%;
+  --accent: 28 16% 18%;
+  --accent-foreground: 45 29% 97%;
 
   --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 217 33% 20%;
-  --input: 217 33% 20%;
-  --ring: 156 56% 60%;
+  --border: 28 14% 28%;
+  --input: 28 14% 28%;
+  --ring: 30 18% 56%;
 }
 
 /* ---------- BASE RESETS ---------- */
@@ -232,37 +240,4 @@
     );
   }
 
-  .bg-surface-gradient-transcribe-hero {
-    background-image: linear-gradient(
-      180deg,
-      rgb(var(--app-surface-rgb)) 0%,
-      #f8fafc 45%,
-      #eef7f6 100%
-    );
-  }
-
-  .bg-surface-gradient-transcribe-upload {
-    background-image: linear-gradient(
-      135deg,
-      rgb(var(--app-surface-rgb)) 0%,
-      #f8fafc 35%,
-      #eef7f6 100%
-    );
-  }
-
-  .bg-surface-gradient-transcribe-panel {
-    background-image: linear-gradient(
-      180deg,
-      rgb(var(--app-surface-rgb)) 0%,
-      #f8fafc 100%
-    );
-  }
-
-  .bg-surface-gradient-transcribe-accent {
-    background-image: linear-gradient(
-      135deg,
-      #ecfdf5 0%,
-      rgb(var(--app-surface-rgb)) 100%
-    );
-  }
 }

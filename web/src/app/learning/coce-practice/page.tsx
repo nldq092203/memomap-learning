@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
-import { ArrowLeft, ChevronLeft, ListChecks, PanelLeftClose, PanelLeftOpen } from "lucide-react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { ArrowLeft, BookOpen, ChevronLeft, Headphones, ListChecks, PanelLeftClose, PanelLeftOpen } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
@@ -31,7 +31,8 @@ function matchesQuestionMode(
 
 export default function CoCePracticePage() {
   const router = useRouter()
-  const { isGuest, setShowSyncModal } = useGuest()
+  const searchParams = useSearchParams()
+  const { isGuest, setShowLoginPrompt } = useGuest()
   const {
     level,
     topic,
@@ -59,11 +60,30 @@ export default function CoCePracticePage() {
   const [hasChosenLevel, setHasChosenLevel] = useState(false)
   const [isMediaPaneCollapsed, setIsMediaPaneCollapsed] = useState(false)
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0)
+  const lockedQuestionType = useMemo<"co" | "ce" | null>(() => {
+    const section = (searchParams.get("section") || searchParams.get("mode") || "").toLowerCase()
+    if (section === "co") return "co"
+    if (section === "ce") return "ce"
+    return null
+  }, [searchParams])
+  const lockedQuestionMeta = lockedQuestionType === "co"
+    ? {
+        label: "CO",
+        description: "Compréhension orale",
+        Icon: Headphones,
+      }
+    : lockedQuestionType === "ce"
+      ? {
+          label: "CE",
+          description: "Compréhension écrite",
+          Icon: BookOpen,
+        }
+      : null
 
   const handleLevelSelect = (selectedLevel: CEFRLevel) => {
     // Guest: only allow A2
     if (isGuest && selectedLevel !== GUEST_ALLOWED_LEVEL) {
-      setShowSyncModal(true)
+      setShowLoginPrompt(true)
       return
     }
     setHasChosenLevel(true)
@@ -75,7 +95,7 @@ export default function CoCePracticePage() {
       const loaded = await loadExercise(exerciseId, isGuest, topic)
       if (!loaded) return
       setShowTranscript(false)
-      setActiveQuestionType(null)
+      setActiveQuestionType(lockedQuestionType)
       setActiveQuestionIndex(0)
       setIsMediaPaneCollapsed(false)
     })()
@@ -137,6 +157,17 @@ export default function CoCePracticePage() {
     }
   }, [activeQuestionIndex, questions])
 
+  useEffect(() => {
+    if (!currentExercise || !lockedQuestionType) return
+    setActiveQuestionType(lockedQuestionType)
+
+    if (questions && matchesQuestionMode(questions.meta.type, lockedQuestionType)) {
+      return
+    }
+
+    void loadQuestions(lockedQuestionType, isGuest)
+  }, [currentExercise, isGuest, loadQuestions, lockedQuestionType, questions])
+
   const jumpToQuestion = (index: number) => {
     setActiveQuestionIndex(index)
 
@@ -157,10 +188,10 @@ export default function CoCePracticePage() {
               type="button"
               variant="ghost"
               className="mb-6 rounded-full px-3 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              onClick={() => router.push("/learning/workspace")}
+              onClick={() => router.back()}
             >
               <ArrowLeft className="mr-1.5 h-4 w-4" />
-              Retour à l&apos;espace d&apos;entrainement
+              Retour
             </Button>
 
             <div className="mx-auto max-w-3xl rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-sm">
@@ -199,10 +230,10 @@ export default function CoCePracticePage() {
             type="button"
             variant="ghost"
             className="mb-6 rounded-full px-3 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-            onClick={() => router.push("/learning/workspace")}
+            onClick={() => router.back()}
           >
             <ArrowLeft className="mr-1.5 h-4 w-4" />
-            Retour à l&apos;espace d&apos;entrainement
+            Retour
           </Button>
           <LevelSelection onSelectLevel={handleLevelSelect} />
         </div>
@@ -218,10 +249,10 @@ export default function CoCePracticePage() {
             type="button"
             variant="ghost"
             className="mb-6 rounded-full px-3 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-            onClick={() => router.push("/learning/workspace")}
+            onClick={() => router.back()}
           >
             <ArrowLeft className="mr-1.5 h-4 w-4" />
-            Retour à l&apos;espace d&apos;entrainement
+            Retour
           </Button>
           <ExerciseList
             level={level}
@@ -251,10 +282,10 @@ export default function CoCePracticePage() {
           type="button"
           variant="ghost"
           className="mb-6 rounded-full px-3 text-slate-600 hover:bg-white hover:text-slate-900"
-          onClick={() => router.push("/learning/workspace")}
+          onClick={() => router.back()}
         >
           <ArrowLeft className="mr-1.5 h-4 w-4" />
-          Retour à l&apos;espace d&apos;entrainement
+          Retour
         </Button>
 
         <div className="mb-6 rounded-[30px] border border-slate-200 bg-white/90 px-5 py-5 shadow-sm backdrop-blur">
@@ -331,10 +362,24 @@ export default function CoCePracticePage() {
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
                     Navigation
                   </p>
-                  <PracticeTypeSelector
-                    activeType={activeQuestionType}
-                    onSelectType={handleQuestionTypeChange}
-                  />
+                  {lockedQuestionMeta ? (
+                    <div className="rounded-[24px] border border-slate-200 bg-white/95 p-2 shadow-sm">
+                      <div className="flex items-center gap-3 rounded-[18px] bg-teal-500 px-4 py-3 text-white">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/20 text-white">
+                          <lockedQuestionMeta.Icon className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold">{lockedQuestionMeta.label}</p>
+                          <p className="text-xs text-white/80">{lockedQuestionMeta.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <PracticeTypeSelector
+                      activeType={activeQuestionType}
+                      onSelectType={handleQuestionTypeChange}
+                    />
+                  )}
                 </div>
 
                 {questions && (

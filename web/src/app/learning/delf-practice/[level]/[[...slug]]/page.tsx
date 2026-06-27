@@ -36,7 +36,7 @@ type ResolvedRoute =
 export default function DelfLevelRoutePage() {
   const params = useParams<{ level: string; slug?: string[] }>()
   const router = useRouter()
-  const { isGuest, setShowSyncModal } = useGuest()
+  const { isGuest, setShowLoginPrompt } = useGuest()
   const {
     currentTest,
     userAnswers,
@@ -127,10 +127,10 @@ export default function DelfLevelRoutePage() {
     }
 
     if (isGuest && !GUEST_ALLOWED_DELF_LEVELS.includes(route.level)) {
-      setShowSyncModal(true)
+      setShowLoginPrompt(true)
       router.replace(DELF_PRACTICE_ROOT)
     }
-  }, [isGuest, route, router, setShowSyncModal])
+  }, [isGuest, route, router, setShowLoginPrompt])
 
   useEffect(() => {
     if (route.kind !== "books" && route.kind !== "list") {
@@ -213,10 +213,10 @@ export default function DelfLevelRoutePage() {
             type="button"
             variant="ghost"
             className="mb-6 rounded-full px-3 text-slate-600 hover:bg-white hover:text-slate-900"
-            onClick={() => router.push("/learning/workspace")}
+            onClick={() => router.back()}
           >
             <ArrowLeft className="mr-1.5 h-4 w-4" />
-            Retour à l&apos;espace d&apos;entrainement
+            Retour
           </Button>
 
           <TestList
@@ -243,10 +243,10 @@ export default function DelfLevelRoutePage() {
             type="button"
             variant="ghost"
             className="mb-6 rounded-full px-3 text-slate-600 hover:bg-white hover:text-slate-900"
-            onClick={() => router.push("/learning/workspace")}
+            onClick={() => router.back()}
           >
             <ArrowLeft className="mr-1.5 h-4 w-4" />
-            Retour à l&apos;espace d&apos;entrainement
+            Retour
           </Button>
 
           <BookSectionSelector
@@ -271,10 +271,10 @@ export default function DelfLevelRoutePage() {
             type="button"
             variant="ghost"
             className="mb-6 rounded-full px-3 text-slate-600 hover:bg-white hover:text-slate-900"
-            onClick={() => router.push("/learning/workspace")}
+            onClick={() => router.back()}
           >
             <ArrowLeft className="mr-1.5 h-4 w-4" />
-            Retour à l&apos;espace d&apos;entrainement
+            Retour
           </Button>
 
           {currentTest ? (

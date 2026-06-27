@@ -8,10 +8,8 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { useNumbersDictation } from "@/lib/hooks/use-numbers-dictation"
 import type { NumbersType } from "@/lib/services/learning-numbers-api"
-import { learningApi, type LearningLanguage } from "@/lib/services/learning-api"
 import { useLearningLang } from "@/lib/contexts/learning-lang-context"
 import { useGuest } from "@/lib/contexts/guest-context"
-import { notificationService } from "@/lib/services/notification-service"
 import { apiClient } from "@/lib/services/api-client"
 import { cn } from "@/lib/utils"
 import { GuestUpgradeHint } from "@/components/auth/guest-upgrade-hint"
@@ -73,12 +71,11 @@ function formatTime(seconds: number) {
 export default function NumbersDictationPage() {
   const router = useRouter()
   const { lang } = useLearningLang()
-  const { isGuest, setShowSyncModal } = useGuest()
+  const { isGuest } = useGuest()
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   const [selectedTypes, setSelectedTypes] = useState<NumbersType[]>(["YEAR", "PRICE", "PHONE"])
   const [count, setCount] = useState(8)
-  const [isSavingTranscript, setIsSavingTranscript] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
@@ -213,44 +210,6 @@ export default function NumbersDictationPage() {
     updateAnswer("")
   }
 
-  const handleSaveTranscript = async () => {
-    if (!history.length) {
-      notificationService.info("Aucune reponse a enregistrer.")
-      return
-    }
-
-    setIsSavingTranscript(true)
-    try {
-      const transcriptText = history
-        .map((exercise, index) => {
-          const expected = buildExpectedString(exercise.answer, exercise.errors)
-          return [
-            `#${index + 1} · ${TYPE_LABELS[exercise.numberType]}`,
-            `Attendu: ${expected}`,
-            `Reponse: ${exercise.answer || "·"}`,
-            `Resultat: ${exercise.isCorrect ? "correct" : "incorrect"}`,
-          ].join("\n")
-        })
-        .join("\n\n")
-
-      await learningApi.createTranscript({
-        language: (lang as LearningLanguage) || "fr",
-        source_url: null,
-        transcript: transcriptText,
-        notes: "Session de dictee de nombres",
-        comments: null,
-        tags: ["numbers_dictation"],
-      })
-
-      notificationService.success("Session enregistree pour revision.")
-    } catch (error) {
-      console.error("Failed to save transcript", error)
-      notificationService.error("Impossible d'enregistrer la session.")
-    } finally {
-      setIsSavingTranscript(false)
-    }
-  }
-
   const handleStart = () => {
     if (count <= 0) {
       return
@@ -275,15 +234,15 @@ export default function NumbersDictationPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-6xl px-4 py-6 md:py-8">
+      <div className="mx-auto max-w-5xl px-4 py-5 md:py-6">
         <Button
           type="button"
           variant="ghost"
           className="mb-6 rounded-full px-3 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-          onClick={() => router.push("/learning/workspace")}
+          onClick={() => router.back()}
         >
           <ArrowLeft className="mr-1.5 h-4 w-4" />
-          Retour a l&apos;espace d&apos;entrainement
+          Retour
         </Button>
 
         {showSetup && (
@@ -333,12 +292,19 @@ export default function NumbersDictationPage() {
                             className={cn(
                               "rounded-[22px] border px-4 py-5 text-left transition-all",
                               active
-                                ? "border-primary/30 bg-primary/10 shadow-[0_12px_30px_rgba(16,185,129,0.08)]"
-                                : "border-border/70 bg-white hover:border-primary/20 hover:bg-primary/5"
+                                ? "border-[var(--vintage-desert-rock)] bg-[var(--vintage-desert-rock)] text-[var(--vintage-feather-white)] shadow-[0_14px_32px_rgba(74,51,35,0.18)]"
+                                : "border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)] text-[var(--vintage-ink)] hover:border-[var(--vintage-desert-rock)] hover:bg-[var(--vintage-porcelain-mist)]"
                             )}
                           >
-                            <Icon className={cn("mb-4 h-6 w-6", active ? "text-primary" : "text-muted-foreground")} />
-                            <p className="font-semibold text-foreground">{TYPE_LABELS[type]}</p>
+                            <Icon
+                              className={cn(
+                                "mb-4 h-6 w-6",
+                                active
+                                  ? "text-[var(--vintage-feather-white)]"
+                                  : "text-[var(--vintage-muted-ink)]"
+                              )}
+                            />
+                            <p className="font-semibold">{TYPE_LABELS[type]}</p>
                           </button>
                         )
                       })}
@@ -395,7 +361,7 @@ export default function NumbersDictationPage() {
                     size="lg"
                     onClick={handleStart}
                     disabled={!selectedTypes.length || pending}
-                    className="mt-6 h-14 rounded-2xl text-base font-semibold shadow-[0_18px_40px_rgba(16,185,129,0.18)]"
+                    className="mt-6 h-14 rounded-2xl text-base font-semibold shadow-[0_18px_40px_rgba(74,51,35,0.18)]"
                   >
                     Commencer
                   </Button>
@@ -406,8 +372,8 @@ export default function NumbersDictationPage() {
         )}
 
         {!showSetup && !summary && session && (
-          <section className="mx-auto max-w-4xl">
-            <div className="mb-5 flex items-center justify-between gap-4">
+          <section className="mx-auto max-w-[760px]">
+            <div className="mb-4 flex items-center justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
                   Dictee de nombres
@@ -423,7 +389,7 @@ export default function NumbersDictationPage() {
             </div>
 
             <Card className="overflow-hidden border-border/70 bg-card/95">
-              <CardContent className="space-y-8 p-6 md:p-8">
+              <CardContent className="space-y-5 p-5 md:p-6">
                 {current ? (
                   <>
                     <div className="flex items-center justify-between gap-4">
@@ -451,7 +417,7 @@ export default function NumbersDictationPage() {
                       {perfectCurrent && <SparkleBurst />}
                       <div
                         className={cn(
-                          "rounded-[28px] border border-border/70 bg-muted/20 p-4 md:p-6",
+                          "rounded-[24px] border border-border/70 bg-muted/20 p-4",
                           shakeInput && "animate-[numbers-shake_0.38s_ease-in-out]"
                         )}
                       >
@@ -469,7 +435,7 @@ export default function NumbersDictationPage() {
                           }}
                           placeholder="Saisir"
                           disabled={pending || answeredCurrent}
-                          className="h-24 rounded-[24px] border-border bg-white px-6 text-center font-mono text-4xl font-semibold tracking-[0.18em] shadow-sm placeholder:tracking-normal"
+                          className="h-16 rounded-[20px] border-border bg-white px-5 text-center font-mono text-3xl font-semibold tracking-[0.18em] shadow-sm placeholder:tracking-normal"
                         />
 
                         {answeredCurrent && latestExercise && (
@@ -493,7 +459,7 @@ export default function NumbersDictationPage() {
                           size="lg"
                           onClick={handleSubmit}
                           disabled={pending || !current.answer.trim()}
-                          className="h-14 rounded-2xl px-8 text-base font-semibold"
+                          className="h-12 rounded-2xl px-7 text-base font-semibold"
                         >
                           {pending ? "Verification..." : "Valider"}
                         </Button>
@@ -502,7 +468,7 @@ export default function NumbersDictationPage() {
                           type="button"
                           size="lg"
                           onClick={handleNext}
-                          className="h-14 rounded-2xl px-8 text-base font-semibold"
+                          className="h-12 rounded-2xl px-7 text-base font-semibold"
                         >
                           Exercice suivant
                         </Button>
@@ -511,7 +477,7 @@ export default function NumbersDictationPage() {
                           type="button"
                           size="lg"
                           onClick={handleFinish}
-                          className="h-14 rounded-2xl px-8 text-base font-semibold"
+                          className="h-12 rounded-2xl px-7 text-base font-semibold"
                         >
                           Voir le bilan
                         </Button>
@@ -572,15 +538,6 @@ export default function NumbersDictationPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-3">
-                  {isGuest ? (
-                    <Button type="button" onClick={() => setShowSyncModal(true)} className="rounded-2xl">
-                      Se connecter pour enregistrer
-                    </Button>
-                  ) : (
-                    <Button type="button" onClick={handleSaveTranscript} disabled={isSavingTranscript} className="rounded-2xl">
-                      {isSavingTranscript ? "Sauvegarde..." : "Enregistrer la session"}
-                    </Button>
-                  )}
                   <Button
                     type="button"
                     variant="outline"
@@ -639,12 +596,12 @@ function ExerciseAudioPlayer({
   const strokeDashoffset = circumference - (progress / 100) * circumference
 
   return (
-    <div className="rounded-[30px] border border-border/70 bg-muted/20 p-6">
+    <div className="rounded-[24px] border border-border/70 bg-muted/20 p-4">
       <audio ref={audioRef} src={audioSrc ?? undefined} preload="metadata" className="hidden" />
 
-      <div className="flex flex-col items-center gap-6">
-        <div className="flex items-center gap-4">
-          <Button type="button" size="icon" variant="ghost" className="h-12 w-12 rounded-full" onClick={() => onJump(-5)} disabled={!audioSrc}>
+      <div className="flex flex-col items-center gap-4">
+        <div className="flex items-center gap-3">
+          <Button type="button" size="icon" variant="ghost" className="h-10 w-10 rounded-full" onClick={() => onJump(-5)} disabled={!audioSrc}>
             <RotateCcw className="h-5 w-5" />
           </Button>
 
@@ -652,11 +609,11 @@ function ExerciseAudioPlayer({
             type="button"
             onClick={onToggle}
             disabled={!audioSrc}
-            className="relative flex h-36 w-36 items-center justify-center rounded-full disabled:opacity-50"
+            className="relative flex h-28 w-28 items-center justify-center rounded-full disabled:opacity-50"
             aria-label={isPlaying ? "Pause audio" : "Lire audio"}
           >
             <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 140 140">
-              <circle cx="70" cy="70" r={radius} className="fill-none stroke-emerald-100" strokeWidth="8" />
+              <circle cx="70" cy="70" r={radius} className="fill-none stroke-[var(--vintage-cream)]" strokeWidth="8" />
               <circle
                 cx="70"
                 cy="70"
@@ -668,17 +625,17 @@ function ExerciseAudioPlayer({
                 strokeDashoffset={strokeDashoffset}
               />
             </svg>
-            <span className="flex h-24 w-24 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_18px_40px_rgba(16,185,129,0.18)]">
-              {isPlaying ? <Pause className="h-10 w-10 fill-current" /> : <Play className="ml-1 h-10 w-10 fill-current" />}
+            <span className="flex h-20 w-20 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_18px_40px_rgba(74,51,35,0.18)]">
+              {isPlaying ? <Pause className="h-8 w-8 fill-current" /> : <Play className="ml-1 h-8 w-8 fill-current" />}
             </span>
           </button>
 
-          <Button type="button" size="icon" variant="ghost" className="h-12 w-12 rounded-full" onClick={() => onJump(5)} disabled={!audioSrc}>
+          <Button type="button" size="icon" variant="ghost" className="h-10 w-10 rounded-full" onClick={() => onJump(5)} disabled={!audioSrc}>
             <RotateCw className="h-5 w-5" />
           </Button>
         </div>
 
-        <div className="w-full max-w-2xl space-y-3">
+        <div className="w-full max-w-xl space-y-2">
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <span>{formatTime(currentTime)}</span>
             <span>{formatTime(duration)}</span>
@@ -690,7 +647,7 @@ function ExerciseAudioPlayer({
             step={0.1}
             value={Math.min(currentTime, duration || 0)}
             onChange={(event) => onSeek(Number(event.target.value))}
-            className="h-2 w-full cursor-pointer appearance-none rounded-full bg-emerald-100 accent-primary"
+            className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[var(--vintage-cream)] accent-primary"
             disabled={!audioSrc}
           />
         </div>
@@ -713,15 +670,15 @@ function VirtualNumpad({
   disabled: boolean
 }) {
   return (
-    <div className="rounded-[28px] border border-border/70 bg-white p-4">
-      <div className="grid grid-cols-3 gap-3">
+    <div className="rounded-[24px] border border-border/70 bg-white p-3">
+      <div className="grid grid-cols-3 gap-2.5">
         {keys.map((key) => (
           <button
             key={key}
             type="button"
             disabled={disabled}
             onClick={() => onPress(key)}
-            className="h-16 rounded-2xl border border-border/70 bg-muted/20 text-2xl font-semibold transition hover:border-primary/30 hover:bg-primary/5 disabled:opacity-50"
+            className="h-[52px] rounded-2xl border border-border/70 bg-muted/20 text-xl font-semibold transition hover:border-[var(--vintage-soft-sandstone)] hover:bg-[var(--vintage-porcelain-mist)] disabled:opacity-50"
           >
             {key}
           </button>
@@ -730,7 +687,7 @@ function VirtualNumpad({
           type="button"
           disabled={disabled}
           onClick={onClear}
-          className="h-16 rounded-2xl border border-border/70 bg-muted/20 text-sm font-semibold transition hover:border-primary/30 hover:bg-primary/5 disabled:opacity-50"
+          className="h-[52px] rounded-2xl border border-border/70 bg-muted/20 text-sm font-semibold transition hover:border-[var(--vintage-soft-sandstone)] hover:bg-[var(--vintage-porcelain-mist)] disabled:opacity-50"
         >
           Effacer
         </button>
@@ -738,7 +695,7 @@ function VirtualNumpad({
           type="button"
           disabled={disabled}
           onClick={onDelete}
-          className="col-span-2 flex h-16 items-center justify-center gap-2 rounded-2xl border border-border/70 bg-muted/20 text-sm font-semibold transition hover:border-primary/30 hover:bg-primary/5 disabled:opacity-50"
+          className="flex h-[52px] items-center justify-center gap-2 rounded-2xl border border-border/70 bg-muted/20 text-sm font-semibold transition hover:border-[var(--vintage-soft-sandstone)] hover:bg-[var(--vintage-porcelain-mist)] disabled:opacity-50"
         >
           <Delete className="h-4 w-4" />
           Supprimer
@@ -771,7 +728,7 @@ function InlineDigitFeedback({
           className={cn(
             "rounded-full px-3 py-1.5",
             exercise.isCorrect
-              ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
+              ? "bg-[var(--vintage-cream)] text-[var(--vintage-desert-rock)] hover:bg-[var(--vintage-cream)]"
               : "bg-rose-100 text-rose-700 hover:bg-rose-100"
           )}
         >
@@ -791,7 +748,7 @@ function InlineDigitFeedback({
                   "flex h-12 w-12 items-center justify-center rounded-full border-2 font-mono text-lg font-semibold",
                   error
                     ? "border-rose-300 bg-rose-50 text-rose-600"
-                    : "border-emerald-300 bg-emerald-50 text-emerald-600"
+                    : "border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-porcelain-mist)] text-[var(--vintage-desert-rock)]"
                 )}
               >
                 {got}
@@ -805,8 +762,8 @@ function InlineDigitFeedback({
       </div>
 
       {exercise.script && (
-        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/60 px-4 py-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
+        <div className="rounded-2xl border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-porcelain-mist)]/70 px-4 py-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--vintage-desert-rock)]">
             Transcription
           </p>
           <p className="mt-2 text-sm leading-relaxed text-slate-700">
@@ -834,7 +791,7 @@ function SparkleBurst() {
         <span
           key={position}
           className={cn(
-            "absolute h-2.5 w-2.5 rounded-full bg-emerald-300 animate-ping",
+            "absolute h-2.5 w-2.5 rounded-full bg-[var(--vintage-soft-sandstone)] animate-ping",
             position
           )}
           style={{ animationDelay: `${index * 90}ms` }}

@@ -6,8 +6,7 @@ import { useLearningLang } from "@/lib/contexts/learning-lang-context"
 import { VocabCardModal } from "@/components/learning/vocabulary/vocab-card-modal"
 import { learningVocabApi } from "@/lib/services/learning-vocab-api"
 import { notificationService } from "@/lib/services/notification-service"
-import type { LocalVocabCard } from "@/lib/types/learning-session"
-import type { LearningLanguage } from "@/lib/services/learning-api"
+import type { LocalVocabCard } from "@/lib/types/local-vocab-card"
 
 export function GlobalLearningShortcuts() {
   const { lang } = useLearningLang()
@@ -28,7 +27,7 @@ export function GlobalLearningShortcuts() {
         return Promise.reject(new Error("Word is required"))
       }
 
-      const language = (lang || "fr") as LearningLanguage
+      const language = lang || "fr"
 
       try {
         const result = await learningVocabApi.bulkImport(language, [

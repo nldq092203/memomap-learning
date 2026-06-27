@@ -6,7 +6,7 @@ import { FloatingWindow } from "@/components/ui/floating-windows"
 import { VocabCardModal } from "@/components/learning/vocabulary/vocab-card-modal"
 import { DraggableAiBubble } from "@/components/ui/draggable-ai-bubble"
 import { useGlobalShortcuts } from "@/lib/hooks/use-global-shortcuts"
-import type { LocalVocabCard } from "@/lib/types/learning-session"
+import type { LocalVocabCard } from "@/lib/types/local-vocab-card"
 
 export function AiAssistantLauncher({
   learningLang = "fr",
