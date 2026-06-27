@@ -1421,6 +1421,43 @@ Current scope:
 - Existing `/api/web/vocab` routes remain SQL-backed until the switch ticket.
 - This service is the bridge for `REV-209` backfill and the later Mongo write-path switch.
 
+#### REV-209 Implementation Note
+
+Status: Completed backend foundation.
+
+Changes made:
+
+- Added `backend/scripts/backfill_vocab_sql_to_mongo.py`.
+- Added sparse unique Mongo index for `(user_id, legacy_sql_id)`.
+
+Backfill behavior:
+
+- Default mode is dry-run. Mongo is only imported/used when running with `--apply`.
+- Optional filters:
+  - `--user-id`
+  - `--language`
+  - `--limit`
+  - `--skip-indexes`
+- Inserts raw Mongo documents instead of using `create_card`, so existing SQL timestamps and SRS state are preserved.
+- Copies SQL `VocabularyCardORM` fields into Mongo `vocab_cards`:
+  - `word` to `text`.
+  - `due_at` to `next_due_at`.
+  - SRS fields: status, last reviewed, interval, ease, reps, lapses, streak, last grade.
+  - `extra.source_context`, `extra.examples`, `extra.level`, and `extra.native_language` where present.
+- Idempotency:
+  - Stores top-level `legacy_sql_id`.
+  - Stores `extra.imported_from_sql_id`.
+  - Skips rows already imported for the same user.
+- Logs scanned, migrated, skipped, and failed counts.
+
+Run examples:
+
+```bash
+cd backend
+uv run python scripts/backfill_vocab_sql_to_mongo.py
+uv run python scripts/backfill_vocab_sql_to_mongo.py --apply
+```
+
 ### Phase 0: Discovery And Guardrails
 
 #### REV-001: Audit Current Routes And Navigation

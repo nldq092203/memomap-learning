@@ -80,6 +80,12 @@ def ensure_vocabulary_indexes() -> None:
         name="ix_vocab_cards_user_updated",
     )
     cards.create_index(
+        [("user_id", ASCENDING), ("legacy_sql_id", ASCENDING)],
+        name="uq_vocab_cards_user_legacy_sql_id",
+        unique=True,
+        sparse=True,
+    )
+    cards.create_index(
         [
             ("text", TEXT),
             ("translation", TEXT),
