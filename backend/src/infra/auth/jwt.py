@@ -10,7 +10,6 @@ import typing
 
 from src.config import Config
 
-
 JWT_SECRET = getattr(Config, "DB_JWT_SECRET", None) or Config.SECRET_KEY
 JWT_ALG = "HS256"
 JWT_ISS = "memomap-learning"
@@ -28,7 +27,7 @@ def _b64url_decode(data: str) -> bytes:
 def create_jwt(
     user_payload: dict[str, typing.Any],
     *,
-    expires_in: int = 86400,
+    expires_in: int = 86400 * 3,
 ) -> str:
     """
     Create a signed JWT containing the user payload.
@@ -91,4 +90,3 @@ def decode_jwt(token: str) -> dict[str, typing.Any] | None:
         return None
 
     return payload
-
