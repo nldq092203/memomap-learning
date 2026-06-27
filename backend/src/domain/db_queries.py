@@ -48,18 +48,11 @@ class UserQueries:
         return user
 
     @staticmethod
-    def get_google_auth(user: UserORM) -> dict[str, Any]:
-        extra = user.extra if isinstance(user.extra, dict) else {}
-        google_auth = extra.get("google_auth")
-        return google_auth if isinstance(google_auth, dict) else {}
-
-    @staticmethod
-    def update_google_oauth(
+    def update_google_identity(
         db: Session,
         user: UserORM,
         *,
         google_user: dict[str, Any],
-        google_auth: dict[str, Any],
     ) -> UserORM:
         extra = dict(user.extra or {})
         extra.update(
@@ -68,7 +61,6 @@ class UserQueries:
                 "google_email_verified": google_user.get("email_verified"),
                 "google_iss": google_user.get("iss"),
                 "google_aud": google_user.get("aud"),
-                "google_auth": google_auth,
             }
         )
         user.extra = extra

@@ -23,7 +23,6 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from src.api.decorators import require_auth
 from src.infra.auth.google_oauth import (
-    build_google_auth_record,
     exchange_google_auth_code,
     get_google_user_from_token_response,
     GoogleOAuthExchangeError,
@@ -43,9 +42,8 @@ def create_token():
     POST /auth/token
 
     Exchange a **Google OAuth authorization code** for an application **JWT**.
-    The backend stores Google auth metadata for account continuity. Legacy
-    Drive-backed endpoints may use stored OAuth tokens while they remain
-    available during the revamp.
+    The backend stores Google identity metadata for account continuity. Google
+    OAuth access and refresh tokens are intentionally not persisted.
 
     Authentication:
     - This endpoint is **public** (no JWT required).
@@ -61,7 +59,7 @@ def create_token():
     Behavior:
     - Exchanges the code with Google token endpoint.
     - Verifies the returned Google identity.
-    - Stores Google OAuth tokens under the user record.
+    - Stores Google identity metadata under the user record.
     - If no code is provided:
       - Returns `400` with `message="code required"`.
     - On success:
@@ -146,16 +144,10 @@ def create_token():
                 user = UserQueries.create(db, email=email, extra=extra)
                 logger.info(f"[AUTH] Created new user: {email}")
 
-            existing_refresh_token = UserQueries.get_google_auth(user).get("refresh_token")
-            google_auth = build_google_auth_record(
-                google_tokens,
-                existing_refresh_token=existing_refresh_token,
-            )
-            UserQueries.update_google_oauth(
+            UserQueries.update_google_identity(
                 db,
                 user,
                 google_user=google_user,
-                google_auth=google_auth,
             )
             db.commit()
 

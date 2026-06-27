@@ -1233,12 +1233,38 @@ Follow-up:
 
 #### REV-106 Implementation Note
 
-Status: Backend-only partial.
+Status: Backend-only complete.
 
 Changes made:
 
 - Updated `backend/src/api/auth/__init__.py` so normal Google login no longer fails when Google does not return a refresh token.
-- Kept legacy Drive refresh behavior isolated behind legacy Drive-backed endpoints.
+- Google login now updates only Google identity metadata and does not persist Google OAuth access/refresh tokens.
+- Drive OAuth token storage is no longer part of the active login path.
+
+#### REV-106B Implementation Note
+
+Status: Completed backend Drive flow shutdown.
+
+Decision:
+
+- Drive-backed app flows are no longer active and are not needed for the revamp backend.
+
+Changes made:
+
+- Removed Google OAuth token persistence from normal login entirely; `/api/auth/token` now stores only Google identity metadata.
+- Disabled all registered Drive-backed legacy routes with `410 Gone`, including audio lesson reads, numbers admin reads/mutations, and speaking practice Drive creation.
+- Removed Drive-backed route imports from `backend/src/api/web/legacy.py` so the legacy registry no longer imports Drive services.
+- Removed the legacy Drive audio fallback from `GET /api/web/numbers/audio/<audio_ref>`; Git-backed audio paths still redirect to `NUMBERS_AUDIO_BASE_URL`.
+- Removed backend generation of `/api/web/numbers/audio/<drive_id>` fallback URLs when public audio base URL is unavailable.
+- Removed `X-Google-Access-Token` from backend CORS allowed headers.
+- Removed Drive-specific API error handlers from the active API error registry.
+- Removed the stale `backend/src/api/web/audio_lessons.py` route module.
+- Removed Google OAuth refresh-token helpers and `google_auth` persistence helpers from the active auth/query layer.
+- Removed import-time Azure TTS initialization from GitHub-backed speaking practice retrieval.
+
+Temporary code retention:
+
+- Some unregistered Drive storage helper modules still exist in the codebase for final deletion, but no active app route should require Google Drive OAuth tokens.
 
 Verification:
 

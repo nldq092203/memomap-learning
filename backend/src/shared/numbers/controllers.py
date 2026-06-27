@@ -48,7 +48,6 @@ def build_audio_url(raw_audio_ref: str | None) -> str | None:
     1. If raw_audio_ref is already an absolute URL, return as-is.
     2. If NUMBERS_AUDIO_BASE_URL is configured, treat raw_audio_ref as a
        relative path inside the public audio repository.
-    3. Fallback: expose backend streaming endpoint for legacy Drive IDs.
     """
     if not isinstance(raw_audio_ref, str) or not raw_audio_ref:
         return None
@@ -61,10 +60,7 @@ def build_audio_url(raw_audio_ref: str | None) -> str | None:
     if base_url:
         return f"{base_url.rstrip('/')}/{raw_audio_ref.lstrip('/')}"
 
-    # Legacy behaviour: route through backend audio proxy
-    if not raw_audio_ref.startswith("/"):
-        return f"/api/web/numbers/audio/{raw_audio_ref}"
-    return raw_audio_ref
+    return raw_audio_ref if raw_audio_ref.startswith("/") else None
 
 
 __all__ = [
@@ -72,4 +68,3 @@ __all__ = [
     "parse_number_types",
     "build_audio_url",
 ]
-

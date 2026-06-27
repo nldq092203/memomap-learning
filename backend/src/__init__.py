@@ -53,7 +53,6 @@ def create_app(config_object: type[LearningConfig] | None = None) -> Flask:
                     "Authorization",
                     "Content-Type",
                     "X-Admin-Token",
-                    "X-Google-Access-Token",
                 ],
                 "allow_private_network": True,
             }

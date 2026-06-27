@@ -7,9 +7,7 @@ from src.extensions import logger
 from src.infra.auth.google_oauth import (
     GoogleOAuthError,
     GoogleOAuthExchangeError,
-    GoogleOAuthRefreshError,
 )
-from src.infra.drive.client import GoogleDriveError
 
 
 class APIError(Exception):
@@ -70,36 +68,6 @@ def register_error_handlers(bp: Blueprint):
     @bp.errorhandler(ResourceNotFoundError)
     def handle_not_found_error(error: ResourceNotFoundError):
         return ResponseBuilder().error(message=str(error), status_code=404).build()
-
-    @bp.errorhandler(GoogleDriveError)
-    def handle_google_drive_error(error: GoogleDriveError):
-        if error.status_code == 401:
-            return (
-                ResponseBuilder()
-                .error(
-                    message="Google Drive session expired or invalid. Please sign in with Google again.",
-                    status_code=403,
-                )
-                .build()
-            )
-
-        return (
-            ResponseBuilder()
-            .error(message="Google Drive request failed.", status_code=502)
-            .build()
-        )
-
-    @bp.errorhandler(GoogleOAuthRefreshError)
-    def handle_google_oauth_refresh_error(error: GoogleOAuthRefreshError):
-        return (
-            ResponseBuilder()
-            .error(
-                message=str(error)
-                or "Google Drive session expired or invalid. Please sign in with Google again.",
-                status_code=403,
-            )
-            .build()
-        )
 
     @bp.errorhandler(GoogleOAuthExchangeError)
     def handle_google_oauth_exchange_error(error: GoogleOAuthExchangeError):

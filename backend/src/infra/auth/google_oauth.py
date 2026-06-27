@@ -3,12 +3,10 @@
 This module owns:
 - Google token verification via `tokeninfo`
 - Authorization code exchange
-- Access token refresh
 """
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
 import requests
@@ -28,10 +26,6 @@ class GoogleOAuthError(RuntimeError):
 
 class GoogleOAuthExchangeError(GoogleOAuthError):
     """Authorization code exchange failed."""
-
-
-class GoogleOAuthRefreshError(GoogleOAuthError):
-    """Stored Google refresh token cannot be used anymore."""
 
 
 def _google_client_ids() -> list[str]:
@@ -206,29 +200,6 @@ def exchange_google_auth_code(
     )
 
 
-def refresh_google_access_token(refresh_token: str) -> Dict[str, Any]:
-    """Use a stored Google refresh token to mint a fresh access token."""
-    if not refresh_token:
-        raise GoogleOAuthRefreshError("Google refresh token is required")
-
-    client_id = getattr(Config, "GOOGLE_WEB_CLIENT_ID", None) or getattr(Config, "GOOGLE_CLIENT_ID", None)
-    client_secret = getattr(Config, "GOOGLE_CLIENT_SECRET", None)
-    if not client_id or not client_secret:
-        raise GoogleOAuthRefreshError("Google OAuth is not configured")
-
-    try:
-        return _call_google_token_endpoint(
-            {
-                "client_id": str(client_id),
-                "client_secret": str(client_secret),
-                "refresh_token": refresh_token,
-                "grant_type": "refresh_token",
-            }
-        )
-    except GoogleOAuthExchangeError as exc:
-        raise GoogleOAuthRefreshError(str(exc)) from exc
-
-
 def get_google_user_from_token_response(token_payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """Extract normalized user identity from a token exchange response."""
     id_token = token_payload.get("id_token")
@@ -244,42 +215,11 @@ def get_google_user_from_token_response(token_payload: Dict[str, Any]) -> Option
     return None
 
 
-def build_google_auth_record(
-    token_payload: Dict[str, Any],
-    *,
-    existing_refresh_token: str | None = None,
-) -> Dict[str, Any]:
-    """Normalize Google OAuth token payload for persistent storage."""
-    access_token = token_payload.get("access_token")
-    if not access_token:
-        raise GoogleOAuthError("Google access token missing from token response")
-
-    expires_in_raw = token_payload.get("expires_in")
-    try:
-        expires_in = int(expires_in_raw or 0)
-    except (TypeError, ValueError):
-        expires_in = 0
-
-    refresh_token = token_payload.get("refresh_token") or existing_refresh_token
-    expires_at = datetime.now(timezone.utc) + timedelta(seconds=max(expires_in, 0))
-
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "access_token_expires_at": expires_at.isoformat(),
-        "scope": token_payload.get("scope"),
-        "token_type": token_payload.get("token_type"),
-    }
-
-
 __all__ = [
     "GoogleOAuthError",
     "GoogleOAuthExchangeError",
-    "GoogleOAuthRefreshError",
-    "build_google_auth_record",
     "exchange_google_auth_code",
     "get_google_user_from_token_response",
-    "refresh_google_access_token",
     "verify_google_access_token",
     "verify_google_id_token",
 ]

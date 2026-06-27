@@ -9,12 +9,10 @@ Admin dataset generation is exposed separately under /web/numbers/admin/*.
 
 from __future__ import annotations
 
-from flask import Response, redirect, request
+from flask import redirect, request
 
-from src.api.decorators import require_auth
 from src.api.errors import BadRequestError, NotFoundError
 from src.config import Config
-from src.infra.drive import DriveRepository, GoogleDriveClient
 from src.shared.numbers.controllers import (
     build_audio_url,
     get_generator,
@@ -171,7 +169,7 @@ def numbers_audio_stream(audio_ref: str):
     """GET /web/numbers/audio/{audio_ref}
 
     - If `audio_ref` is a Git-backed path (contains '/'): redirect to NUMBERS_AUDIO_BASE_URL/audio_ref
-    - Else treat it as a Drive file id and stream from Drive (requires X-Google-Access-Token)
+    - Legacy Drive file IDs are no longer supported.
     """
     if "/" in audio_ref:
         base_url = getattr(Config, "NUMBERS_AUDIO_BASE_URL", None)
@@ -186,18 +184,12 @@ def numbers_audio_stream(audio_ref: str):
             )
         return redirect(f"{base_url.rstrip('/')}/{audio_ref.lstrip('/')}")
 
-    access_token = (request.headers.get("X-Google-Access-Token") or "").strip()
-    if not access_token:
-        return (
-            ResponseBuilder()
-            .error(
-                message="X-Google-Access-Token header is required to stream Drive audio",
-                status_code=400,
-            )
-            .build()
+    return (
+        ResponseBuilder()
+        .error(
+            error={"code": "legacy_drive_audio_disabled"},
+            message="Legacy Drive-backed numbers audio is disabled.",
+            status_code=410,
         )
-
-    repo = DriveRepository(GoogleDriveClient(access_token))
-    meta = repo.g.drive_get(audio_ref, fields="id,mimeType")
-    data = repo.g.drive_download(audio_ref)
-    return Response(data, mimetype=meta.get("mimeType") or "audio/mpeg")
+        .build()
+    )
