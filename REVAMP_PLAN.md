@@ -3094,6 +3094,22 @@ Next archive point:
 
 - Archive the remaining SQL vocabulary internals (`VocabularyQueries`, SQL vocabulary controllers, SQL `SRSService`, and `VocabularyCompatibilityService`) after confirming no active route imports them.
 
+#### REV-707H Implementation Note
+
+Status: Completed SQL vocabulary internals archive.
+
+Changes made:
+
+- Added `backend/src/legacy/sql_vocabulary/` for archived SQL vocabulary code.
+- Moved `VocabularyCompatibilityService` into the SQL vocabulary legacy archive.
+- Archived SQL vocabulary controllers, SQL `VocabularyQueries`, and SQL `SRSService` away from the active domain layer.
+- Removed SQL vocabulary controller/query/service exports from `backend/src/domain/__init__.py` and `backend/src/domain/services/__init__.py`.
+- Left active vocabulary routes on the Mongo vocabulary repository and `MongoSRSService`.
+
+Temporary retention:
+
+- `VocabularyCardORM` remains in active SQLAlchemy metadata until a separate data-retention and migration-schema decision is made.
+
 ### Suggested First Sprint
 
 Start backend-first so legacy dependencies are understood before UI routes are hidden:

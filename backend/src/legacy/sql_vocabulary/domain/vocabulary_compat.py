@@ -7,10 +7,11 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from src.domain.db_queries import VocabularyQueries
 from src.domain.errors import ResourceNotFoundError
-from src.domain.services.srs import MongoSRSService, SRSService
+from src.domain.services.srs import MongoSRSService
 from src.domain.vocabulary_mongo import MongoVocabularyRepository
+from src.legacy.sql_vocabulary.domain.db_queries import VocabularyQueries
+from src.legacy.sql_vocabulary.domain.services.srs import SRSService
 
 
 MONGO_ID_PREFIX = "mongo:"
