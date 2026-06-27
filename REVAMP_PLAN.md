@@ -1266,6 +1266,29 @@ Temporary code retention:
 
 - Some unregistered Drive storage helper modules still exist in the codebase for final deletion, but no active app route should require Google Drive OAuth tokens.
 
+#### REV-106C Implementation Note
+
+Status: Completed legacy archive relocation.
+
+Decision:
+
+- Do not delete old Drive implementation code immediately. Move it out of the active backend packages into a dedicated legacy archive so it remains available for reference while no active route can import it accidentally.
+
+Changes made:
+
+- Created `backend/src/legacy/drive/` as the backend legacy archive for Drive-backed code.
+- Moved the old Drive REST infra from `backend/src/infra/drive/` to `backend/src/legacy/drive/infra/drive/`.
+- Moved `backend/src/shared/drive_services.py` to `backend/src/legacy/drive/shared/drive_services.py`.
+- Moved the old Drive-backed numbers admin route wrapper to `backend/src/legacy/drive/api/web/numbers_admin.py`.
+- Moved Drive-backed numbers admin/staging helpers to `backend/src/legacy/drive/shared/numbers/admin/`.
+- Moved the Drive-backed numbers repository adapter to `backend/src/legacy/drive/shared/numbers/repository/google_drive_repo.py`.
+- Restored the old audio lesson route module into `backend/src/legacy/drive/api/web/audio_lessons.py` instead of the active API package.
+- Added a legacy archive README stating archived code must not be imported by active app routes.
+
+Verification target:
+
+- Active backend route imports should not reference `src.shared.drive_services`, `src.infra.drive`, Drive-backed numbers admin helpers, or old audio lesson route modules.
+
 Verification:
 
 - `python3 -m compileall backend/src/api/auth backend/src/api/web` passes.
