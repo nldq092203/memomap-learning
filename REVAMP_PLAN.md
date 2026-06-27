@@ -1460,12 +1460,12 @@ uv run python scripts/backfill_vocab_sql_to_mongo.py --apply
 
 #### REV-505 Backend Switch Preparation Note
 
-Status: Backend-only partial.
+Status: Superseded by Mongo primary implementation.
 
 Changes made:
 
 - Added `VOCAB_STORAGE_BACKEND` config.
-- Default remains `sql`.
+- Initial default remained `sql` during compatibility validation.
 - When `VOCAB_STORAGE_BACKEND=compat`, existing `/api/web/vocab` endpoints route through `VocabularyCompatibilityService`.
 
 Compat-routed endpoints:
@@ -1486,6 +1486,54 @@ Safety:
 - SQL remains the default path unless explicitly enabled by env.
 - Compat path supports `mongo:<id>` and `sql:<id>` ids while preserving legacy unprefixed SQL fallback behavior where possible.
 - New writes go to Mongo only when `VOCAB_STORAGE_BACKEND=compat`.
+
+Legacy decision:
+
+- SQL vocabulary is now legacy storage.
+- Mongo `vocab_cards` and `vocab_reviews` are the target revamp storage.
+- Keep SQL read fallback only during the transition window.
+- Do not add new features to SQL vocabulary paths.
+- Remove SQL vocabulary read/write paths only after enough production confidence that:
+  - Backfill has completed and repeated `--apply` runs only skip already imported rows.
+  - New cards are consistently created in Mongo.
+  - Review flow updates Mongo SRS state and appends Mongo review history.
+  - Due list and stats remain correct with Mongo data.
+  - No active client still depends on unprefixed SQL-only card ids.
+
+#### REV-505 Mongo Primary Implementation Note
+
+Status: Completed backend switch.
+
+Changes made:
+
+- `/api/web/vocab` now uses Mongo vocabulary storage directly.
+- Removed active route dependency on SQL vocabulary controllers and SQL `VocabularyQueries`.
+- `VOCAB_STORAGE_BACKEND` default is now `mongo`.
+- Existing SQL vocabulary tables/models remain in the codebase only as legacy data/schema until final cleanup.
+
+Mongo-routed endpoints:
+
+- `GET /api/web/vocab`
+- `POST /api/web/vocab`
+- `GET /api/web/vocab/<card_id>`
+- `PATCH /api/web/vocab/<card_id>`
+- `DELETE /api/web/vocab/<card_id>`
+- `DELETE /api/web/vocab/<card_id>/hard`
+- `GET /api/web/vocab/due`
+- `POST /api/web/vocab:review-batch`
+- `GET /api/web/vocab/stats`
+
+Compatibility:
+
+- API responses keep `word`, `due_at`, and `id` fields for frontend compatibility.
+- Mongo ids are returned as `mongo:<id>`.
+- Incoming ids may include `mongo:<id>` or the raw Mongo id.
+
+Legacy decision:
+
+- SQL vocabulary read/write paths are no longer active in revamp vocab APIs.
+- Do not delete SQL vocabulary table/model yet.
+- Remove SQL vocabulary schema, SQL query helpers, and migration bridge during final legacy cleanup after one stable production window.
 
 ### Phase 0: Discovery And Guardrails
 
@@ -2577,18 +2625,23 @@ Priority: P1
 Goal:
 
 - Make MongoDB the primary storage for new vocabulary.
+- Treat SQL vocabulary as legacy transition storage.
 
 Scope:
 
 - Ensure all new vocab save actions write to Mongo.
 - Keep compatibility read path only as needed.
 - Verify exercise save flow uses Mongo.
+- Stop adding new SQL vocabulary behavior.
+- After confidence window, remove SQL vocabulary write path and then SQL read fallback.
 
 Acceptance criteria:
 
 - New manual and exercise-saved vocabulary cards are created in Mongo.
 - Old SQL write path is no longer used by revamp UI.
 - Existing old cards remain visible during transition.
+- SQL vocabulary code has a documented deletion point once backfill and compat validation are complete.
+- Active `/api/web/vocab` routes no longer call SQL vocabulary controllers.
 
 Dependencies:
 

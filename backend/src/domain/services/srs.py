@@ -273,7 +273,7 @@ class MongoSRSService:
         state = FSRSState(
             stability=float(interval_days) if interval_days > 0 else 1.0,
             difficulty=ease / 100.0 if ease > 0 else 0.5,
-            last_review_at=card.get("last_reviewed_at"),
+            last_review_at=self._as_aware_utc(card.get("last_reviewed_at")),
             last_interval=float(interval_days),
             reps=reps,
             lapses=lapses,
@@ -354,3 +354,21 @@ class MongoSRSService:
             "cards": reviewed_cards,
             "reviews": review_events,
         }
+
+    def _as_aware_utc(self, value: Any) -> datetime | None:
+        """Normalize legacy/backfilled datetimes before FSRS arithmetic."""
+        if value is None:
+            return None
+        if isinstance(value, datetime):
+            if value.tzinfo is None:
+                return value.replace(tzinfo=timezone.utc)
+            return value.astimezone(timezone.utc)
+        if isinstance(value, str):
+            try:
+                parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            except ValueError:
+                return None
+            if parsed.tzinfo is None:
+                return parsed.replace(tzinfo=timezone.utc)
+            return parsed.astimezone(timezone.utc)
+        return None
