@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy.orm import Session
 
 from src.api.errors import NotFoundError
 from src.domain.db_queries import VocabularyQueries
+from src.domain.services.srs import MongoSRSService, SRSService
 from src.domain.vocabulary_mongo import MongoVocabularyRepository
 
 
@@ -217,6 +218,125 @@ class VocabularyCompatibilityService:
             "sources": {
                 "mongo": len(mongo_cards),
                 "sql": len(sql_cards),
+            },
+        }
+
+    def review_cards(
+        self,
+        *,
+        user_id: str,
+        reviews: list[tuple[str, str]],
+    ) -> dict[str, Any]:
+        """Review Mongo and SQL legacy cards in one request."""
+        mongo_reviews: list[tuple[str, str]] = []
+        sql_reviews: list[tuple[str, str]] = []
+
+        for card_id, grade in reviews:
+            source, raw_id = self._split_card_id(card_id)
+            if source == "sql":
+                sql_reviews.append((raw_id, grade))
+            elif source == "mongo":
+                mongo_reviews.append((raw_id, grade))
+            else:
+                try:
+                    self.mongo_repository.get_card_document(
+                        user_id=user_id,
+                        card_id=raw_id,
+                    )
+                    mongo_reviews.append((raw_id, grade))
+                except Exception:
+                    sql_reviews.append((raw_id, grade))
+
+        mongo_result = MongoSRSService(self.mongo_repository).batch_review(
+            mongo_reviews,
+            user_id,
+        )
+        sql_cards = SRSService(self.db).batch_review(sql_reviews, user_id)
+        sql_items = [self._sql_card_to_unified(card) for card in sql_cards]
+        return {
+            "updated_count": mongo_result["updated_count"] + len(sql_items),
+            "cards": [*mongo_result["cards"], *sql_items],
+            "reviews": mongo_result["reviews"],
+            "sources": {
+                "mongo": mongo_result["updated_count"],
+                "sql": len(sql_items),
+            },
+        }
+
+    def soft_delete_card(self, *, user_id: str, card_id: str) -> None:
+        """Soft delete one Mongo or SQL legacy card."""
+        source, raw_id = self._split_card_id(card_id)
+        if source == "mongo":
+            self.mongo_repository.soft_delete_card(user_id=user_id, card_id=raw_id)
+            return
+        if source == "sql":
+            if not VocabularyQueries.soft_delete(self.db, raw_id, user_id):
+                raise NotFoundError("Vocabulary card not found")
+            return
+
+        try:
+            self.mongo_repository.soft_delete_card(user_id=user_id, card_id=raw_id)
+        except Exception:
+            if not VocabularyQueries.soft_delete(self.db, raw_id, user_id):
+                raise NotFoundError("Vocabulary card not found")
+
+    def hard_delete_card(self, *, user_id: str, card_id: str) -> None:
+        """Hard delete one Mongo or SQL legacy card."""
+        source, raw_id = self._split_card_id(card_id)
+        if source == "mongo":
+            self.mongo_repository.hard_delete_card(user_id=user_id, card_id=raw_id)
+            return
+        if source == "sql":
+            if not VocabularyQueries.hard_delete(self.db, raw_id, user_id):
+                raise NotFoundError("Vocabulary card not found")
+            return
+
+        try:
+            self.mongo_repository.hard_delete_card(user_id=user_id, card_id=raw_id)
+        except Exception:
+            if not VocabularyQueries.hard_delete(self.db, raw_id, user_id):
+                raise NotFoundError("Vocabulary card not found")
+
+    def get_stats(self, *, user_id: str, language: str | None = None) -> dict[str, Any]:
+        """Return combined lightweight stats across Mongo and SQL legacy cards."""
+        base_query: dict[str, Any] = {"user_id": user_id, "deleted_at": None}
+        if language:
+            base_query["language"] = language
+
+        mongo_total = self.mongo_repository.cards.count_documents(base_query)
+        mongo_status = {
+            status: self.mongo_repository.cards.count_documents(
+                {**base_query, "status": status}
+            )
+            for status in ("new", "learning", "review", "suspended")
+        }
+        mongo_due = self.mongo_repository.cards.count_documents(
+            {
+                **base_query,
+                "status": {"$in": ["new", "learning", "review"]},
+                "$or": [
+                    {"next_due_at": None},
+                    {"next_due_at": {"$lte": datetime.now(timezone.utc)}},
+                ],
+            }
+        )
+        sql_stats = VocabularyQueries.get_stats(self.db, user_id, language)
+        return {
+            "language": language,
+            "total": mongo_total + sql_stats["total"],
+            "new": mongo_status["new"] + sql_stats["new"],
+            "learning": mongo_status["learning"] + sql_stats["learning"],
+            "review": mongo_status["review"] + sql_stats["review"],
+            "suspended": mongo_status["suspended"] + sql_stats["suspended"],
+            "due_today": mongo_due + sql_stats["due_today"],
+            "overdue": sql_stats["overdue"],
+            "sources": {
+                "mongo": {
+                    "total": mongo_total,
+                    **mongo_status,
+                    "due_today": mongo_due,
+                },
+                "sql": sql_stats,
             },
         }
 

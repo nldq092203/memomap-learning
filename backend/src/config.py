@@ -98,6 +98,7 @@ class LearningConfig:
 
     # MongoDB Configuration (Community Feedback)
     MONGO_URI = os.getenv("MONGO_URI")
+    VOCAB_STORAGE_BACKEND = os.getenv("VOCAB_STORAGE_BACKEND", "sql").lower()
 
     # PostgreSQL Configuration
     POSTGRES_DSN = os.getenv("POSTGRES_DSN", None)

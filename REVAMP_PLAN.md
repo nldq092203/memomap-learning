@@ -1458,6 +1458,35 @@ uv run python scripts/backfill_vocab_sql_to_mongo.py
 uv run python scripts/backfill_vocab_sql_to_mongo.py --apply
 ```
 
+#### REV-505 Backend Switch Preparation Note
+
+Status: Backend-only partial.
+
+Changes made:
+
+- Added `VOCAB_STORAGE_BACKEND` config.
+- Default remains `sql`.
+- When `VOCAB_STORAGE_BACKEND=compat`, existing `/api/web/vocab` endpoints route through `VocabularyCompatibilityService`.
+
+Compat-routed endpoints:
+
+- `GET /api/web/vocab`
+- `POST /api/web/vocab`
+- `GET /api/web/vocab/<card_id>`
+- `PATCH /api/web/vocab/<card_id>`
+- `DELETE /api/web/vocab/<card_id>`
+- `DELETE /api/web/vocab/<card_id>/hard`
+- `GET /api/web/vocab/due`
+- `POST /api/web/vocab:review-batch`
+- `GET /api/web/vocab/stats`
+
+Safety:
+
+- No frontend changes.
+- SQL remains the default path unless explicitly enabled by env.
+- Compat path supports `mongo:<id>` and `sql:<id>` ids while preserving legacy unprefixed SQL fallback behavior where possible.
+- New writes go to Mongo only when `VOCAB_STORAGE_BACKEND=compat`.
+
 ### Phase 0: Discovery And Guardrails
 
 #### REV-001: Audit Current Routes And Navigation
