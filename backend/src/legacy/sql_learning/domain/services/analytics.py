@@ -7,7 +7,8 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from src.domain.db_queries import SessionQueries, VocabularyQueries
+from src.domain.db_queries import VocabularyQueries
+from src.legacy.sql_learning.domain.db_queries import SessionQueries
 
 
 class AnalyticsService:

@@ -4,9 +4,6 @@ from src.infra.db.connection import db_session, get_db, engine, SessionLocal
 from src.infra.db.orm import (
     Base,
     UserORM,
-    LearningSessionORM,
-    LearningTranscriptORM,
-    LearningAudioLessonORM,
     VocabularyCardORM,
     UserExerciseProgressORM,
     CoCeExerciseORM,
@@ -22,9 +19,6 @@ __all__ = [
     # ORM models
     "Base",
     "UserORM",
-    "LearningSessionORM",
-    "LearningTranscriptORM",
-    "LearningAudioLessonORM",
     "VocabularyCardORM",
     "UserExerciseProgressORM",
     "CoCeExerciseORM",

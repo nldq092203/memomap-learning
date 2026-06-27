@@ -3044,7 +3044,41 @@ Changes made:
 
 Next archive point:
 
-- Move `sessions.py`, `transcripts.py`, `analytics.py`, related SQL controllers/query helpers, and old ORM models into a legacy SQL learning archive after confirming no active backend import still depends on them.
+- Move old ORM models into a legacy SQL learning archive only after the data-retention and migration-schema decision is complete.
+
+#### REV-707E Implementation Note
+
+Status: Completed SQL learning archive relocation.
+
+Changes made:
+
+- Created `backend/src/legacy/sql_learning/` as the backend legacy archive for SQL-backed learning code.
+- Moved disabled route modules out of the active API package:
+  - `backend/src/api/web/sessions.py`
+  - `backend/src/api/web/transcripts.py`
+  - `backend/src/api/web/analytics.py`
+- Moved the unused standalone analytics service out of the active domain services package.
+- Removed Sessions, Transcripts, and standalone Analytics controller functions from active `backend/src/domain/controllers.py`.
+- Removed `SessionQueries` and `TranscriptQueries` from active `backend/src/domain/db_queries.py`.
+- Removed legacy controller/query/service exports from `backend/src/domain/__init__.py` and `backend/src/domain/services/__init__.py`.
+- Added archived controller/query copies under `backend/src/legacy/sql_learning/domain/`.
+
+Temporary retention:
+
+- `LearningSessionORM`, `LearningTranscriptORM`, and `LearningAudioLessonORM` remain in active SQLAlchemy metadata for now so migrations and existing DB schema references stay stable.
+
+#### REV-707F Implementation Note
+
+Status: Completed legacy ORM export cleanup.
+
+Changes made:
+
+- Removed `LearningSessionORM`, `LearningTranscriptORM`, and `LearningAudioLessonORM` from public `src.infra.db` exports.
+- Marked those ORM classes and their `UserORM` relationships as legacy schema retained for compatibility in `backend/src/infra/db/orm.py`.
+
+Temporary retention:
+
+- The table mappings remain in active SQLAlchemy metadata until a separate data-retention and migration-schema decision is made.
 
 ### Suggested First Sprint
 

@@ -12,156 +12,13 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from src.domain.db_queries import (
-    SessionQueries,
-    TranscriptQueries,
     VocabularyQueries,
     ExerciseProgressQueries,
 )
 from src.domain.errors import ResourceNotFoundError, ValidationError
-from src.domain.services.analytics import AnalyticsService
 from src.domain.services.exercise_catalog import CatalogFilters, ExerciseCatalogService
 from src.domain.services.srs import SRSService
 from src.utils.constants import LEARNING_LANGS
-
-# ==================== Sessions Controllers ====================
-
-
-def create_session_controller(
-    db: Session,
-    user_id: str,
-    language: str,
-    name: str,
-    duration_seconds: int,
-    tags: list[str] | None = None,
-    extra: dict[str, Any] | None = None,
-) -> dict[str, Any]:
-    """Create a new learning session."""
-    if language not in LEARNING_LANGS:
-        raise ValidationError(f"language must be one of: {', '.join(LEARNING_LANGS)}")
-
-    session = SessionQueries.create(
-        db=db,
-        user_id=user_id,
-        language=language,
-        name=name,
-        duration_seconds=duration_seconds,
-        tags=tags,
-        extra=extra,
-    )
-
-    return _session_to_dict(session)
-
-
-def list_sessions_controller(
-    db: Session,
-    user_id: str,
-    language: str | None = None,
-    limit: int = 20,
-    offset: int = 0,
-    day_filter: str | None = None,
-) -> dict[str, Any]:
-    """List sessions with pagination."""
-    if language and language not in LEARNING_LANGS:
-        raise ValidationError(f"language must be one of: {', '.join(LEARNING_LANGS)}")
-
-    sessions, total = SessionQueries.list_by_user(
-        db=db,
-        user_id=user_id,
-        language=language,
-        limit=limit,
-        offset=offset,
-        day_filter=day_filter,
-    )
-
-    items = [_session_to_dict(s) for s in sessions]
-    return {"items": items, "total": total, "limit": limit, "offset": offset}
-
-
-def get_session_controller(db: Session, user_id: str, session_id: str) -> dict[str, Any]:
-    """Get session by ID."""
-    session = SessionQueries.get_by_id(db, session_id, user_id)
-    if not session:
-        raise ResourceNotFoundError("Session not found")
-    return _session_to_dict(session)
-
-
-# ==================== Transcripts Controllers ====================
-
-
-def create_transcript_controller(
-    db: Session,
-    user_id: str,
-    language: str,
-    source_url: str | None = None,
-    transcript: str | None = None,
-    notes: list[str] | None = None,
-    tags: list[str] | None = None,
-    lesson_audio_folder_id: str | None = None,
-    extra: dict[str, Any] | None = None,
-) -> dict[str, Any]:
-    """Create a new transcript."""
-    if language not in LEARNING_LANGS:
-        raise ValidationError(f"language must be one of: {', '.join(LEARNING_LANGS)}")
-
-    transcript_obj = TranscriptQueries.create(
-        db=db,
-        user_id=user_id,
-        language=language,
-        source_url=source_url,
-        transcript=transcript,
-        notes=notes,
-        tags=tags,
-        lesson_audio_folder_id=lesson_audio_folder_id,
-        extra=extra,
-    )
-
-    return _transcript_to_dict(transcript_obj)
-
-
-def list_transcripts_controller(
-    db: Session,
-    user_id: str,
-    language: str | None = None,
-    limit: int = 20,
-    offset: int = 0,
-) -> dict[str, Any]:
-    """List transcripts with pagination."""
-    if language and language not in LEARNING_LANGS:
-        raise ValidationError(f"language must be one of: {', '.join(LEARNING_LANGS)}")
-
-    transcripts, total = TranscriptQueries.list_by_user(
-        db=db, user_id=user_id, language=language, limit=limit, offset=offset
-    )
-
-    items = [_transcript_to_dict(t) for t in transcripts]
-    return {"items": items, "total": total, "limit": limit, "offset": offset}
-
-
-def get_transcript_controller(db: Session, user_id: str, transcript_id: str) -> dict[str, Any]:
-    """Get transcript by ID."""
-    transcript = TranscriptQueries.get_by_id(db, transcript_id, user_id)
-    if not transcript:
-        raise ResourceNotFoundError("Transcript not found")
-    return _transcript_to_dict(transcript)
-
-
-def update_transcript_controller(
-    db: Session, user_id: str, transcript_id: str, **updates
-) -> dict[str, Any]:
-    """Update transcript."""
-    transcript = TranscriptQueries.update(db, transcript_id, user_id, **updates)
-    if not transcript:
-        raise ResourceNotFoundError("Transcript not found")
-    return _transcript_to_dict(transcript)
-
-
-def delete_transcript_controller(db: Session, user_id: str, transcript_id: str) -> bool:
-    """Delete transcript."""
-    deleted = TranscriptQueries.delete(db, transcript_id, user_id)
-    if not deleted:
-        raise ResourceNotFoundError("Transcript not found")
-    return True
-
 
 # ==================== Vocabulary Controllers ====================
 
@@ -486,56 +343,7 @@ def list_exercise_catalog_controller(
         raise ValidationError(str(exc)) from exc
 
 
-# ==================== Analytics Controllers ====================
-
-
-def get_analytics_summary_controller(
-    db: Session, user_id: str, language: str | None = None, days: int = 30
-) -> dict[str, Any]:
-    """Get learning analytics summary."""
-    if language and language not in LEARNING_LANGS:
-        raise ValidationError(f"language must be one of: {', '.join(LEARNING_LANGS)}")
-
-    if days < 1 or days > 365:
-        raise ValidationError("days must be between 1 and 365")
-
-    service = AnalyticsService(db)
-    return service.get_learning_summary(user_id=user_id, language=language, days=days)
-
-
 # ==================== Helper Functions ====================
-
-
-def _session_to_dict(session) -> dict[str, Any]:
-    """Convert session ORM to dict."""
-    return {
-        "id": session.id,
-        "user_id": session.user_id,
-        "language": session.language,
-        "name": session.name,
-        "duration_seconds": session.duration_seconds,
-        "tags": session.tags,
-        "created_at": session.created_at,
-        "updated_at": session.updated_at,
-        "extra": session.extra,
-    }
-
-
-def _transcript_to_dict(transcript) -> dict[str, Any]:
-    """Convert transcript ORM to dict."""
-    return {
-        "id": transcript.id,
-        "user_id": transcript.user_id,
-        "language": transcript.language,
-        "source_url": transcript.source_url,
-        "lesson_audio_folder_id": transcript.lesson_audio_folder_id,
-        "transcript": transcript.transcript,
-        "notes": transcript.notes,
-        "tags": transcript.tags,
-        "created_at": transcript.created_at,
-        "updated_at": transcript.updated_at,
-        "extra": transcript.extra,
-    }
 
 
 def _vocab_card_to_dict(card) -> dict[str, Any]:

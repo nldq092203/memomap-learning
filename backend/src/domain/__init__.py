@@ -9,16 +9,6 @@ This layer contains:
 """
 
 from src.domain.controllers import (
-    # Sessions
-    create_session_controller,
-    list_sessions_controller,
-    get_session_controller,
-    # Transcripts
-    create_transcript_controller,
-    list_transcripts_controller,
-    get_transcript_controller,
-    update_transcript_controller,
-    delete_transcript_controller,
     # Vocabulary
     create_vocab_card_controller,
     list_vocab_cards_controller,
@@ -36,14 +26,10 @@ from src.domain.controllers import (
     get_exercise_progress_summary_controller,
     # Exercise catalog
     list_exercise_catalog_controller,
-    # Analytics
-    get_analytics_summary_controller,
 )
 
 from src.domain.db_queries import (
     UserQueries,
-    SessionQueries,
-    TranscriptQueries,
     VocabularyQueries,
     ExerciseProgressQueries,
 )
@@ -51,14 +37,6 @@ from src.domain.vocabulary_compat import VocabularyCompatibilityService
 
 __all__ = [
     # Controllers
-    "create_session_controller",
-    "list_sessions_controller",
-    "get_session_controller",
-    "create_transcript_controller",
-    "list_transcripts_controller",
-    "get_transcript_controller",
-    "update_transcript_controller",
-    "delete_transcript_controller",
     "create_vocab_card_controller",
     "list_vocab_cards_controller",
     "get_vocab_card_controller",
@@ -73,11 +51,8 @@ __all__ = [
     "list_exercise_progress_controller",
     "get_exercise_progress_summary_controller",
     "list_exercise_catalog_controller",
-    "get_analytics_summary_controller",
     # Queries
     "UserQueries",
-    "SessionQueries",
-    "TranscriptQueries",
     "VocabularyQueries",
     "ExerciseProgressQueries",
     "VocabularyCompatibilityService",

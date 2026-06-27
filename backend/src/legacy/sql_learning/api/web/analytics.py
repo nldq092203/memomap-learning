@@ -4,7 +4,7 @@ from flask import request
 from sqlalchemy.orm import Session
 
 from src.api.decorators import require_auth, with_db
-from src.domain.controllers import get_analytics_summary_controller
+from src.legacy.sql_learning.domain.controllers import get_analytics_summary_controller
 from src.utils.response_builder import ResponseBuilder
 
 

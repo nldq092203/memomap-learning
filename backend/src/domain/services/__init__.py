@@ -1,6 +1,5 @@
-"""Domain services - business logic for SRS and analytics."""
+"""Domain services - business logic for SRS."""
 
 from src.domain.services.srs import SRSService, MongoSRSService, Grade
-from src.domain.services.analytics import AnalyticsService
 
-__all__ = ["SRSService", "MongoSRSService", "AnalyticsService", "Grade"]
+__all__ = ["SRSService", "MongoSRSService", "Grade"]

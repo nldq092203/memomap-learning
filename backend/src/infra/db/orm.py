@@ -49,7 +49,8 @@ class UserORM(Base):
         nullable=True,
     )
 
-    # Relationships (for easier querying)
+    # Legacy relationships retained until the old SQL learning tables have a
+    # final data-retention/schema decision.
     sessions: so.Mapped[list["LearningSessionORM"]] = so.relationship(
         back_populates="user",
         cascade="all, delete-orphan",
@@ -81,7 +82,7 @@ class UserORM(Base):
 
 
 class LearningSessionORM(Base):
-    """Learning session (study time tracking)."""
+    """Legacy learning session table retained for schema compatibility."""
 
     __tablename__ = "learning_sessions"
 
@@ -110,7 +111,7 @@ class LearningSessionORM(Base):
 
 
 class LearningTranscriptORM(Base):
-    """Learning transcript (lesson notes)."""
+    """Legacy learning transcript table retained for schema compatibility."""
 
     __tablename__ = "learning_transcripts"
 
@@ -142,7 +143,7 @@ class LearningTranscriptORM(Base):
 
 
 class LearningAudioLessonORM(Base):
-    """Audio lesson with transcript."""
+    """Legacy audio lesson table retained for schema compatibility."""
 
     __tablename__ = "learning_audio_lessons"
 

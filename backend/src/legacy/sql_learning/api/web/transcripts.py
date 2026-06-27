@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from src.api.decorators import require_auth, with_db
 from src.api.schemas import TranscriptCreateRequest, TranscriptUpdateRequest
 from src.api.errors import BadRequestError
-from src.domain.controllers import (
+from src.legacy.sql_learning.domain.controllers import (
     create_transcript_controller,
     list_transcripts_controller,
     get_transcript_controller,
