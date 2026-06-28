@@ -26,25 +26,25 @@ export function ExerciseView({
   const hasImageOptions = exercise.options?.some((option) => isImageOption(option))
 
   return (
-    <Card className={`overflow-hidden rounded-[28px] transition-colors ${
+    <Card className={`overflow-hidden rounded-[24px] transition-colors ${
       showResults
         ? isCorrect
-          ? 'border-green-500/50 bg-green-50/50 dark:bg-green-950/20'
+          ? 'border-[var(--vintage-desert-rock)] bg-[var(--vintage-cream)]/45'
           : 'border-destructive/50 bg-destructive/5 dark:bg-destructive/10'
-        : 'border-border hover:border-border/80'
+        : 'border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/95 hover:border-[var(--vintage-desert-rock)]'
     }`}>
       <CardContent className="p-6">
         <div className="space-y-6">
           {/* Question Header */}
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-2">
-              <h3 className="font-semibold text-lg flex items-center gap-2">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+              <h3 className="flex items-center gap-2 text-lg font-semibold text-[var(--vintage-ink)]">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--vintage-cream)] text-xs font-bold text-[var(--vintage-desert-rock)]">
                   {index + 1}
                 </span>
                 {exercise.title}
               </h3>
-              <p className="text-base font-semibold leading-7 text-slate-800">
+              <p className="text-base font-semibold leading-7 text-[var(--vintage-ink)]">
                 {exercise.question_text}
               </p>
             </div>
@@ -53,7 +53,7 @@ export function ExerciseView({
             {showResults && (
               <div className="shrink-0 pt-1">
                 {isCorrect ? (
-                  <div className="flex items-center gap-1.5 text-green-600 dark:text-green-500 font-medium">
+                  <div className="flex items-center gap-1.5 font-medium text-[var(--vintage-desert-rock)]">
                     <CheckCircle2 className="h-5 w-5" />
                     <span className="text-sm">Correct</span>
                   </div>
@@ -79,21 +79,21 @@ export function ExerciseView({
               const isSelected = selectedOption === optIdx
               
               let optionClass = hasImageOptions
-                ? "flex cursor-pointer flex-col overflow-hidden rounded-[22px] border p-3 transition-all"
-                : "flex cursor-pointer items-start space-x-3 rounded-lg border p-4 transition-all hover:bg-muted/50"
+                  ? "flex cursor-pointer flex-col overflow-hidden rounded-[18px] border border-[var(--vintage-soft-sandstone)] p-3 transition-all hover:border-[var(--vintage-desert-rock)] hover:bg-[var(--vintage-porcelain-mist)]"
+                : "flex cursor-pointer items-start space-x-3 rounded-lg border border-[var(--vintage-soft-sandstone)] p-4 transition-all hover:bg-[var(--vintage-porcelain-mist)]"
               
               if (showResults) {
                 const isThisOptionCorrect = optIdx === exercise.correct_answer
                 
                 if (isThisOptionCorrect) {
-                  optionClass += " border-green-500/50 bg-green-50/50 dark:bg-green-900/20 shadow-sm"
+                  optionClass += " border-[var(--vintage-desert-rock)] bg-[var(--vintage-cream)]/55 shadow-sm"
                 } else if (isSelected && !isThisOptionCorrect) {
                   optionClass += " border-destructive/50 bg-destructive/5 dark:bg-destructive/10"
                 } else {
                   optionClass += " opacity-60 grayscale"
                 }
               } else if (isSelected) {
-                optionClass += " border-primary bg-primary/5 ring-1 ring-primary"
+                optionClass += " border-[var(--vintage-desert-rock)] bg-[var(--vintage-cream)]/50 ring-1 ring-[var(--vintage-desert-rock)]"
               }
 
               return (
@@ -111,7 +111,7 @@ export function ExerciseView({
                     {isImageOption(option) ? (
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                          <span className="rounded-full bg-[var(--vintage-porcelain-mist)] px-2.5 py-1 text-xs font-semibold text-[var(--vintage-muted-ink)]">
                             {option.label}
                           </span>
                         </div>
@@ -119,12 +119,12 @@ export function ExerciseView({
                         <img 
                           src={getAssetUrl ? getAssetUrl(option.img_url) : option.img_url} 
                           alt={option.label}
-                          className="h-[150px] w-full rounded-xl border border-slate-200 bg-white object-contain p-2"
+                          className="h-[150px] w-full rounded-xl border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)] object-contain p-2"
                           loading="lazy"
                         />
                       </div>
                     ) : (
-                      <span className="font-medium text-sm leading-relaxed">{option}</span>
+                    <span className="text-sm font-medium leading-relaxed text-[var(--vintage-ink)]">{option}</span>
                     )}
                   </div>
                 </Label>
@@ -134,16 +134,16 @@ export function ExerciseView({
 
           {/* Explanation in review mode */}
           {showResults && (exercise.explanation || exercise.transcript) && (
-            <div className="mt-6 rounded-lg bg-muted/50 p-4 border space-y-3">
-              <div className="flex items-center gap-2 font-medium text-primary">
+            <div className="mt-6 space-y-3 rounded-lg border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-porcelain-mist)] p-4">
+              <div className="flex items-center gap-2 font-medium text-[var(--vintage-desert-rock)]">
                 <Info className="h-4 w-4" />
                 Explication
               </div>
               
               {exercise.transcript && (
                 <div className="space-y-1">
-                  <span className="text-xs font-semibold uppercase text-muted-foreground">Extrait :</span>
-                  <p className="text-sm italic border-l-2 border-primary/30 pl-3">
+                  <span className="text-xs font-semibold uppercase text-[var(--vintage-muted-ink)]">Extrait :</span>
+                  <p className="border-l-2 border-[var(--vintage-soft-sandstone)] pl-3 text-sm italic text-[var(--vintage-muted-ink)]">
                     &ldquo;{exercise.transcript}&rdquo;
                   </p>
                 </div>
@@ -151,8 +151,8 @@ export function ExerciseView({
               
               {exercise.explanation && (
                 <div className="space-y-1">
-                  <span className="text-xs font-semibold uppercase text-muted-foreground">Note :</span>
-                  <p className="text-sm">{exercise.explanation}</p>
+                  <span className="text-xs font-semibold uppercase text-[var(--vintage-muted-ink)]">Note :</span>
+                  <p className="text-sm text-[var(--vintage-ink)]">{exercise.explanation}</p>
                 </div>
               )}
             </div>

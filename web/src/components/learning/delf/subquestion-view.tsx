@@ -37,12 +37,12 @@ export function SubQuestionView({
   }
 
   return (
-    <div className={`rounded-[24px] border bg-card p-5 transition-colors ${
+    <div className={`rounded-[22px] border p-5 transition-colors ${
       showResults
         ? isCorrect
-          ? 'border-green-500/40 bg-green-50/30 dark:border-green-800/40 dark:bg-green-950/20'
+          ? 'border-[var(--vintage-desert-rock)] bg-[var(--vintage-cream)]/35'
           : 'border-destructive/40 bg-destructive/5 dark:border-destructive/40 dark:bg-destructive/10'
-        : 'border-border'
+        : 'border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/95'
     }`}>
       <div className="space-y-5">
         
@@ -50,17 +50,17 @@ export function SubQuestionView({
         <div className="flex items-start justify-between gap-4">
           <div className="flex gap-3">
             {question.number !== undefined && (
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-teal-100 text-xs font-bold text-teal-700">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--vintage-cream)] text-xs font-bold text-[var(--vintage-desert-rock)]">
                 {question.number}
               </span>
             )}
-            <p className="text-base font-semibold leading-7 text-slate-900">{question.question_text}</p>
+            <p className="text-base font-semibold leading-7 text-[var(--vintage-ink)]">{question.question_text}</p>
           </div>
           
           {showResults && isCorrect !== null && (
             <div className="shrink-0 pt-0.5">
               {isCorrect ? (
-                <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-500" />
+                <CheckCircle2 className="h-5 w-5 text-[var(--vintage-desert-rock)]" />
               ) : (
                 <XCircle className="h-5 w-5 text-destructive" />
               )}
@@ -82,19 +82,19 @@ export function SubQuestionView({
               
               let optionClass =
                 question.type === "multiple_choice_image"
-                  ? "flex cursor-pointer flex-col overflow-hidden rounded-[22px] border p-3 transition-all hover:border-emerald-200 hover:bg-emerald-50/40"
-                  : "flex cursor-pointer items-start space-x-3 rounded-lg border p-3 transition-colors hover:bg-muted/50"
+                  ? "flex cursor-pointer flex-col overflow-hidden rounded-[18px] border border-[var(--vintage-soft-sandstone)] p-3 transition-all hover:border-[var(--vintage-desert-rock)] hover:bg-[var(--vintage-porcelain-mist)]"
+                  : "flex cursor-pointer items-start space-x-3 rounded-lg border border-[var(--vintage-soft-sandstone)] p-3 transition-colors hover:bg-[var(--vintage-porcelain-mist)]"
               if (showResults) {
                 const isThisCorrect = optIdx === question.correct_answer
                 if (isThisCorrect) {
-                  optionClass += " border-green-500/50 bg-green-50/50 dark:bg-green-900/20 shadow-sm"
+                  optionClass += " border-[var(--vintage-desert-rock)] bg-[var(--vintage-cream)]/55 shadow-sm"
                 } else if (isSelected && !isThisCorrect) {
                   optionClass += " border-destructive/50 bg-destructive/5 dark:bg-destructive/10"
                 } else {
                   optionClass += " opacity-60 grayscale"
                 }
               } else if (isSelected) {
-                optionClass += " border-primary bg-primary/5 ring-1 ring-primary"
+                optionClass += " border-[var(--vintage-desert-rock)] bg-[var(--vintage-cream)]/50 ring-1 ring-[var(--vintage-desert-rock)]"
               }
 
               return (
@@ -108,7 +108,7 @@ export function SubQuestionView({
                     {isImageOption(option) ? (
                       <div className="mt-[-2px] space-y-3">
                         <div className="flex items-center justify-between">
-                          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                          <span className="rounded-full bg-[var(--vintage-porcelain-mist)] px-2.5 py-1 text-xs font-semibold text-[var(--vintage-muted-ink)]">
                             {option.label}
                           </span>
                         </div>
@@ -116,12 +116,12 @@ export function SubQuestionView({
                         <img 
                           src={getAssetUrl ? getAssetUrl(option.img_url) : option.img_url} 
                           alt={option.label}
-                          className="h-[140px] w-full rounded-xl border border-slate-200 bg-white object-contain p-2"
+                          className="h-[140px] w-full rounded-xl border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)] object-contain p-2"
                           loading="lazy"
                         />
                       </div>
                     ) : (
-                      <span className="font-medium text-sm leading-relaxed">{option}</span>
+                      <span className="text-sm font-medium leading-relaxed text-[var(--vintage-ink)]">{option}</span>
                     )}
                   </div>
                 </Label>
@@ -141,25 +141,25 @@ export function SubQuestionView({
               const correctArr = showResults ? (question.correct_answers as string[] || []) : []
               const isCorrectTarget = correctArr.includes(option.label)
 
-              let boxClass = "relative flex cursor-pointer flex-col overflow-hidden rounded-[22px] border-2 transition-all hover:border-emerald-300"
+              let boxClass = "relative flex cursor-pointer flex-col overflow-hidden rounded-[18px] border-2 transition-all hover:border-[var(--vintage-desert-rock)]"
               if (showResults) {
                 if (isCorrectTarget) {
-                  boxClass += " border-green-500 bg-green-50 dark:bg-green-900/20 ring-2 ring-green-500/30"
+                  boxClass += " border-[var(--vintage-desert-rock)] bg-[var(--vintage-cream)]/55 ring-2 ring-[var(--vintage-desert-rock)]/30"
                 } else if (isSelected && !isCorrectTarget) {
                   boxClass += " border-destructive bg-destructive/10"
                 } else {
                   boxClass += " border-muted opacity-60 grayscale"
                 }
               } else if (isSelected) {
-                boxClass += " border-primary bg-primary/5 ring-2 ring-primary/30"
+                boxClass += " border-[var(--vintage-desert-rock)] bg-[var(--vintage-cream)]/50 ring-2 ring-[var(--vintage-desert-rock)]/30"
               } else {
-                boxClass += " border-border bg-card"
+                boxClass += " border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]"
               }
 
               return (
                 <Label key={optIdx} htmlFor={`sq-${question.id}-chk-${optIdx}`} className={boxClass}>
-                  <div className="p-2 flex items-center justify-between border-b bg-muted/30">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-sm bg-background border text-xs font-bold shadow-sm">
+                  <div className="flex items-center justify-between border-b border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-porcelain-mist)] p-2">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-sm border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)] text-xs font-bold shadow-sm">
                       {option.label.toUpperCase()}
                     </span>
                     <Checkbox 
@@ -173,7 +173,7 @@ export function SubQuestionView({
                       className="h-4 w-4"
                     />
                   </div>
-                  <div className="p-3 flex items-center justify-center bg-white aspect-square">
+                  <div className="flex aspect-square items-center justify-center bg-[var(--vintage-feather-white)] p-3">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img 
                       src={getAssetUrl ? getAssetUrl(option.img_url) : option.img_url} 
@@ -186,9 +186,9 @@ export function SubQuestionView({
                   {showResults && (
                     <div className="absolute top-2 right-8">
                       {isCorrectTarget ? (
-                         <CheckCircle2 className="h-5 w-5 text-green-600 drop-shadow-sm" />
+                         <CheckCircle2 className="h-5 w-5 text-[var(--vintage-desert-rock)] drop-shadow-sm" />
                        ) : (isSelected && !isCorrectTarget) ? (
-                         <XCircle className="h-5 w-5 text-destructive drop-shadow-sm bg-white rounded-full bg-opacity-80" />
+                         <XCircle className="h-5 w-5 rounded-full bg-[var(--vintage-feather-white)] text-destructive drop-shadow-sm" />
                        ) : null}
                     </div>
                   )}
@@ -203,8 +203,8 @@ export function SubQuestionView({
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
               {question.labels.map(label => (
-                <div key={label.number} className="flex items-center gap-2 rounded-md border bg-muted/30 p-2 text-sm">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-sm bg-foreground/10 text-xs font-bold shrink-0">
+                <div key={label.number} className="flex items-center gap-2 rounded-md border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-porcelain-mist)] p-2 text-sm">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm bg-[var(--vintage-cream)] text-xs font-bold text-[var(--vintage-desert-rock)]">
                     {label.number}
                   </span>
                   <span>{label.description}</span>
@@ -225,19 +225,19 @@ export function SubQuestionView({
                 
                 let inputClass = "flex items-center gap-2 border rounded-md p-2 pl-3 transition-colors "
                 if (showResults) {
-                  if (userVal === correctVal) inputClass += "border-green-400 bg-green-50 dark:bg-green-950/30"
+                  if (userVal === correctVal) inputClass += "border-[var(--vintage-desert-rock)] bg-[var(--vintage-cream)]/55"
                   else inputClass += "border-destructive bg-destructive/10"
                 } else if (userVal) {
-                  inputClass += "border-primary/50 bg-primary/5 ring-1 ring-primary/20"
+                  inputClass += "border-[var(--vintage-desert-rock)] bg-[var(--vintage-cream)]/50 ring-1 ring-[var(--vintage-desert-rock)]/20"
                 } else {
-                  inputClass += "bg-card"
+                  inputClass += "border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]"
                 }
 
                 return (
                   <div key={partLabel} className={inputClass}>
-                    <span className="font-bold text-lg text-primary">{partLabel}</span>
+                    <span className="text-lg font-bold text-[var(--vintage-desert-rock)]">{partLabel}</span>
                     <select 
-                      className="ml-2 bg-transparent border-b border-primary/30 outline-none text-center font-medium w-12 pb-1 focus:border-primary disabled:opacity-100 disabled:cursor-not-allowed appearance-none"
+                      className="ml-2 w-12 appearance-none border-b border-[var(--vintage-soft-sandstone)] bg-transparent pb-1 text-center font-medium outline-none focus:border-[var(--vintage-desert-rock)] disabled:cursor-not-allowed disabled:opacity-100"
                       value={userVal || ""}
                       disabled={showResults}
                       onChange={(e) => {
@@ -253,7 +253,7 @@ export function SubQuestionView({
                     {showResults && (
                       <span className="ml-1 shrink-0">
                          {userVal === correctVal ? (
-                           <CheckCircle2 className="h-4 w-4 text-green-600" />
+                           <CheckCircle2 className="h-4 w-4 text-[var(--vintage-desert-rock)]" />
                          ) : (
                            <span className="flex items-center gap-1 text-xs text-destructive font-medium">
                              <XCircle className="h-4 w-4" /> 
@@ -271,12 +271,12 @@ export function SubQuestionView({
 
         {/* Explanation */}
         {showResults && question.explanation && (
-          <div className="mt-4 rounded-lg bg-muted/50 p-4 border space-y-2 text-sm leading-relaxed">
-            <div className="flex items-center gap-2 font-medium text-primary mb-1">
+          <div className="mt-4 space-y-2 rounded-lg border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-porcelain-mist)] p-4 text-sm leading-relaxed">
+            <div className="mb-1 flex items-center gap-2 font-medium text-[var(--vintage-desert-rock)]">
               <Info className="h-4 w-4" />
               Explication
             </div>
-            <p className="text-muted-foreground">{question.explanation}</p>
+            <p className="text-[var(--vintage-muted-ink)]">{question.explanation}</p>
           </div>
         )}
         

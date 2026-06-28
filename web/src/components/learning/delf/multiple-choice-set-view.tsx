@@ -21,37 +21,37 @@ export function MultipleChoiceSetView({
   getAssetUrl,
 }: MultipleChoiceSetViewProps) {
   return (
-    <Card className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+    <Card className="overflow-hidden rounded-[24px] border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/95 shadow-[0_14px_34px_rgba(74,51,35,0.07)]">
       <CardContent className="p-0">
-        <div className="space-y-4 border-b bg-slate-50 p-5 sm:p-6">
-          <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-950">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-100 text-xs font-bold text-teal-700">
+        <div className="space-y-4 border-b border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-porcelain-mist)] p-5 sm:p-6">
+          <h3 className="flex items-center gap-2 text-lg font-semibold text-[var(--vintage-ink)]">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--vintage-cream)] text-xs font-bold text-[var(--vintage-desert-rock)]">
               {index + 1}
             </span>
             {exercise.title}
           </h3>
           
           {exercise.instruction && (
-            <p className="border-l-4 border-teal-300 bg-white py-1.5 pl-4 text-base font-medium text-slate-700">
+            <p className="rounded-r-xl border-l-4 border-[var(--vintage-desert-rock)] bg-[var(--vintage-feather-white)]/80 py-1.5 pl-4 pr-3 text-base font-medium text-[var(--vintage-muted-ink)]">
               {exercise.instruction}
             </p>
           )}
 
           {exercise.question_text && (
-            <p className="mt-2 text-sm font-medium text-slate-600">
+            <p className="mt-2 text-sm font-medium text-[var(--vintage-muted-ink)]">
               {exercise.question_text}
             </p>
           )}
         </div>
 
         {/* Sub-Questions Loop */}
-        <div className="p-5 sm:p-8 space-y-6">
+        <div className="space-y-6 p-5 sm:p-8">
           <div className="flex items-center gap-3">
-             <HelpCircle className="h-4 w-4 shrink-0 text-muted-foreground" />
-            <span className="whitespace-nowrap text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+             <HelpCircle className="h-4 w-4 shrink-0 text-[var(--vintage-muted-ink)]" />
+            <span className="whitespace-nowrap text-sm font-semibold uppercase tracking-widest text-[var(--vintage-muted-ink)]">
               Questions
             </span>
-            <div className="h-px flex-1 bg-border"></div>
+            <div className="h-px flex-1 bg-[var(--vintage-soft-sandstone)]"></div>
           </div>
 
           <div className="space-y-6">

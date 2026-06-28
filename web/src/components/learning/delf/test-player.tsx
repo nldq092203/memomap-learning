@@ -44,7 +44,6 @@ export function TestPlayer({
   onAnswerSubQuestion,
   onSubmit,
   onRestartTest,
-  onBackToList,
   onBackToRoot,
 }: TestPlayerProps) {
   const content = test.content
@@ -77,7 +76,6 @@ export function TestPlayer({
     return userAnswers.some((answer) => answer.exerciseId === exercise.id)
   })
 
-  const totalExerciseCount = content.exercises.length
   const totalQuestionCount = content.exercises.reduce((total, exercise) => {
     if (exercise.type === "matching") return total + (exercise.documents?.length ?? 0)
     if (isNestedQuestionExerciseType(exercise.type)) return total + (exercise.questions?.length ?? 0)
@@ -228,50 +226,22 @@ export function TestPlayer({
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="space-y-3">
-        <div className="flex flex-wrap items-center gap-1 text-sm text-slate-500 sm:gap-2">
-          <button
-            type="button"
-            onClick={onBackToRoot}
-            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 transition-colors hover:bg-white hover:text-slate-900 sm:gap-2 sm:px-3 sm:py-1.5"
-          >
-            DELF
-          </button>
-          <span>/</span>
-          <button
-            type="button"
-            onClick={onBackToList}
-            className="rounded-full px-2 py-1 transition-colors hover:bg-white hover:text-slate-900"
-          >
-            {test.level}
-          </button>
-          <span>/</span>
-          <button
-            type="button"
-            onClick={onBackToList}
-            className="rounded-full px-2 py-1 transition-colors hover:bg-white hover:text-slate-900"
-          >
-            {test.section}
-          </button>
-          <span>/</span>
-          <span className="font-medium text-slate-700">{exerciseLabel}</span>
-        </div>
-
-        <div className="sticky top-4 z-20 rounded-[24px] border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
+      <div className="space-y-4">
+        <div className="sticky top-4 z-20 rounded-[24px] border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/95 p-4 shadow-[0_14px_34px_rgba(74,51,35,0.08)] backdrop-blur">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0 space-y-2">
               <div className="flex flex-wrap items-center gap-2">
-                <div className="rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">
+                <div className="rounded-full bg-[var(--vintage-cream)] px-3 py-1 text-xs font-semibold text-[var(--vintage-desert-rock)]">
                   {test.level} {test.section}
                 </div>
-                <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                <div className="rounded-full bg-[var(--vintage-porcelain-mist)] px-3 py-1 text-xs font-semibold text-[var(--vintage-muted-ink)]">
                   Variante {test.variant}
                 </div>
                 {showResults && score && (
                   <div
                     className={`rounded-full px-3 py-1 text-xs font-semibold ${
                       score.percentage >= 50
-                        ? "bg-emerald-50 text-emerald-700"
+                        ? "bg-[var(--vintage-cream)] text-[var(--vintage-desert-rock)]"
                         : "bg-rose-50 text-rose-700"
                     }`}
                   >
@@ -279,11 +249,11 @@ export function TestPlayer({
                   </div>
                 )}
               </div>
-              <h2 className="text-xl font-semibold tracking-tight text-slate-950">{exerciseLabel}</h2>
+              <h2 className="text-xl font-semibold tracking-tight text-[var(--vintage-ink)]">{exerciseLabel}</h2>
             </div>
 
             {section === "CO" && audioUrl && (
-              <div className="w-full rounded-[22px] border border-slate-200 bg-[linear-gradient(135deg,#f8fafc_0%,#eef7f6_100%)] p-3 sm:p-4 lg:max-w-[560px]">
+              <div className="w-full rounded-[22px] border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-porcelain-mist)] p-3 sm:p-4 lg:max-w-[560px]">
                 {audioItems.length > 1 && (
                   <div className="mb-3 grid gap-2 sm:grid-cols-3">
                     {audioItems.map((item, index) => (
@@ -294,8 +264,8 @@ export function TestPlayer({
                         size="sm"
                         className={`h-9 rounded-full text-xs ${
                           activeAudioIndex === index
-                            ? "bg-teal-500 text-white hover:bg-teal-600"
-                            : "border-slate-200 bg-white/70 text-slate-600 hover:bg-white"
+                            ? "bg-[var(--vintage-desert-rock)] text-white hover:bg-[#8f7763]"
+                            : "border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/80 text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-feather-white)]"
                         }`}
                         onClick={() => setActiveAudioIndex(index)}
                       >
@@ -309,7 +279,7 @@ export function TestPlayer({
                     <Button
                       size="icon"
                       onClick={togglePlay}
-                      className="h-10 w-10 shrink-0 rounded-full bg-teal-500 text-white hover:bg-teal-600 sm:h-11 sm:w-11"
+                      className="h-10 w-10 shrink-0 rounded-full bg-[var(--vintage-desert-rock)] text-white hover:bg-[#8f7763] sm:h-11 sm:w-11"
                     >
                       {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="ml-0.5 h-5 w-5" />}
                     </Button>
@@ -317,7 +287,7 @@ export function TestPlayer({
                       variant="outline"
                       size="icon"
                       onClick={handleRestart}
-                      className="h-9 w-9 shrink-0 rounded-full border-slate-200 text-slate-600 hover:bg-white sm:h-10 sm:w-10"
+                      className="h-9 w-9 shrink-0 rounded-full border-[var(--vintage-soft-sandstone)] text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-feather-white)] sm:h-10 sm:w-10"
                     >
                       <RotateCcw className="h-4 w-4" />
                     </Button>
@@ -325,7 +295,7 @@ export function TestPlayer({
                       variant="outline"
                       size="icon"
                       onClick={() => handleSkip(-5)}
-                      className="h-9 w-9 shrink-0 rounded-full border-slate-200 text-slate-600 hover:bg-white sm:h-10 sm:w-10"
+                      className="h-9 w-9 shrink-0 rounded-full border-[var(--vintage-soft-sandstone)] text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-feather-white)] sm:h-10 sm:w-10"
                     >
                       <SkipBack className="h-4 w-4" />
                     </Button>
@@ -333,7 +303,7 @@ export function TestPlayer({
                       variant="outline"
                       size="icon"
                       onClick={() => handleSkip(5)}
-                      className="h-9 w-9 shrink-0 rounded-full border-slate-200 text-slate-600 hover:bg-white sm:h-10 sm:w-10"
+                      className="h-9 w-9 shrink-0 rounded-full border-[var(--vintage-soft-sandstone)] text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-feather-white)] sm:h-10 sm:w-10"
                     >
                       <SkipForward className="h-4 w-4" />
                     </Button>
@@ -346,9 +316,9 @@ export function TestPlayer({
                       className="block w-full cursor-pointer"
                       aria-label="Seek audio"
                     >
-                      <Progress value={progress} className="h-2" />
+                      <Progress value={progress} className="h-2 bg-[var(--vintage-cream)] [&>div]:bg-[var(--vintage-desert-rock)]" />
                     </button>
-                    <div className="flex items-center justify-between text-xs font-medium text-slate-500">
+                    <div className="flex items-center justify-between text-xs font-medium text-[var(--vintage-muted-ink)]">
                       <span>{formatTime(currentTime)}</span>
                       <span>{formatTime(duration)}</span>
                     </div>
@@ -361,18 +331,18 @@ export function TestPlayer({
 
           <div className="mt-4 space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="font-medium text-slate-700">Progression</span>
-              <span className="text-slate-500">{showResults ? score?.percentage ?? 100 : progressRatio}%</span>
+              <span className="font-medium text-[var(--vintage-muted-ink)]">Progression</span>
+              <span className="text-[var(--vintage-desert-rock)]">{showResults ? score?.percentage ?? 100 : progressRatio}%</span>
             </div>
-            <Progress value={showResults ? score?.percentage ?? 100 : progressRatio} className="h-2" />
+            <Progress value={showResults ? score?.percentage ?? 100 : progressRatio} className="h-2 bg-[var(--vintage-cream)] [&>div]:bg-[var(--vintage-desert-rock)]" />
           </div>
         </div>
       </div>
 
       {section === "CE" && content.extra_transcripts?.length > 0 && (
         <div className="space-y-4">
-          <h3 className="flex items-center gap-2 px-1 text-lg font-semibold text-slate-950">
-            <AlertCircle className="h-5 w-5 text-teal-600" />
+          <h3 className="flex items-center gap-2 px-1 text-lg font-semibold text-[var(--vintage-ink)]">
+            <AlertCircle className="h-5 w-5 text-[var(--vintage-desert-rock)]" />
             Documents de lecture
           </h3>
           <ExtraTranscriptView transcripts={content.extra_transcripts} />
@@ -380,8 +350,8 @@ export function TestPlayer({
       )}
 
       <div className="space-y-6">
-        <h3 className="flex items-center gap-2 px-1 text-lg font-semibold text-slate-950">
-          <BookOpen className="h-5 w-5 text-teal-600" />
+        <h3 className="flex items-center gap-2 px-1 text-lg font-semibold text-[var(--vintage-ink)]">
+          <BookOpen className="h-5 w-5 text-[var(--vintage-desert-rock)]" />
           Questions
         </h3>
 
@@ -447,15 +417,15 @@ export function TestPlayer({
       </div>
 
       <div className="sticky bottom-4 z-20">
-        <div className="flex flex-col items-center gap-3 rounded-[24px] border border-slate-200 bg-white/95 px-4 py-3 shadow-lg shadow-slate-200/60 backdrop-blur sm:flex-row sm:justify-between sm:rounded-[30px] sm:px-5 sm:py-4">
-          <div className="text-center text-sm text-slate-500 sm:text-left">
+        <div className="flex flex-col items-center gap-3 rounded-[24px] border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/95 px-4 py-3 shadow-[0_18px_42px_rgba(74,51,35,0.12)] backdrop-blur sm:flex-row sm:justify-between sm:rounded-[30px] sm:px-5 sm:py-4">
+          <div className="text-center text-sm text-[var(--vintage-muted-ink)] sm:text-left">
             {!showResults
               ? `${answeredQuestionCount} question${answeredQuestionCount > 1 ? "s" : ""} complétée${answeredQuestionCount > 1 ? "s" : ""} sur ${totalQuestionCount}.`
               : "Votre correction est affichée ci-dessus."}
           </div>
 
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-            <Button variant="outline" onClick={onBackToRoot} className="w-full rounded-full sm:w-auto">
+            <Button variant="outline" onClick={onBackToRoot} className="w-full rounded-full border-[var(--vintage-soft-sandstone)] text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-porcelain-mist)] sm:w-auto">
               Quitter
             </Button>
 
@@ -467,12 +437,12 @@ export function TestPlayer({
                   className="w-full rounded-full px-8 sm:w-auto"
                   variant={allAnswered ? "default" : "outline"}
                   disabled={!allAnswered}
-                  style={allAnswered ? { backgroundColor: "#14b8a6", color: "white" } : undefined}
+                  style={allAnswered ? { backgroundColor: "var(--vintage-desert-rock)", color: "white" } : undefined}
                 >
                   Valider l&apos;exercice
                 </Button>
                 {!allAnswered && (
-                  <p className="text-center text-xs text-slate-500">Répondez à toutes les questions pour valider.</p>
+                  <p className="text-center text-xs text-[var(--vintage-muted-ink)]">Répondez à toutes les questions pour valider.</p>
                 )}
               </div>
             ) : (
@@ -483,7 +453,7 @@ export function TestPlayer({
                 <Button
                   onClick={onRestartTest}
                   size="lg"
-                  className="w-full rounded-full bg-emerald-100 px-8 text-emerald-700 hover:bg-emerald-200 sm:w-auto"
+                  className="w-full rounded-full bg-[var(--vintage-cream)] px-8 text-[var(--vintage-desert-rock)] hover:bg-[var(--vintage-soft-sandstone)] sm:w-auto"
                 >
                   Recommencer
                 </Button>
