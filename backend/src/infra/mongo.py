@@ -4,6 +4,7 @@ import os
 
 from pymongo import ASCENDING, DESCENDING, TEXT, MongoClient
 from pymongo.collection import Collection
+from pymongo.errors import OperationFailure
 
 from src.extensions import logger
 
@@ -45,6 +46,17 @@ def get_vocab_reviews_collection() -> Collection:
     return get_db()["vocab_reviews"]
 
 
+def _drop_index_if_exists(collection: Collection, name: str) -> None:
+    """Drop an index by name, ignoring the case where it does not exist."""
+    try:
+        collection.drop_index(name)
+        logger.info("Dropped stale index %s on %s", name, collection.name)
+    except OperationFailure as exc:
+        # code 27 == IndexNotFound; anything else is a real error.
+        if exc.code != 27:
+            raise
+
+
 def ensure_vocabulary_indexes() -> None:
     """Create Mongo indexes required by the vocabulary repository."""
     cards = get_vocab_cards_collection()
@@ -79,11 +91,16 @@ def ensure_vocabulary_indexes() -> None:
         [("user_id", ASCENDING), ("updated_at", DESCENDING)],
         name="ix_vocab_cards_user_updated",
     )
+    # Drop any pre-existing definition: a compound `sparse` unique index does
+    # NOT skip documents where only `legacy_sql_id` is null (user_id is always
+    # present), so every new card with `legacy_sql_id: null` collides. Replace
+    # it with a partial index scoped to legacy-imported docs only.
+    _drop_index_if_exists(cards, "uq_vocab_cards_user_legacy_sql_id")
     cards.create_index(
         [("user_id", ASCENDING), ("legacy_sql_id", ASCENDING)],
         name="uq_vocab_cards_user_legacy_sql_id",
         unique=True,
-        sparse=True,
+        partialFilterExpression={"legacy_sql_id": {"$type": "string"}},
     )
     cards.create_index(
         [
