@@ -228,24 +228,24 @@ export function VocabCardModal({
       >
         <div className="grid gap-5 md:grid-cols-[minmax(0,1.25fr)_240px]">
           <div className="space-y-5">
-            <div className="rounded-[28px] border border-slate-200 bg-surface-gradient-card p-6 shadow-sm">
+            <div className="rounded-[28px] border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/92 p-6 shadow-sm">
               <div className="mb-5 space-y-2">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--vintage-desert-rock)]">
                   Carte rapide
                 </p>
-                <h2 className="text-xl font-semibold text-slate-900">
+                <h2 className="text-xl font-semibold text-[var(--vintage-ink)]">
                   Ajoutez un mot, laissez l’IA suggérer le sens, puis enregistrez.
                 </h2>
               </div>
 
               <div className="space-y-5">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">Mot ou expression</label>
+                  <label className="text-sm font-medium text-[var(--vintage-muted-ink)]">Mot ou expression</label>
                   <Input
                     value={word}
                     onChange={(e) => setWord(e.target.value)}
                     placeholder="ex. prendre la parole"
-                    className="h-14 rounded-2xl border-slate-200 bg-white text-xl font-semibold text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]"
+                    className="h-14 rounded-2xl border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)] text-xl font-semibold text-[var(--vintage-ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] focus-visible:border-[var(--vintage-desert-rock)] focus-visible:ring-[var(--vintage-desert-rock)]/20"
                     autoFocus
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
@@ -257,13 +257,13 @@ export function VocabCardModal({
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">Sens principal</label>
+                  <label className="text-sm font-medium text-[var(--vintage-muted-ink)]">Sens principal</label>
                   <div className="relative">
                     <Input
                       value={translation}
                       onChange={(e) => setTranslation(e.target.value)}
                       placeholder="Saisissez la traduction ou laissez l’IA suggérer"
-                      className="h-12 rounded-2xl border-slate-200 bg-white pr-12 text-base"
+                      className="h-12 rounded-2xl border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)] pr-12 text-base focus-visible:border-[var(--vintage-desert-rock)] focus-visible:ring-[var(--vintage-desert-rock)]/20"
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           e.preventDefault()
@@ -275,7 +275,7 @@ export function VocabCardModal({
                       type="button"
                       onClick={handleAutoFill}
                       disabled={isAutofilling || isSaving}
-                      className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-primary/8 text-primary transition hover:bg-primary/12 disabled:opacity-50"
+                      className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[var(--vintage-cream)] text-[var(--vintage-desert-rock)] transition hover:bg-[var(--vintage-soft-sandstone)] disabled:opacity-50"
                       aria-label="Suggestion IA"
                       title="Suggestion IA"
                     >
@@ -288,20 +288,20 @@ export function VocabCardModal({
                   <button
                     type="button"
                     onClick={() => setShowMoreDetails((prev) => !prev)}
-                    className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-slate-900"
+                    className="inline-flex items-center gap-2 text-sm font-medium text-[var(--vintage-muted-ink)] transition hover:text-[var(--vintage-ink)]"
                   >
                     <ChevronDown className={`h-4 w-4 transition-transform ${showMoreDetails ? "rotate-180" : ""}`} />
                     Ajouter plus de détails
                   </button>
 
                   {showMoreDetails && (
-                    <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                    <div className="space-y-3 rounded-2xl border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-porcelain-mist)]/70 p-4">
                       <div className="flex gap-2">
                         <Input
                           value={newNote}
                           onChange={(e) => setNewNote(e.target.value)}
                           placeholder="Ajoutez une phrase de contexte ou une règle de grammaire..."
-                          className="h-11 rounded-2xl border-slate-200 bg-white"
+                          className="h-11 rounded-2xl border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)] focus-visible:border-[var(--vintage-desert-rock)] focus-visible:ring-[var(--vintage-desert-rock)]/20"
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
                               e.preventDefault()
@@ -317,11 +317,11 @@ export function VocabCardModal({
                       {notes.length > 0 && (
                         <div className="space-y-2">
                           {notes.map((note, index) => (
-                            <div key={index} className="flex items-start justify-between rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600">
+                            <div key={index} className="flex items-start justify-between rounded-2xl border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)] px-3 py-2 text-sm text-[var(--vintage-muted-ink)]">
                               <span className="pr-3">{note}</span>
                               <button
                                 type="button"
-                                className="mt-0.5 text-slate-400 transition hover:text-destructive"
+                                className="mt-0.5 text-[var(--vintage-muted-ink)]/60 transition hover:text-destructive"
                                 onClick={() => handleRemoveNote(note)}
                               >
                                 <X className="h-4 w-4" />
@@ -336,15 +336,15 @@ export function VocabCardModal({
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 border-t border-slate-200 pt-4">
-              <Button variant="ghost" onClick={onClose} disabled={isSaving} className="text-slate-500 hover:text-slate-900">
+            <div className="flex items-center justify-end gap-3 border-t border-[var(--vintage-soft-sandstone)] pt-4">
+              <Button variant="ghost" onClick={onClose} disabled={isSaving} className="text-[var(--vintage-muted-ink)] hover:text-[var(--vintage-ink)]">
                 Annuler
               </Button>
               <Button
                 onClick={handleSave}
                 disabled={isSaving || !word.trim()}
                 loading={isSaving}
-                className="rounded-2xl bg-primary px-6 text-primary-foreground shadow-sm hover:bg-primary/90"
+                className="rounded-2xl bg-[var(--vintage-desert-rock)] px-6 text-[var(--vintage-feather-white)] shadow-sm hover:bg-[#8f7763]"
               >
                 {isSaving ? "Enregistrement..." : "Enregistrer la carte"}
               </Button>
@@ -352,20 +352,20 @@ export function VocabCardModal({
           </div>
 
           <aside className="space-y-4">
-            <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
-              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+            <div className="rounded-[24px] border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-porcelain-mist)]/80 p-4">
+              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--vintage-desert-rock)]">
                 Contexte
               </p>
               <div className="space-y-4">
-                <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-3 py-3">
-                  <span className="text-sm text-slate-500">Langue</span>
+                <div className="flex items-center justify-between rounded-2xl border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)] px-3 py-3">
+                  <span className="text-sm text-[var(--vintage-muted-ink)]">Langue</span>
                   <Badge variant="outline" className="rounded-full">{language.toUpperCase()}</Badge>
                 </div>
 
                 <div className="space-y-3">
                   <div>
-                    <p className="text-sm font-medium text-slate-700">Tags suggérés</p>
-                    <p className="text-xs text-slate-500">Choisissez rapidement un registre ou un niveau.</p>
+                    <p className="text-sm font-medium text-[var(--vintage-ink)]">Tags suggérés</p>
+                    <p className="text-xs text-[var(--vintage-muted-ink)]">Choisissez rapidement un registre ou un niveau.</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {SUGGESTED_TAGS.map((tagValue) => {
@@ -377,8 +377,8 @@ export function VocabCardModal({
                           onClick={() => handleSelectSuggestedTag(tagValue)}
                           className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
                             isSelected
-                              ? "border-primary/20 bg-primary/10 text-primary"
-                              : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900"
+                              ? "border-[var(--vintage-desert-rock)]/25 bg-[var(--vintage-cream)] text-[var(--vintage-desert-rock)]"
+                              : "border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)] text-[var(--vintage-muted-ink)] hover:border-[var(--vintage-desert-rock)] hover:text-[var(--vintage-ink)]"
                           }`}
                         >
                           {tagValue}
@@ -391,7 +391,7 @@ export function VocabCardModal({
                     value={newTag}
                     onChange={(e) => setNewTag(e.target.value)}
                     placeholder="Ajoutez un tag personnalisé"
-                    className="h-11 rounded-2xl border-slate-200 bg-white"
+                    className="h-11 rounded-2xl border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)] focus-visible:border-[var(--vintage-desert-rock)] focus-visible:ring-[var(--vintage-desert-rock)]/20"
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault()
@@ -408,7 +408,7 @@ export function VocabCardModal({
                           {tag}
                           <button
                             type="button"
-                            className="ml-1 text-slate-400 transition hover:text-destructive"
+                            className="ml-1 text-[var(--vintage-muted-ink)]/60 transition hover:text-destructive"
                             onClick={() => handleRemoveTag(tag)}
                           >
                             <X className="h-3 w-3" />

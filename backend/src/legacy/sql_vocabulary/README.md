@@ -15,6 +15,5 @@ Archived areas:
 - SQL SRS service wrapper.
 - SQL-to-Mongo vocabulary compatibility service.
 
-`VocabularyCardORM` remains in active SQLAlchemy metadata for now so migrations
-and existing database schema references stay stable until a separate
-data-retention decision.
+`VocabularyCardORM` and the SQL `vocabulary_cards` table have been removed from
+active SQLAlchemy metadata after the MongoDB migration was completed.

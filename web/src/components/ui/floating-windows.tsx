@@ -634,27 +634,27 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
       onPointerDown={handleActivate}
       className={`pointer-events-auto ${className ?? ""}`}
     >
-      <Card className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/60 bg-surface-gradient-float text-sm shadow-[0_18px_48px_-24px_rgba(15,23,42,0.45)] backdrop-blur-2xl backdrop-saturate-150 animate-in fade-in zoom-in-95 duration-200 md:rounded-[28px] md:text-base">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top,rgba(52,211,153,0.12),transparent_70%)]" />
+      <Card className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-[var(--vintage-soft-sandstone)]/70 bg-[var(--vintage-feather-white)]/96 text-sm shadow-[0_18px_48px_-24px_rgba(74,51,35,0.42)] backdrop-blur-2xl backdrop-saturate-150 animate-in fade-in zoom-in-95 duration-200 md:rounded-[28px] md:text-base">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top,rgba(164,141,120,0.14),transparent_70%)]" />
         <CardHeader
-          className={`relative flex cursor-grab select-none items-center justify-between gap-2 border-b border-white/50 bg-white/45 px-3 py-2 ${
+          className={`relative flex cursor-grab select-none items-center justify-between gap-2 border-b border-[var(--vintage-soft-sandstone)]/55 bg-[var(--vintage-feather-white)]/56 px-3 py-2 ${
             isDocked ? "h-10" : ""
           }`}
           style={{ touchAction: isMobileViewport ? "auto" : "none" }}
           onPointerDown={isMobileViewport ? undefined : handleHeaderPointerDown}
         >
           <div className="flex min-w-0 items-center gap-2">
-            <span className="inline-flex h-8 w-8 flex-none items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm">
+            <span className="inline-flex h-8 w-8 flex-none items-center justify-center rounded-2xl bg-[var(--vintage-cream)] text-[var(--vintage-desert-rock)] shadow-sm">
               <GripVertical className="h-4 w-4" />
             </span>
             {isDocked ? (
-              <CardTitle className="flex min-w-0 items-center truncate text-[12px] font-semibold tracking-wide text-primary leading-none">
+              <CardTitle className="flex min-w-0 items-center truncate text-[12px] font-semibold leading-none tracking-wide text-[var(--vintage-desert-rock)]">
                 <span className="truncate">{title}</span>
               </CardTitle>
             ) : (
-              <CardTitle className="truncate text-[11px] font-semibold uppercase tracking-[0.18em] text-primary/90">
-                <span className="inline-flex max-w-full items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[12px] font-semibold tracking-[0.16em] text-primary shadow-sm">
-                  <span className="inline-flex h-2 w-2 rounded-full bg-primary/70" />
+              <CardTitle className="truncate text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--vintage-desert-rock)]">
+                <span className="inline-flex max-w-full items-center gap-2 rounded-full bg-[var(--vintage-cream)] px-3 py-1 text-[12px] font-semibold tracking-[0.16em] text-[var(--vintage-desert-rock)] shadow-sm">
+                  <span className="inline-flex h-2 w-2 rounded-full bg-[var(--vintage-desert-rock)]/70" />
                   <span className="truncate">{title}</span>
                 </span>
               </CardTitle>

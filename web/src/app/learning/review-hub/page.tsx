@@ -12,6 +12,7 @@ import { ReviewModal } from "@/components/learning/review/session-review-modal"
 import { useLearningLang } from "@/lib/contexts/learning-lang-context"
 import { REVIEW_CHALLENGES, type ReviewChallengeId } from "@/components/learning/review/challenges"
 import { ProtectedRoute } from "@/components/auth/protected-route"
+import { VocabShortcutHint } from "@/components/learning/vocabulary/vocab-shortcut-hint"
 
 // Recent sessions section removed for a cleaner, focused Review Hub
 
@@ -210,6 +211,8 @@ function ReviewHubContent() {
               </div>
 
               <div className="flex w-full flex-col gap-3 lg:w-auto lg:min-w-[280px]">
+                <VocabShortcutHint />
+
                 <Link
                   href="/learning/vocab"
                   className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-porcelain-mist)] px-4 text-sm font-semibold text-[var(--vintage-ink)] transition-colors hover:bg-[var(--vintage-cream)]"

@@ -24,6 +24,7 @@ import { notificationService } from "@/lib/services/notification-service"
 import { VocabCardModal } from "@/components/learning/vocabulary/vocab-card-modal"
 import { VocabCard } from "@/components/learning/vocabulary/vocab-card"
 import { VocabControlBar } from "@/components/learning/vocabulary/vocab-control-bar"
+import { VocabShortcutHint } from "@/components/learning/vocabulary/vocab-shortcut-hint"
 import { cn } from "@/lib/utils"
 
 export default function VocabPage() {
@@ -167,6 +168,8 @@ export default function VocabPage() {
                    Gérez votre lexique personnel et suivez votre progression.
                 </p>
              </div>
+
+             <VocabShortcutHint />
 
              {/* Control Bar */}
              <div className="sticky top-4 z-20 bg-background/80 backdrop-blur-md p-2 rounded-2xl border shadow-sm ring-1 ring-border/40">
