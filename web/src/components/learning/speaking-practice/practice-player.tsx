@@ -43,33 +43,33 @@ export function PracticePlayer({
 
   return (
     <div className="space-y-6">
-      <Button variant="ghost" onClick={onBack} className="-ml-2 gap-2 rounded-full text-slate-600 hover:bg-white hover:text-slate-900">
+      <Button variant="ghost" onClick={onBack} className="-ml-2 gap-2 rounded-full text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-feather-white)] hover:text-[var(--vintage-ink)]">
         <ChevronLeft className="h-4 w-4" />
         Retour aux sous-thèmes
       </Button>
 
-      <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="rounded-[24px] border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/92 p-6 shadow-[0_14px_34px_rgba(74,51,35,0.08)]">
         <div className="space-y-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--vintage-desert-rock)]">
                 Séance orale
               </p>
-              <h1 className="text-balance break-words text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
+              <h1 className="text-balance break-words text-2xl font-semibold tracking-tight text-[var(--vintage-ink)] sm:text-3xl">
                 {content.topic}
               </h1>
-              <p className="mt-1 break-words text-sm text-slate-500">
+              <p className="mt-1 break-words text-sm text-[var(--vintage-muted-ink)]">
                 Travaillez votre expression orale avec des étapes guidées.
               </p>
             </div>
-            <Badge className="w-fit shrink-0 rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-50">
+            <Badge className="w-fit shrink-0 rounded-full bg-[var(--vintage-cream)] text-[var(--vintage-desert-rock)] hover:bg-[var(--vintage-cream)]">
               {currentItemIndex + 1} / {totalItems}
             </Badge>
           </div>
 
           <div className="space-y-2">
-            <Progress value={progress} className="h-2" />
-            <p className="text-xs text-slate-500">
+            <Progress value={progress} className="h-2 bg-[var(--vintage-cream)] [&>div]:bg-[var(--vintage-desert-rock)]" />
+            <p className="text-xs text-[var(--vintage-muted-ink)]">
               {Math.round(progress)}% terminé
             </p>
           </div>
@@ -84,14 +84,14 @@ export function PracticePlayer({
 
       <PracticeItem item={currentItem} itemType={itemType} />
 
-      <Card className="rounded-[28px] border-slate-200 bg-white shadow-sm">
+      <Card className="rounded-[24px] border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/92 shadow-[0_14px_34px_rgba(74,51,35,0.08)]">
         <CardContent className="p-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <Button
               variant="outline"
               onClick={onPrevious}
               disabled={currentItemIndex === 0}
-              className="w-full gap-2 rounded-full border-slate-200 text-slate-700 hover:bg-slate-100 sm:w-auto"
+              className="w-full gap-2 rounded-full border-[var(--vintage-soft-sandstone)] text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-porcelain-mist)] hover:text-[var(--vintage-ink)] sm:w-auto"
             >
               <SkipBack className="h-4 w-4" />
               <span className="hidden sm:inline">Précédent</span>
@@ -105,10 +105,10 @@ export function PracticePlayer({
                   onClick={() => onGoToItem(index)}
                   className={`h-2 rounded-full transition-all ${
                     index === currentItemIndex
-                      ? "w-8 bg-emerald-400"
+                      ? "w-8 bg-[var(--vintage-desert-rock)]"
                       : index < currentItemIndex
-                      ? "w-2 bg-emerald-300"
-                      : "w-2 bg-slate-300"
+                      ? "w-2 bg-[var(--vintage-soft-sandstone)]"
+                      : "w-2 bg-[var(--vintage-cream)]"
                   }`}
                   title={`Aller à l'étape ${index + 1}`}
                 />
@@ -119,7 +119,7 @@ export function PracticePlayer({
               variant="outline"
               onClick={onNext}
               disabled={currentItemIndex === totalItems - 1}
-              className="w-full gap-2 rounded-full border-slate-200 text-slate-700 hover:bg-slate-100 sm:w-auto"
+              className="w-full gap-2 rounded-full border-[var(--vintage-soft-sandstone)] text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-porcelain-mist)] hover:text-[var(--vintage-ink)] sm:w-auto"
             >
               <span className="sm:hidden">Étape suivante</span>
               <span className="hidden sm:inline">Suivant</span>
@@ -129,17 +129,6 @@ export function PracticePlayer({
         </CardContent>
       </Card>
 
-      <Card className="rounded-[28px] border-emerald-200 bg-emerald-50/50 shadow-sm">
-        <CardContent className="p-4">
-          <h3 className="mb-2 text-sm font-semibold text-slate-950">Conseils d&apos;expression orale</h3>
-          <ul className="space-y-1 text-sm text-slate-600">
-            <li>• Écoutez chaque audio attentivement avant de répondre.</li>
-            <li>• Prenez le temps de structurer vos idées.</li>
-            <li>• Répondez à voix haute pour progresser plus vite.</li>
-            <li>• Comparez votre réponse avec les modèles proposés.</li>
-          </ul>
-        </CardContent>
-      </Card>
     </div>
   )
 }

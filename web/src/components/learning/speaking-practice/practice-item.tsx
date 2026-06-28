@@ -18,25 +18,25 @@ export function PracticeItem({ item, itemType }: PracticeItemProps) {
         return {
           title: "Introduction",
           icon: MessageSquare,
-          color: "text-emerald-600",
-          bgColor: "bg-emerald-50",
-          borderColor: "border-emerald-200",
+          color: "text-[var(--vintage-desert-rock)]",
+          bgColor: "bg-[var(--vintage-cream)]",
+          borderColor: "border-[var(--vintage-soft-sandstone)]",
         }
       case "question":
         return {
           title: "Question d'entrainement",
           icon: MessageSquare,
-          color: "text-emerald-600",
-          bgColor: "bg-emerald-50",
-          borderColor: "border-emerald-200",
+          color: "text-[var(--vintage-desert-rock)]",
+          bgColor: "bg-[var(--vintage-cream)]",
+          borderColor: "border-[var(--vintage-soft-sandstone)]",
         }
       case "model":
         return {
           title: "Réponse modèle",
           icon: MessageSquare,
-          color: "text-teal-600",
-          bgColor: "bg-teal-50",
-          borderColor: "border-teal-200",
+          color: "text-[var(--vintage-desert-rock)]",
+          bgColor: "bg-[var(--vintage-cream)]",
+          borderColor: "border-[var(--vintage-soft-sandstone)]",
         }
     }
   }
@@ -45,7 +45,7 @@ export function PracticeItem({ item, itemType }: PracticeItemProps) {
   const Icon = config.icon
 
   return (
-    <Card className={cn("rounded-[28px] border bg-white shadow-sm", config.borderColor)}>
+    <Card className={cn("rounded-[24px] border bg-[var(--vintage-feather-white)]/92 shadow-[0_14px_34px_rgba(74,51,35,0.08)]", config.borderColor)}>
       <CardContent className="space-y-4 p-6">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -53,9 +53,9 @@ export function PracticeItem({ item, itemType }: PracticeItemProps) {
               <Icon className={cn("h-5 w-5", config.color)} />
             </div>
             <div>
-              <h3 className="font-semibold text-slate-950">{config.title}</h3>
+              <h3 className="font-semibold text-[var(--vintage-ink)]">{config.title}</h3>
               {item.s && (
-                <div className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">
+                <div className="mt-0.5 flex items-center gap-1.5 text-xs text-[var(--vintage-muted-ink)]">
                   <Clock className="h-3 w-3" />
                   <span>{item.s} secondes pour répondre</span>
                 </div>
@@ -63,24 +63,24 @@ export function PracticeItem({ item, itemType }: PracticeItemProps) {
             </div>
           </div>
           {itemType === "question" && item.s && (
-            <Badge className="shrink-0 rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-50">
+            <Badge className="shrink-0 rounded-full bg-[var(--vintage-cream)] text-[var(--vintage-desert-rock)] hover:bg-[var(--vintage-cream)]">
               {item.s}s
             </Badge>
           )}
         </div>
 
-        <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
-          <p className="text-base leading-relaxed text-slate-800 sm:text-lg">{item.t}</p>
+        <div className="rounded-[20px] border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-porcelain-mist)] p-4">
+          <p className="text-base leading-relaxed text-[var(--vintage-ink)] sm:text-lg">{item.t}</p>
         </div>
 
         {itemType === "question" && (
-          <p className="text-sm italic text-slate-500">
+          <p className="text-sm italic text-[var(--vintage-muted-ink)]">
             Prenez un moment pour préparer votre réponse, puis parlez quand vous êtes prêt.
           </p>
         )}
 
         {itemType === "model" && (
-          <p className="text-sm italic text-slate-500">
+          <p className="text-sm italic text-[var(--vintage-muted-ink)]">
             Écoutez cette réponse exemple pour enrichir votre expression orale.
           </p>
         )}

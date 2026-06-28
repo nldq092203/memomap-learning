@@ -103,7 +103,7 @@ export function AudioControls({ audioUrl, autoPlay = false, onEnded, className }
   }
 
   return (
-    <Card className={cn("rounded-[28px] border-slate-200 bg-white shadow-sm", className)}>
+    <Card className={cn("rounded-[24px] border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/92 shadow-[0_14px_34px_rgba(74,51,35,0.08)]", className)}>
       <CardContent className="space-y-4 p-6">
         <audio
           ref={audioRef}
@@ -128,7 +128,7 @@ export function AudioControls({ audioUrl, autoPlay = false, onEnded, className }
             disabled={isLoading}
             className="cursor-pointer"
           />
-          <div className="flex items-center justify-between text-xs text-slate-500">
+          <div className="flex items-center justify-between text-xs text-[var(--vintage-muted-ink)]">
             <span>{formatTime(currentTime)}</span>
             <span>{formatTime(duration)}</span>
           </div>
@@ -139,7 +139,7 @@ export function AudioControls({ audioUrl, autoPlay = false, onEnded, className }
             size="lg"
             onClick={togglePlayPause}
             disabled={isLoading}
-            className="flex-1 gap-2 rounded-full bg-emerald-100 text-emerald-700 hover:bg-emerald-200 sm:flex-initial"
+            className="flex-1 gap-2 rounded-full bg-[var(--vintage-desert-rock)] text-[var(--vintage-feather-white)] hover:bg-[#8f7763] sm:flex-initial"
           >
             {isLoading ? (
               <>
@@ -164,7 +164,7 @@ export function AudioControls({ audioUrl, autoPlay = false, onEnded, className }
               variant="ghost"
               size="icon"
               onClick={toggleMute}
-              className="shrink-0 rounded-full text-slate-600 hover:bg-slate-100"
+              className="shrink-0 rounded-full text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-porcelain-mist)] hover:text-[var(--vintage-ink)]"
             >
               {isMuted || volume === 0 ? (
                 <VolumeX className="h-4 w-4" />

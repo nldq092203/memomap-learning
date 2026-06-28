@@ -45,17 +45,20 @@ export default function SpeakingPracticePage() {
     void loadContent(contentPath, isGuest)
   }
 
-  const shellClassName = currentContent
-    ? "min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef8f3_100%)]"
-    : "min-h-screen bg-slate-50"
-
   return (
-    <div className={shellClassName}>
+    <div
+      className="relative min-h-screen overflow-hidden bg-[#f5eee5] text-[var(--vintage-ink)]"
+      style={{
+        backgroundImage: "linear-gradient(180deg, rgba(245,238,229,0.93), rgba(245,238,229,0.98)), url('/UI/map.png')",
+        backgroundPosition: "center top",
+        backgroundSize: "cover",
+      }}
+    >
       <div className={currentContent ? "mx-auto max-w-5xl px-4 py-6 md:px-6 md:py-8" : "mx-auto max-w-6xl px-4 py-6 md:py-8"}>
         <Button
           type="button"
           variant="ghost"
-          className="mb-6 rounded-full px-3 text-slate-600 hover:bg-white hover:text-slate-900"
+          className="mb-6 rounded-full px-3 text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-feather-white)] hover:text-[var(--vintage-ink)]"
           onClick={() => router.back()}
         >
           <ArrowLeft className="mr-1.5 h-4 w-4" />
