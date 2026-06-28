@@ -11,7 +11,7 @@ import time
 import os
 from flask import Flask, request, Response
 
-from src.extensions import cors
+from src.extensions import cors, logger
 from src.config import LearningConfig
 from src.utils.response_builder import ResponseBuilder
 
@@ -80,5 +80,16 @@ def create_app(config_object: type[LearningConfig] | None = None) -> Flask:
 
     blp = create_api_blueprint()
     app.register_blueprint(blp, url_prefix="/api")
+
+    # ---------- Mongo Indexes ----------
+    # Keep the vocab index definitions in sync with the live database so a stale
+    # index (e.g. the old sparse uq_vocab_cards_user_legacy_sql_id) can't cause
+    # duplicate-key errors on inserts.
+    from src.infra.mongo import ensure_vocabulary_indexes
+
+    try:
+        ensure_vocabulary_indexes()
+    except Exception:  # pragma: no cover - never block app startup on indexing
+        logger.exception("Failed to ensure vocabulary indexes")
 
     return app

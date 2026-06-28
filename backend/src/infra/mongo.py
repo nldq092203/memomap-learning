@@ -50,7 +50,7 @@ def _drop_index_if_exists(collection: Collection, name: str) -> None:
     """Drop an index by name, ignoring the case where it does not exist."""
     try:
         collection.drop_index(name)
-        logger.info("Dropped stale index %s on %s", name, collection.name)
+        logger.info("Dropped stale index {} on {}", name, collection.name)
     except OperationFailure as exc:
         # code 27 == IndexNotFound; anything else is a real error.
         if exc.code != 27:
