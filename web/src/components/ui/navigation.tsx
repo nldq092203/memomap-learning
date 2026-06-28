@@ -14,6 +14,8 @@ import {
   User,
   X,
   Lock,
+  List,
+  Target,
 } from "lucide-react"
 import { UserProfile } from "@/components/auth/user-profile"
 import { LoginButton } from "@/components/auth/login-button"
@@ -23,12 +25,33 @@ import { useIsAuthenticated, useAuthLoading } from "@/lib/hooks/use-auth"
 import { useGuest } from "@/lib/contexts/guest-context"
 import { cn } from "@/lib/utils"
 
-const primaryNavItems = [
+type PrimaryNavItem = {
+  label: string
+  href: string
+  icon: React.ElementType
+  guestAllowed: boolean
+  children?: Array<{
+    label: string
+    href: string
+    icon: React.ElementType
+  }>
+}
+
+const primaryNavItems: PrimaryNavItem[] = [
   { label: "Accueil", href: "/", icon: Home, guestAllowed: true },
   { label: "Communauté", href: "/learning/community", icon: MessageSquare, guestAllowed: false },
-  { label: "Vocabulaire", href: "/learning/review-hub", icon: BookOpen, guestAllowed: false },
+  {
+    label: "Vocabulaire",
+    href: "/learning/review-hub",
+    icon: BookOpen,
+    guestAllowed: false,
+    children: [
+      { label: "Review", href: "/learning/review-hub", icon: Target },
+      { label: "Liste", href: "/learning/vocab", icon: List },
+    ],
+  },
   { label: "Profil", href: "/learning/profile", icon: User, guestAllowed: false },
-] as const
+]
 
 function isNavItemActive(pathname: string, href: string) {
   if (href === "/") {
@@ -180,7 +203,7 @@ export function Navigation() {
           </div>
 
           <nav className="space-y-1.5">
-            {primaryNavItems.map(({ label, href, icon: Icon, guestAllowed }) => {
+            {primaryNavItems.map(({ label, href, icon: Icon, guestAllowed, children }) => {
               const isActive = isNavItemActive(pathname, href)
               const isLocked = isGuest && !guestAllowed
 
@@ -223,40 +246,65 @@ export function Navigation() {
               }
 
               return (
-                <Link
-                  key={href}
-                  href={href}
-                  className={cn(
-                    "group flex items-center gap-3 rounded-2xl px-3 py-3 transition-all",
-                    isActive
-                      ? "bg-[var(--vintage-cream)] text-[var(--vintage-ink)]"
-                      : "text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-porcelain-mist)] hover:text-[var(--vintage-ink)]",
-                    isCollapsed && "lg:justify-center lg:px-2",
-                  )}
-                  title={label}
-                >
-                  <div
+                <div key={href} className="space-y-1">
+                  <Link
+                    href={href}
                     className={cn(
-                      "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl",
+                      "group flex items-center gap-3 rounded-2xl px-3 py-3 transition-all",
                       isActive
-                        ? "bg-[var(--vintage-desert-rock)] text-white"
-                        : "bg-[var(--vintage-porcelain-mist)] text-[var(--vintage-desert-rock)] group-hover:text-[var(--vintage-ink)]",
+                        ? "bg-[var(--vintage-cream)] text-[var(--vintage-ink)]"
+                        : "text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-porcelain-mist)] hover:text-[var(--vintage-ink)]",
+                      isCollapsed && "lg:justify-center lg:px-2",
                     )}
+                    title={label}
                   >
-                    <Icon className="h-5 w-5" />
-                  </div>
+                    <div
+                      className={cn(
+                        "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl",
+                        isActive
+                          ? "bg-[var(--vintage-desert-rock)] text-white"
+                          : "bg-[var(--vintage-porcelain-mist)] text-[var(--vintage-desert-rock)] group-hover:text-[var(--vintage-ink)]",
+                      )}
+                    >
+                      <Icon className="h-5 w-5" />
+                    </div>
 
-                  <div className={cn("min-w-0 flex-1 text-left", isCollapsed && "lg:hidden")}>
-                    <p className="font-medium">{label}</p>
-                  </div>
+                    <div className={cn("min-w-0 flex-1 text-left", isCollapsed && "lg:hidden")}>
+                      <p className="font-medium">{label}</p>
+                    </div>
 
-                  <ChevronRight
-                    className={cn(
-                      "h-4 w-4 shrink-0 text-[var(--vintage-desert-rock)]/70",
-                      isCollapsed && "lg:hidden",
-                    )}
-                  />
-                </Link>
+                    <ChevronRight
+                      className={cn(
+                        "h-4 w-4 shrink-0 text-[var(--vintage-desert-rock)]/70",
+                        isCollapsed && "lg:hidden",
+                      )}
+                    />
+                  </Link>
+
+                  {children && (
+                    <div className={cn("ml-14 space-y-1", isCollapsed && "lg:hidden")}>
+                      {children.map(({ label: childLabel, href: childHref, icon: ChildIcon }) => {
+                        const childActive = pathname === childHref
+
+                        return (
+                          <Link
+                            key={childHref}
+                            href={childHref}
+                            className={cn(
+                              "flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
+                              childActive
+                                ? "bg-[var(--vintage-porcelain-mist)] text-[var(--vintage-ink)]"
+                                : "text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-porcelain-mist)] hover:text-[var(--vintage-ink)]",
+                            )}
+                          >
+                            <ChildIcon className="h-4 w-4" />
+                            {childLabel}
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
               )
             })}
           </nav>

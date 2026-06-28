@@ -27,7 +27,7 @@ export default function CoPage() {
         {
           title: "DELF CO",
           description: "Épreuves d'écoute DELF.",
-          href: "/learning/delf-practice/A2?section=CO",
+          href: "/learning/delf-practice?section=CO",
           icon: BookOpen,
           label: "DELF",
         },

@@ -1,95 +1,117 @@
-import { Button } from "@/components/ui/button"
+import type { ReactNode } from "react"
 import type { DelfLevel, DelfSection } from "@/lib/types/api/delf"
 import { GUEST_ALLOWED_DELF_LEVELS, useGuest } from "@/lib/contexts/guest-context"
-import { BookOpen, ChevronRight, Headphones, Lock, Mic, PenTool, Sparkles } from "lucide-react"
-import { TrainingChoiceCard, TrainingSectionHeader } from "@/components/learning/ui"
+import { BookOpen, ChevronRight, Headphones, Lock, Mic, PenTool } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 export const DELF_LEVELS: { id: DelfLevel; name: string; description: string }[] = [
-  { id: "A2", name: "Utilisateur elementaire", description: "Consolider les bases de la comprehension." },
-  { id: "B1", name: "Utilisateur independant", description: "Gagner en aisance sur des supports varies." },
-  { id: "B2", name: "Utilisateur avance", description: "Travailler precision, nuance et vitesse." },
+  { id: "A2", name: "Utilisateur élémentaire", description: "Consolider les bases de la compréhension." },
+  { id: "B1", name: "Utilisateur indépendant", description: "Gagner en aisance sur des supports variés." },
+  { id: "B2", name: "Utilisateur avancé", description: "Travailler précision, nuance et vitesse." },
 ]
 
-export const DELF_SECTIONS: { id: DelfSection; name: string; icon: React.ReactNode; description: string }[] = [
-  { id: "CO", name: "Compréhension orale", icon: <Headphones className="h-5 w-5" />, description: "Audio et ecoute active" },
+export const DELF_SECTIONS: { id: DelfSection; name: string; icon: ReactNode; description: string }[] = [
+  { id: "CO", name: "Compréhension orale", icon: <Headphones className="h-5 w-5" />, description: "Audio et écoute active" },
   { id: "CE", name: "Compréhension écrite", icon: <BookOpen className="h-5 w-5" />, description: "Lecture et analyse" },
-  { id: "PE", name: "Production écrite", icon: <PenTool className="h-5 w-5" />, description: "Bientot disponible" },
-  { id: "PO", name: "Production orale", icon: <Mic className="h-5 w-5" />, description: "Bientot disponible" },
+  { id: "PE", name: "Production écrite", icon: <PenTool className="h-5 w-5" />, description: "Bientôt disponible" },
+  { id: "PO", name: "Production orale", icon: <Mic className="h-5 w-5" />, description: "Bientôt disponible" },
 ]
 
 interface LevelSectionSelectorProps {
   onSelect: (level: DelfLevel) => void
   loading?: boolean
+  preferredSection?: DelfSection | null
 }
 
-export function LevelSectionSelector({ onSelect, loading }: LevelSectionSelectorProps) {
+export function LevelSectionSelector({ onSelect, loading, preferredSection }: LevelSectionSelectorProps) {
   const { isGuest } = useGuest()
+  const visibleSections = preferredSection
+    ? DELF_SECTIONS.filter((section) => section.id === preferredSection)
+    : DELF_SECTIONS.filter((section) => section.id === "CO" || section.id === "CE")
+  const preferredSectionName = preferredSection
+    ? DELF_SECTIONS.find((section) => section.id === preferredSection)?.name
+    : null
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <TrainingSectionHeader
-        eyebrow="Preparation DELF"
-        title="Entrainement DELF"
-        description="Choisissez un niveau, puis le livre et la competence a travailler."
-        aside={
-          <div className="space-y-4 text-right">
-            <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
-              <Sparkles className="h-7 w-7" />
+      <section className="pb-1">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="min-w-0 space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-[var(--vintage-cream)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--vintage-desert-rock)]">
+                Préparation DELF
+              </span>
+              {preferredSectionName && (
+                <span className="rounded-full bg-[var(--vintage-porcelain-mist)] px-3 py-1 text-xs font-semibold text-[var(--vintage-muted-ink)]">
+                  {preferredSectionName}
+                </span>
+              )}
             </div>
-            <div className="rounded-[24px] border border-emerald-100 bg-emerald-50/70 px-5 py-4 text-sm text-emerald-800">
-              CO et CE disponibles maintenant.
-            </div>
+            <h1 className="text-balance text-3xl font-semibold tracking-tight text-[var(--vintage-ink)] md:text-5xl">
+              Choisissez votre niveau
+            </h1>
+            <p className="max-w-2xl text-sm leading-7 text-[var(--vintage-muted-ink)] md:text-base">
+              {preferredSectionName
+                ? `Sélectionnez un niveau, puis le livre pour ${preferredSectionName}.`
+                : "Choisissez un niveau, puis le livre et la compétence à travailler."}
+            </p>
           </div>
-        }
-      />
+        </div>
+      </section>
 
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {DELF_LEVELS.map((level) => {
           const isLockedForGuest = isGuest && !GUEST_ALLOWED_DELF_LEVELS.includes(level.id)
 
           return (
-            <TrainingChoiceCard
+            <button
               key={level.id}
-              interactive={!isLockedForGuest}
+              type="button"
+              disabled={loading || isLockedForGuest}
               onClick={() => onSelect(level.id)}
-              eyebrow={
-                <div className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-                  <span>Niveau {level.id}</span>
-                  {isLockedForGuest && <Lock className="h-3 w-3" />}
-                </div>
-              }
-              title={level.id}
-              description={
-                isLockedForGuest ? "Disponible apres connexion. Le mode invite couvre A2 et B1." : level.description
-              }
-              footer={<p className="text-sm font-medium text-slate-700">{level.name}</p>}
-              action={
-                <Button
-                  type="button"
-                  disabled={loading || isLockedForGuest}
-                  className="h-10 w-full justify-between rounded-full bg-emerald-100 px-4 text-emerald-700 hover:bg-emerald-200 sm:w-auto"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    onSelect(level.id)
-                  }}
-                >
-                  Voir les livres
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              }
+              className={cn(
+                "group min-h-[260px] rounded-[26px] border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/92 p-5 text-left shadow-[0_14px_34px_rgba(74,51,35,0.07)] transition-all hover:-translate-y-0.5 hover:border-[var(--vintage-desert-rock)] hover:shadow-[0_18px_42px_rgba(74,51,35,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--vintage-desert-rock)]",
+                isLockedForGuest && "cursor-not-allowed opacity-60 hover:translate-y-0"
+              )}
             >
-              <div className="flex flex-wrap gap-2">
-                {DELF_SECTIONS.filter((section) => section.id === "CO" || section.id === "CE").map((section) => (
-                  <div
-                    key={section.id}
-                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600"
-                  >
-                    {section.icon}
-                    {section.id}
+              <div className="flex h-full min-w-0 flex-col justify-between gap-6">
+                <div className="space-y-4">
+                  <div className="inline-flex items-center gap-1 rounded-full bg-[var(--vintage-porcelain-mist)] px-3 py-1 text-xs font-semibold text-[var(--vintage-muted-ink)]">
+                    <span>Niveau {level.id}</span>
+                    {isLockedForGuest && <Lock className="h-3 w-3" />}
                   </div>
-                ))}
+
+                  <div className="space-y-3">
+                    <h2 className="text-3xl font-semibold tracking-tight text-[var(--vintage-ink)]">
+                      {level.id}
+                    </h2>
+                    <p className="text-sm leading-6 text-[var(--vintage-muted-ink)]">
+                      {isLockedForGuest ? "Disponible après connexion. Le mode invité couvre A2 et B1." : level.description}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {visibleSections.map((section) => (
+                      <div
+                        key={section.id}
+                        className="inline-flex items-center gap-2 rounded-full border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-porcelain-mist)] px-3 py-1.5 text-xs font-medium text-[var(--vintage-muted-ink)]"
+                      >
+                        {section.icon}
+                        {section.id}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm font-medium text-[var(--vintage-muted-ink)]">{level.name}</p>
+                  <div className="inline-flex h-10 w-full items-center justify-between rounded-full bg-[var(--vintage-desert-rock)] px-4 text-sm font-semibold text-white transition-colors group-hover:bg-[#8f7763] sm:w-auto sm:min-w-[150px]">
+                    Voir les livres
+                    <ChevronRight className="h-4 w-4" />
+                  </div>
+                </div>
               </div>
-            </TrainingChoiceCard>
+            </button>
           )
         })}
       </div>
