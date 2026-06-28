@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from typing import Any
 
-
 # v1 codes. New codes for v2/v3/v4 should land here too.
 SCANNED_PDF = "scanned_pdf"
 OCR_APPLIED = "ocr_applied"

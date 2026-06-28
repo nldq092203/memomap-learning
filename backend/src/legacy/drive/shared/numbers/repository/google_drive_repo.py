@@ -8,7 +8,6 @@ from src.shared.numbers.models.stored import NumberDictationExercise
 from src.shared.numbers.repository.base import NumbersExerciseRepository
 from src.infra.drive.repository import DriveRepository
 
-
 ROOT_FOLDER = "NumbersDictation"
 MANIFEST_FILENAME = "manifest.json"
 
@@ -94,7 +93,9 @@ class GoogleDriveNumbersExerciseRepository(NumbersExerciseRepository):
             version_exercises = self._load_manifest(version_folder_id)
 
             for ex in version_exercises:
-                if ex.number_type in wanted and (not guest_preview_only or ex.guest_preview):
+                if ex.number_type in wanted and (
+                    not guest_preview_only or ex.guest_preview
+                ):
                     exercises.append(ex)
 
         return exercises

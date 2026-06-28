@@ -80,8 +80,8 @@ class YouTubeTranscriptService:
                     # Let's inspect the object structure safely?
                     # Actually, iterate through all transcripts
                     for t in transcript_list:
-                         available.append(t)
-                    
+                        available.append(t)
+
                     if available:
                         first_transcript = available[0]
                         # Translate to the first preferred language
@@ -104,19 +104,21 @@ class YouTubeTranscriptService:
             # Extract text and calculate duration
             full_text_parts = []
             duration_seconds = 0
-            
+
             # Access snippets directly from the object
-            if hasattr(fetched_transcript, 'snippets'):
+            if hasattr(fetched_transcript, "snippets"):
                 snippets = fetched_transcript.snippets
                 full_text_parts = [s.text for s in snippets]
-                
+
                 if snippets:
                     last = snippets[-1]
                     duration_seconds = int(last.start + last.duration)
             else:
                 # Fallback if it returns a list (older versions)
                 # But our debug showed it returns FetchedTranscript
-                full_text_parts = [str(s) for s in fetched_transcript] # Should not happen based on debug
+                full_text_parts = [
+                    str(s) for s in fetched_transcript
+                ]  # Should not happen based on debug
 
             full_text = " ".join(full_text_parts)
 

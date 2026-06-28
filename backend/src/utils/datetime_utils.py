@@ -51,4 +51,3 @@ def parse_iso_to_utc(value: str | None) -> datetime | None:
 def now_iso() -> str:
     """Return current UTC time as ISO string."""
     return to_iso_utc(datetime.now(timezone.utc))
-

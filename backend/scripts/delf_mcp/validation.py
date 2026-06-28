@@ -13,7 +13,6 @@ from pydantic import ValidationError
 
 from src.shared.delf_practice.schemas import DelfExercise, DelfTestPaper
 
-
 # Flat MCQ fields that must NOT be populated on an exercise that also has
 # nested `questions`. Each entry is (attribute, "empty" sentinel value).
 _FLAT_MCQ_FIELDS: tuple[tuple[str, Any], ...] = (
@@ -150,7 +149,7 @@ def _quality_warning(
         snippet = f"{snippet[:117]}..."
     return {
         "field": field,
-        "message": f"{reason}. Check: \"{snippet}\"",
+        "message": f'{reason}. Check: "{snippet}"',
         "type": "french_text_quality_warning",
         "suggestion": suggestion,
     }
@@ -308,14 +307,16 @@ def _check_duplicate_exercise_ids(paper: DelfTestPaper) -> list[dict[str, str]]:
     seen: dict[str, int] = {}
     for idx, exercise in enumerate(paper.exercises):
         if exercise.id in seen:
-            errors.append({
-                "field": f"exercises[{idx}].id",
-                "message": (
-                    f"Duplicate exercise id '{exercise.id}' "
-                    f"(also at exercises[{seen[exercise.id]}])"
-                ),
-                "type": "value_error",
-            })
+            errors.append(
+                {
+                    "field": f"exercises[{idx}].id",
+                    "message": (
+                        f"Duplicate exercise id '{exercise.id}' "
+                        f"(also at exercises[{seen[exercise.id]}])"
+                    ),
+                    "type": "value_error",
+                }
+            )
         else:
             seen[exercise.id] = idx
     return errors
@@ -327,15 +328,17 @@ def _check_duplicate_subquestion_ids(paper: DelfTestPaper) -> list[dict[str, str
         seen: dict[str, int] = {}
         for q_idx, question in enumerate(exercise.questions):
             if question.id in seen:
-                errors.append({
-                    "field": f"exercises[{ex_idx}].questions[{q_idx}].id",
-                    "message": (
-                        f"Duplicate sub-question id '{question.id}' "
-                        f"within exercise '{exercise.id}' "
-                        f"(also at questions[{seen[question.id]}])"
-                    ),
-                    "type": "value_error",
-                })
+                errors.append(
+                    {
+                        "field": f"exercises[{ex_idx}].questions[{q_idx}].id",
+                        "message": (
+                            f"Duplicate sub-question id '{question.id}' "
+                            f"within exercise '{exercise.id}' "
+                            f"(also at questions[{seen[question.id]}])"
+                        ),
+                        "type": "value_error",
+                    }
+                )
             else:
                 seen[question.id] = q_idx
     return errors
@@ -347,28 +350,32 @@ def _check_correct_answer_bounds(paper: DelfTestPaper) -> list[dict[str, str]]:
         # Flat MCQ
         if exercise.options and exercise.correct_answer is not None:
             if not (0 <= exercise.correct_answer < len(exercise.options)):
-                errors.append({
-                    "field": f"exercises[{ex_idx}].correct_answer",
-                    "message": (
-                        f"correct_answer={exercise.correct_answer} is out of bounds "
-                        f"for options (size {len(exercise.options)})"
-                    ),
-                    "type": "value_error",
-                })
+                errors.append(
+                    {
+                        "field": f"exercises[{ex_idx}].correct_answer",
+                        "message": (
+                            f"correct_answer={exercise.correct_answer} is out of bounds "
+                            f"for options (size {len(exercise.options)})"
+                        ),
+                        "type": "value_error",
+                    }
+                )
         # Nested questions
         for q_idx, question in enumerate(exercise.questions):
             if question.options and question.correct_answer is not None:
                 if not (0 <= question.correct_answer < len(question.options)):
-                    errors.append({
-                        "field": (
-                            f"exercises[{ex_idx}].questions[{q_idx}].correct_answer"
-                        ),
-                        "message": (
-                            f"correct_answer={question.correct_answer} is out of "
-                            f"bounds for options (size {len(question.options)})"
-                        ),
-                        "type": "value_error",
-                    })
+                    errors.append(
+                        {
+                            "field": (
+                                f"exercises[{ex_idx}].questions[{q_idx}].correct_answer"
+                            ),
+                            "message": (
+                                f"correct_answer={question.correct_answer} is out of "
+                                f"bounds for options (size {len(question.options)})"
+                            ),
+                            "type": "value_error",
+                        }
+                    )
     return errors
 
 
@@ -381,14 +388,16 @@ def _check_ce_audio(paper: DelfTestPaper) -> list[dict[str, str]]:
     audio_values.extend(value for value in paper.audio_filenames if value)
     if not audio_values:
         return []
-    return [{
-        "field": "audio_filename",
-        "message": (
-            "CE (reading comprehension) papers must not have audio files, "
-            f"got {audio_values}"
-        ),
-        "type": "value_error",
-    }]
+    return [
+        {
+            "field": "audio_filename",
+            "message": (
+                "CE (reading comprehension) papers must not have audio files, "
+                f"got {audio_values}"
+            ),
+            "type": "value_error",
+        }
+    ]
 
 
 def _exercise_has_flat_mcq(exercise: DelfExercise) -> list[str]:
@@ -408,14 +417,16 @@ def _check_nested_vs_flat(paper: DelfTestPaper) -> list[dict[str, str]]:
             continue
         conflicts = _exercise_has_flat_mcq(exercise)
         for field_name in conflicts:
-            errors.append({
-                "field": f"exercises[{ex_idx}].{field_name}",
-                "message": (
-                    f"Exercise '{exercise.id}' uses nested questions; "
-                    f"flat MCQ field '{field_name}' must be empty/null"
-                ),
-                "type": "value_error",
-            })
+            errors.append(
+                {
+                    "field": f"exercises[{ex_idx}].{field_name}",
+                    "message": (
+                        f"Exercise '{exercise.id}' uses nested questions; "
+                        f"flat MCQ field '{field_name}' must be empty/null"
+                    ),
+                    "type": "value_error",
+                }
+            )
     return errors
 
 

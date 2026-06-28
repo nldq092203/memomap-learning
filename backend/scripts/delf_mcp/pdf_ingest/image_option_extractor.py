@@ -24,7 +24,6 @@ from typing import Any
 from .manifest import ImageOptionCrop, crops_dir
 from .pdf_reader import PdfDocument
 
-
 # Default render DPI for the cropped option image. Higher than the page-
 # level render DPI because options often occupy a small fraction of the page.
 DEFAULT_CROP_DPI = 220
@@ -93,9 +92,7 @@ def _list_embedded_images_on_page(
     return bboxes
 
 
-def _is_full_page_bbox(
-    page: Any, bbox: tuple[float, float, float, float]
-) -> bool:
+def _is_full_page_bbox(page: Any, bbox: tuple[float, float, float, float]) -> bool:
     x0, y0, x1, y1 = bbox
     width = max(1.0, float(page.rect.width))
     height = max(1.0, float(page.rect.height))
@@ -223,7 +220,7 @@ def _component_boxes_from_page_image(image_bgr: Any) -> list[tuple[int, int, int
 
 
 def _group_pixel_boxes_into_rows(
-    boxes: list[tuple[int, int, int, int]]
+    boxes: list[tuple[int, int, int, int]],
 ) -> list[list[tuple[int, int, int, int]]]:
     if not boxes:
         return []
@@ -250,7 +247,7 @@ def _group_pixel_boxes_into_rows(
 
 
 def _merge_row_components(
-    row: list[tuple[int, int, int, int]]
+    row: list[tuple[int, int, int, int]],
 ) -> list[tuple[int, int, int, int]]:
     """Merge nearby contours in one visual option row into option columns."""
     if not row:
@@ -279,7 +276,11 @@ def _merge_row_components(
     while len(columns) == 4:
         widths = [c[2] - c[0] for c in columns]
         narrow_idx = next(
-            (idx for idx, width in enumerate(widths) if width <= SCAN_NARROW_COLUMN_WIDTH_PX),
+            (
+                idx
+                for idx, width in enumerate(widths)
+                if width <= SCAN_NARROW_COLUMN_WIDTH_PX
+            ),
             None,
         )
         if narrow_idx is None:

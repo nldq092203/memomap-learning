@@ -29,7 +29,6 @@ from scripts.delf_mcp import (  # noqa: E402
     update_service,
 )
 
-
 # ---------------------------------------------------------------------------
 # Fakes
 # ---------------------------------------------------------------------------
@@ -74,7 +73,9 @@ class _FakeRepo:
                 return r
         return None
 
-    def list_by_status(self, status="draft", level=None, section=None, variant=None, limit=50):
+    def list_by_status(
+        self, status="draft", level=None, section=None, variant=None, limit=50
+    ):
         out = [r for r in self.rows if r.status == status]
         if level:
             out = [r for r in out if r.level.upper() == level.upper()]
@@ -187,11 +188,13 @@ def _draft_row(**overrides) -> _FakeRow:
 
 
 def test_list_drafts_returns_only_drafts():
-    repo = _FakeRepo([
-        _draft_row(id="d1", test_id="tp-01"),
-        _draft_row(id="a1", test_id="tp-02", status="active"),
-        _draft_row(id="d2", test_id="tp-03"),
-    ])
+    repo = _FakeRepo(
+        [
+            _draft_row(id="d1", test_id="tp-01"),
+            _draft_row(id="a1", test_id="tp-02", status="active"),
+            _draft_row(id="d2", test_id="tp-03"),
+        ]
+    )
     result = list_service.list_drafts(repo=repo)
     assert result["success"] is True
     assert result["total"] == 2
@@ -199,15 +202,15 @@ def test_list_drafts_returns_only_drafts():
 
 
 def test_list_drafts_filters_by_level_section_variant():
-    repo = _FakeRepo([
-        _draft_row(id="a", level="A2", section="CE", variant="v1"),
-        _draft_row(id="b", level="B1", section="CE", variant="v1", test_id="tp-02"),
-        _draft_row(id="c", level="A2", section="CO", variant="v1", test_id="tp-03"),
-        _draft_row(id="d", level="A2", section="CE", variant="v2", test_id="tp-04"),
-    ])
-    out = list_service.list_drafts(
-        level="A2", section="CE", variant="v1", repo=repo
+    repo = _FakeRepo(
+        [
+            _draft_row(id="a", level="A2", section="CE", variant="v1"),
+            _draft_row(id="b", level="B1", section="CE", variant="v1", test_id="tp-02"),
+            _draft_row(id="c", level="A2", section="CO", variant="v1", test_id="tp-03"),
+            _draft_row(id="d", level="A2", section="CE", variant="v2", test_id="tp-04"),
+        ]
     )
+    out = list_service.list_drafts(level="A2", section="CE", variant="v1", repo=repo)
     assert [d["draft_id"] for d in out["drafts"]] == ["a"]
 
 
@@ -456,9 +459,9 @@ def test_publish_falls_back_to_contents_api_when_raw_fetch_fails():
     repo = _FakeRepo([row])
     raw_github = _FakeGithubRepo({row.github_path: fixtures.VALID_CE_PAPER})
     raw_github.fail = True
-    api_github = _FakeGithubManager({
-        row.github_path: json.dumps(fixtures.VALID_CE_PAPER).encode("utf-8")
-    })
+    api_github = _FakeGithubManager(
+        {row.github_path: json.dumps(fixtures.VALID_CE_PAPER).encode("utf-8")}
+    )
 
     out = publish_service.publish_draft(
         draft_id="row-1",
@@ -502,14 +505,21 @@ def test_publish_refuses_non_draft_status():
 
 
 def test_publish_resolves_by_scope_when_no_draft_id():
-    row = _draft_row(test_id="tp-07", level="A2", variant="v", section="CE",
-                     github_path="delf/a2/v/CE/tp/tp-07.json")
-    github = _FakeGithubRepo({
-        row.github_path: {
-            **fixtures.VALID_CE_PAPER,
-            "test_id": "tp-07",
+    row = _draft_row(
+        test_id="tp-07",
+        level="A2",
+        variant="v",
+        section="CE",
+        github_path="delf/a2/v/CE/tp/tp-07.json",
+    )
+    github = _FakeGithubRepo(
+        {
+            row.github_path: {
+                **fixtures.VALID_CE_PAPER,
+                "test_id": "tp-07",
+            }
         }
-    })
+    )
     out = publish_service.publish_draft(
         test_id="tp-07",
         level="A2",

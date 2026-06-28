@@ -22,10 +22,10 @@ export function ReviewControls({ currentIndex, isFlipped, onPrev, onMark, onSubm
       <div className="mx-auto w-full max-w-3xl space-y-4">
         <Button
           size="lg"
-          className="h-14 w-full rounded-full border border-white/70 bg-white/85 text-base font-semibold text-slate-800 shadow-[0_16px_36px_-24px_rgba(15,23,42,0.28)] backdrop-blur transition-transform active:scale-[0.99]"
+          className="h-14 w-full rounded-full border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/90 text-base font-semibold text-[var(--vintage-ink)] shadow-[0_16px_36px_-24px_rgba(74,51,35,0.28)] backdrop-blur transition-transform active:scale-[0.99]"
           onClick={onFlip}
         >
-          Voir la réponse <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-mono text-slate-500">Espace</span>
+          Voir la réponse <span className="ml-2 rounded-full bg-[var(--vintage-cream)] px-2 py-0.5 text-[11px] font-mono text-[var(--vintage-desert-rock)]">Espace</span>
         </Button>
         {currentIndex > 0 && (
           <div className="flex justify-center">
@@ -59,14 +59,14 @@ export function ReviewControls({ currentIndex, isFlipped, onPrev, onMark, onSubm
           shortcut="3"
           label="Bien"
           subLabel="4 j"
-          colorClass="border-emerald-200/80 bg-emerald-50/70 text-emerald-700 hover:bg-emerald-100/80"
+          colorClass="border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-cream)]/75 text-[var(--vintage-desert-rock)] hover:bg-[var(--vintage-cream)]"
           onClick={() => onMark("good")}
         />
         <ControlButton
           shortcut="4"
           label="Facile"
           subLabel="7 j"
-          colorClass="border-sky-200/80 bg-sky-50/70 text-sky-700 hover:bg-sky-100/80"
+          colorClass="border-[var(--vintage-desert-rock)]/25 bg-[var(--vintage-feather-white)]/90 text-[var(--vintage-desert-rock)] hover:bg-[var(--vintage-porcelain-mist)]"
           onClick={() => onMark("easy")}
         />
       </div>

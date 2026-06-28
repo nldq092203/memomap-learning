@@ -7,7 +7,6 @@ from typing import Union
 
 from pydantic import BaseModel, Field
 
-
 # ============================================================================
 # DELF JSON Content Models (matching GitHub JSON structure)
 # ============================================================================
@@ -38,12 +37,14 @@ class DelfPerson(BaseModel):
 
 class DelfEmailPart(BaseModel):
     """Part of an email document for labeling."""
+
     label: str
     excerpt: str
 
 
 class DelfReadingDocument(BaseModel):
     """Embedded document for reading comprehension."""
+
     type: str | None = None
     title: str | None = None
     content: str | None = None
@@ -55,23 +56,25 @@ class DelfReadingDocument(BaseModel):
 
 class DelfLabelOption(BaseModel):
     """Label for label_matching questions."""
+
     number: int
     description: str
 
 
 class DelfSubQuestion(BaseModel):
     """Nested question inside an exercise."""
+
     id: str = Field(..., min_length=1)
     number: int | None = None
     question_text: str = Field(..., min_length=1)
     type: str = Field(..., min_length=1)
-    
+
     # MCQ / Single Choice
     options: list[Union[str, DelfImageOption]] = Field(default_factory=list)
     correct_answer: int | None = None
     points: float | None = None
     explanation: str | None = None
-    
+
     # Label matching
     labels: list[DelfLabelOption] = Field(default_factory=list)
     # Can be dict {"A": 1} for label_matching, or list ["a", "b"] for multiple_select_image
@@ -94,7 +97,7 @@ class DelfSourceRef(BaseModel):
 
 class DelfExercise(BaseModel):
     """Single exercise within a test paper.
-    
+
     Supports multiple exercise types:
     - multiple_choice / multiple_choice_image: uses options + correct_answer
     - matching: uses documents + persons + correct_answers (dict)
@@ -102,7 +105,9 @@ class DelfExercise(BaseModel):
 
     id: str = Field(..., min_length=1)
     title: str = Field(..., min_length=1)
-    question_text: str | None = None  # Now optional because nested exercises don't have it
+    question_text: str | None = (
+        None  # Now optional because nested exercises don't have it
+    )
     type: str = Field(..., min_length=1)
     instruction: str | None = None
 

@@ -59,7 +59,9 @@ def _activity_source_ref(
         "page_end": activity.page_end + page_offset,
         "source_activities": [activity.activity_number],
         "source_pages": list(
-            range(activity.page_start + page_offset, activity.page_end + page_offset + 1)
+            range(
+                activity.page_start + page_offset, activity.page_end + page_offset + 1
+            )
         ),
     }
 
@@ -220,20 +222,24 @@ def _build_paper(
                 source_pages.append(page)
         for crop in enriched_crops:
             if crop.img_url and crop.local_path:
-                image_uploads.append({
-                    "local_path": crop.local_path,
-                    "img_url": crop.img_url,
-                    "question_number": crop.question_number,
-                    "label": crop.label,
-                })
+                image_uploads.append(
+                    {
+                        "local_path": crop.local_path,
+                        "img_url": crop.img_url,
+                        "question_number": crop.question_number,
+                        "label": crop.label,
+                    }
+                )
         # v3: pull listening-only document blocks up to paper-level
         # extra_transcripts so they're available at save time.
         for extra in activity.extra_transcripts:
             if isinstance(extra, dict) and extra.get("id") and extra.get("content"):
-                extra_transcripts.append({
-                    "id": str(extra["id"]),
-                    "content": str(extra["content"]),
-                })
+                extra_transcripts.append(
+                    {
+                        "id": str(extra["id"]),
+                        "content": str(extra["content"]),
+                    }
+                )
 
     paper_source_pages = sorted(page + page_offset for page in source_pages)
     paper_source_activities = [a.activity_number for a in activities]
@@ -359,25 +365,27 @@ def preview_delf_book_extraction(
         group_activities = groups[(chapter, section, activity_part)]
         if section not in ("CE", "CO"):
             # UNKNOWN section: skip the whole group with a warning.
-            papers.append({
-                "proposed_test_id": None,
-                "content": None,
-                "validation": None,
-                "warnings": [
-                    warning_codes.make_warning(
-                        warning_codes.UNCLASSIFIED_ACTIVITY,
-                        f"Skipped group chapter={chapter} because section is UNKNOWN.",
-                        context={
-                            "chapter_number": chapter,
-                            "activity_numbers": [
-                                a.activity_number for a in group_activities
-                            ],
-                        },
-                    )
-                ],
-                "source_activities": [a.activity_number for a in group_activities],
-                "source_pages": [],
-            })
+            papers.append(
+                {
+                    "proposed_test_id": None,
+                    "content": None,
+                    "validation": None,
+                    "warnings": [
+                        warning_codes.make_warning(
+                            warning_codes.UNCLASSIFIED_ACTIVITY,
+                            f"Skipped group chapter={chapter} because section is UNKNOWN.",
+                            context={
+                                "chapter_number": chapter,
+                                "activity_numbers": [
+                                    a.activity_number for a in group_activities
+                                ],
+                            },
+                        )
+                    ],
+                    "source_activities": [a.activity_number for a in group_activities],
+                    "source_pages": [],
+                }
+            )
             continue
 
         # Pick the first audio filename in the group (CO papers only).
@@ -406,17 +414,19 @@ def preview_delf_book_extraction(
         # validation may include a non-JSON `paper` field — strip it.
         validation_view = {k: v for k, v in validation.items() if k != "paper"}
 
-        papers.append({
-            "proposed_test_id": proposed,
-            "content": paper,
-            "validation": validation_view,
-            "warnings": paper_warnings,
-            "source_activities": [a.activity_number for a in group_activities],
-            "source_pages": source_pages,
-            "chapter_number": chapter,
-            "source_group_activity": activity_part,
-            "image_uploads": image_uploads,
-        })
+        papers.append(
+            {
+                "proposed_test_id": proposed,
+                "content": paper,
+                "validation": validation_view,
+                "warnings": paper_warnings,
+                "source_activities": [a.activity_number for a in group_activities],
+                "source_pages": source_pages,
+                "chapter_number": chapter,
+                "source_group_activity": activity_part,
+                "image_uploads": image_uploads,
+            }
+        )
 
     return {
         "success": True,

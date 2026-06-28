@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import copy
 
-
 VALID_CE_PAPER: dict = {
     "test_id": "tp-01",
     "section": "CE",

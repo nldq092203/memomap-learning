@@ -23,4 +23,3 @@ class AuthorizationError(DomainError):
     """User not authorized to access resource."""
 
     pass
-

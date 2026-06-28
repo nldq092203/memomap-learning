@@ -9,11 +9,16 @@ from src.infra.ai import AIClient
 from src.infra.cache import get_redis_client
 from src.extensions import logger
 
-
 CHAT_HISTORY_TTL = 12 * 60 * 60  # 12 hours
 
 # Language display names
-_LANG_NAMES = {"fr": "French", "en": "English", "vi": "Vietnamese", "de": "German", "es": "Spanish"}
+_LANG_NAMES = {
+    "fr": "French",
+    "en": "English",
+    "vi": "Vietnamese",
+    "de": "German",
+    "es": "Spanish",
+}
 
 
 class AIService:
@@ -161,7 +166,9 @@ class AIService:
         level: str = "B1",
     ) -> dict[str, Any]:
         """Deep analysis: grammar, nuance, synonyms, DELF usage."""
-        prompt = self._build_deep_breakdown_prompt(text, learning_lang, native_lang, level)
+        prompt = self._build_deep_breakdown_prompt(
+            text, learning_lang, native_lang, level
+        )
         return self._call_json(prompt, "deep_breakdown")
 
     def _build_deep_breakdown_prompt(
@@ -189,24 +196,24 @@ class AIService:
             '    "structure": "grammatical structure explanation",\n'
             '    "tense_mood": "tense/mood if applicable",\n'
             '    "notes": ["key grammar points"]\n'
-            '  },\n'
+            "  },\n"
             '  "nuance": {\n'
             '    "register": "formal|informal|neutral|literary|spoken",\n'
             '    "frequency": "very common|common|less common|rare",\n'
             '    "notes": "usage nuance"\n'
-            '  },\n'
+            "  },\n"
             '  "synonyms": [\n'
             '    {"word": "...", "diff": "how it differs"}\n'
-            '  ],\n'
+            "  ],\n"
             '  "delf_tips": {\n'
             f'    "level": "{level}",\n'
             '    "usage": "how to use in DELF exam",\n'
             '    "section": "production_orale|production_ecrite|comprehension"\n'
-            '  },\n'
+            "  },\n"
             '  "collocations": ["common collocations"],\n'
             '  "examples": [\n'
             '    {"fr": "...", "translation": "..."}\n'
-            '  ]\n'
+            "  ]\n"
             "}"
         )
 
@@ -223,7 +230,9 @@ class AIService:
         count: int = 3,
     ) -> dict[str, Any]:
         """Generate example sentences based on user's level."""
-        prompt = self._build_examples_prompt(text, learning_lang, native_lang, level, count)
+        prompt = self._build_examples_prompt(
+            text, learning_lang, native_lang, level, count
+        )
         return self._call_json(prompt, "generate_examples")
 
     def _build_examples_prompt(
@@ -245,13 +254,13 @@ class AIService:
             f'  "word": "{text}",\n'
             f'  "level": "{level}",\n'
             '  "examples": [\n'
-            '    {\n'
+            "    {\n"
             f'      "{learning_lang}": "sentence in {lang_name}",\n'
             '      "translation": "translated sentence",\n'
             '      "audio_text": "clean text for TTS (no punctuation marks, no special chars)",\n'
             '      "context": "situation/context hint"\n'
-            '    }\n'
-            '  ]\n'
+            "    }\n"
+            "  ]\n"
             "}"
         )
 
@@ -287,15 +296,15 @@ class AIService:
             '  "is_correct": true/false,\n'
             '  "score": 0-100,\n'
             '  "errors": [\n'
-            '    {\n'
+            "    {\n"
             '      "text": "the wrong part",\n'
             '      "correction": "the correct version",\n'
             '      "type": "spelling|grammar|accent|conjugation|agreement|punctuation",\n'
             '      "start_index": 0,\n'
             '      "end_index": 5,\n'
             '      "explanation": "why it is wrong"\n'
-            '    }\n'
-            '  ],\n'
+            "    }\n"
+            "  ],\n"
             '  "suggestions": ["general improvement tips"]\n'
             "}"
         )
@@ -333,12 +342,12 @@ class AIService:
             f'  "word": "{text}",\n'
             '  "meaning": "brief meaning",\n'
             '  "mnemonics": [\n'
-            '    {\n'
+            "    {\n"
             '      "type": "sound|visual|story|acronym|association",\n'
             '      "trick": "the mnemonic trick",\n'
             '      "explanation": "why it works"\n'
-            '    }\n'
-            '  ],\n'
+            "    }\n"
+            "  ],\n"
             '  "best_pick": "the single best mnemonic, very short"\n'
             "}"
         )

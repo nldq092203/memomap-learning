@@ -88,4 +88,3 @@ def enforce_ai_rate_limit(subject_id: str | None) -> dict[str, typing.Any] | Non
     except Exception as e:
         logger.error(f"[AI-RATE-LIMIT] Error: {e}")
     return None
-

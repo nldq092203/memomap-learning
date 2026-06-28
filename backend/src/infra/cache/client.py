@@ -190,9 +190,7 @@ class RedisClient:
         except json.JSONDecodeError:
             return None
 
-    def set_json(
-        self, key: str, value: typing.Any, ex: int | None = None
-    ) -> bool:
+    def set_json(self, key: str, value: typing.Any, ex: int | None = None) -> bool:
         try:
             return self.set(key, json.dumps(value), ex=ex)
         except (TypeError, ValueError) as e:
@@ -213,6 +211,7 @@ def get_redis_client() -> RedisClient:
 
 def with_redis_fallback(fallback_value: typing.Any = None):
     """Decorator that returns fallback value on Redis errors."""
+
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -221,5 +220,7 @@ def with_redis_fallback(fallback_value: typing.Any = None):
             except RedisError as e:
                 logger.warning(f"[Redis] Fallback for {func.__name__}: {e}")
                 return fallback_value
+
         return wrapper
+
     return decorator

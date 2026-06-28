@@ -33,19 +33,23 @@ def _collect_image_refs(paper: DelfTestPaper) -> list[tuple[str, str]]:
         # Flat options
         for opt_idx, option in enumerate(exercise.options):
             if hasattr(option, "img_url") and option.img_url:
-                refs.append((
-                    f"exercises[{ex_idx}].options[{opt_idx}].img_url",
-                    option.img_url,
-                ))
+                refs.append(
+                    (
+                        f"exercises[{ex_idx}].options[{opt_idx}].img_url",
+                        option.img_url,
+                    )
+                )
         # Nested-question options
         for q_idx, question in enumerate(exercise.questions):
             for opt_idx, option in enumerate(question.options):
                 if hasattr(option, "img_url") and option.img_url:
-                    refs.append((
-                        f"exercises[{ex_idx}].questions[{q_idx}]"
-                        f".options[{opt_idx}].img_url",
-                        option.img_url,
-                    ))
+                    refs.append(
+                        (
+                            f"exercises[{ex_idx}].questions[{q_idx}]"
+                            f".options[{opt_idx}].img_url",
+                            option.img_url,
+                        )
+                    )
     return refs
 
 
@@ -76,12 +80,8 @@ def verify_delf_asset_references(
         }
 
     github = github or GitHubDelfManager()
-    image_dir = image_asset_directory(
-        level=level, variant=variant, section=section
-    )
-    audio_dir = audio_asset_directory(
-        level=level, variant=variant, section=section
-    )
+    image_dir = image_asset_directory(level=level, variant=variant, section=section)
+    audio_dir = audio_asset_directory(level=level, variant=variant, section=section)
 
     missing: list[dict[str, str]] = []
     present_count = 0
@@ -111,7 +111,9 @@ def verify_delf_asset_references(
     audio_values: list[tuple[str, str]] = []
     if paper.audio_filename:
         audio_values.append(("audio_filename", paper.audio_filename))
-    audio_values.extend(("audio_filenames", value) for value in paper.audio_filenames if value)
+    audio_values.extend(
+        ("audio_filenames", value) for value in paper.audio_filenames if value
+    )
 
     seen_audio: set[str] = set()
     for field_name, audio_filename in audio_values:

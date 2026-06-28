@@ -55,20 +55,22 @@ def _convert_0_99(n: int) -> str:
     Converts an integer (0–99) to French.
     Handles all French irregularities (70s, 80s, 90s).
     """
-    units = [
-        "", "un", "deux", "trois", "quatre",
-        "cinq", "six", "sept", "huit", "neuf"
-    ]
+    units = ["", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf"]
 
     teens = [
-        "dix", "onze", "douze", "treize", "quatorze",
-        "quinze", "seize", "dix-sept", "dix-huit", "dix-neuf"
+        "dix",
+        "onze",
+        "douze",
+        "treize",
+        "quatorze",
+        "quinze",
+        "seize",
+        "dix-sept",
+        "dix-huit",
+        "dix-neuf",
     ]
 
-    tens = [
-        "", "dix", "vingt", "trente", "quarante",
-        "cinquante", "soixante"
-    ]
+    tens = ["", "dix", "vingt", "trente", "quarante", "cinquante", "soixante"]
 
     if n < 10:
         return units[n]
@@ -125,8 +127,8 @@ def number_to_spoken_chunks(digits: str, number_type: NumberType) -> list[str]:
         # Expecting 4-digit years (as per blueprints, currently 1900–1999).
         if len(digits) == 4:
             year = int(digits)
-            first_two = int(digits[:2])   # 19
-            last_two = int(digits[2:])    # 98
+            first_two = int(digits[:2])  # 19
+            last_two = int(digits[2:])  # 98
 
             # For 1900–1999, spoken French uses:
             #   1998 → "mille neuf cent" + "quatre-vingt-dix-huit"
@@ -182,7 +184,7 @@ def number_to_spoken_chunks(digits: str, number_type: NumberType) -> list[str]:
     elif number_type == NumberType.PHONE:
         # Split into pairs
         for i in range(0, len(digits), 2):
-            pair = digits[i:i + 2]
+            pair = digits[i : i + 2]
 
             if len(pair) != 2:
                 continue

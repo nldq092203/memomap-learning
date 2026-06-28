@@ -29,7 +29,6 @@ from typing import Any
 
 from .pdf_reader import PageContent
 
-
 _ACTIVITY_HEADER = re.compile(
     r"activit[ée]\s+(\d{1,3})\b",
     re.IGNORECASE,
@@ -112,13 +111,15 @@ def parse_answer_pdf(pages: list[PageContent]) -> AnswerKey:
             existing = answers[activity_number]
             for qnum, idx in parsed.items():
                 if qnum in existing and existing[qnum] != idx:
-                    warnings.append({
-                        "code": "ambiguous_answer_key",
-                        "message": (
-                            f"Activity {activity_number} Q{qnum}: conflicting "
-                            f"answer ({existing[qnum]} vs {idx})."
-                        ),
-                    })
+                    warnings.append(
+                        {
+                            "code": "ambiguous_answer_key",
+                            "message": (
+                                f"Activity {activity_number} Q{qnum}: conflicting "
+                                f"answer ({existing[qnum]} vs {idx})."
+                            ),
+                        }
+                    )
             existing.update(parsed)
         else:
             answers[activity_number] = parsed

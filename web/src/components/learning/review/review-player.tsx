@@ -112,10 +112,10 @@ export function ReviewPlayer({
   const progressPercent = totalCards > 0 ? ((currentIndex + 1) / totalCards) * 100 : 0
 
   return (
-    <div className="fixed inset-0 z-[100] bg-background flex flex-col">
-      <div className="absolute inset-x-0 top-0 z-20 h-px bg-slate-200/70">
+    <div className="fixed inset-0 z-[100] flex flex-col bg-[var(--vintage-porcelain-mist)]">
+      <div className="absolute inset-x-0 top-0 z-20 h-px bg-[var(--vintage-soft-sandstone)]/60">
         <div
-          className="h-full bg-primary transition-[width] duration-300 ease-out"
+          className="h-full bg-[var(--vintage-desert-rock)] transition-[width] duration-300 ease-out"
           style={{ width: `${progressPercent}%` }}
         />
       </div>

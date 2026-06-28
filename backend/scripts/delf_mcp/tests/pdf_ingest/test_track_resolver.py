@@ -6,7 +6,9 @@ import os
 import sys
 
 _BACKEND_DIR = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    )
 )
 if _BACKEND_DIR not in sys.path:
     sys.path.insert(0, _BACKEND_DIR)
@@ -62,9 +64,11 @@ def test_resolve_tracks_warns_when_missing():
 
 
 def test_resolve_tracks_returns_filename_when_audio_exists():
-    github = _FakeGithub({
-        "delf/a2/tout-public-a2/CO/audio/DELF_TP_A2_Piste05.mp3",
-    })
+    github = _FakeGithub(
+        {
+            "delf/a2/tout-public-a2/CO/audio/DELF_TP_A2_Piste05.mp3",
+        }
+    )
     filename, exists, warnings_out = resolve_tracks_for_activity(
         activity_number=1,
         level="A2",
@@ -95,9 +99,11 @@ def test_resolve_tracks_warns_when_audio_missing_on_github():
 
 
 def test_resolve_tracks_multiple_tracks_uses_first_and_warns():
-    github = _FakeGithub({
-        "delf/a2/tout-public-a2/CO/audio/DELF_TP_A2_Piste05.mp3",
-    })
+    github = _FakeGithub(
+        {
+            "delf/a2/tout-public-a2/CO/audio/DELF_TP_A2_Piste05.mp3",
+        }
+    )
     filename, exists, warnings_out = resolve_tracks_for_activity(
         activity_number=3,
         level="A2",

@@ -14,7 +14,9 @@ import sys
 import zlib
 
 _BACKEND_DIR = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    )
 )
 if _BACKEND_DIR not in sys.path:
     sys.path.insert(0, _BACKEND_DIR)
@@ -29,12 +31,15 @@ from scripts.delf_mcp.pdf_ingest.image_option_extractor import (
 )
 
 
-def _solid_png_bytes(*, width: int = 80, height: int = 80, color: tuple[int, int, int] = (200, 200, 200)) -> bytes:
+def _solid_png_bytes(
+    *, width: int = 80, height: int = 80, color: tuple[int, int, int] = (200, 200, 200)
+) -> bytes:
     """Return raw PNG bytes for a solid-color rectangle.
 
     Keeps the test self-contained (no Pillow dep at PDF-build time — pymupdf
     insert_image will re-encode the image as needed).
     """
+
     def _chunk(tag: bytes, data: bytes) -> bytes:
         return (
             struct.pack(">I", len(data))

@@ -15,7 +15,6 @@ from src.domain.db_queries import ExerciseProgressQueries
 from src.domain.errors import ResourceNotFoundError, ValidationError
 from src.domain.services.exercise_catalog import CatalogFilters, ExerciseCatalogService
 
-
 # ==================== Exercise Progress Controllers ====================
 
 PROGRESS_SECTIONS = {"CO", "CE", "PO", "PE"}
@@ -56,8 +55,7 @@ def update_exercise_progress_controller(
         raise ValidationError("section must be one of: CO, CE, PO, PE")
     if source_type not in PROGRESS_SOURCE_TYPES:
         raise ValidationError(
-            "source_type must be one of: "
-            + ", ".join(sorted(PROGRESS_SOURCE_TYPES))
+            "source_type must be one of: " + ", ".join(sorted(PROGRESS_SOURCE_TYPES))
         )
     if level is not None:
         level = level.upper()

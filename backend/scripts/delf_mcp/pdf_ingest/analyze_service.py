@@ -31,7 +31,6 @@ from .ocr_service import ocr_pdf
 from .pdf_reader import PdfDocument, read_pdf
 from .transcript_parser import Transcripts, parse_transcript_pdf
 
-
 OCR_MODES = {"auto", "off", "force"}
 
 
@@ -112,7 +111,10 @@ def _read_pdf_with_optional_ocr(
                 },
             )
         )
-        return read_pdf(result.output_pdf_path, render_to_dir=render_to_dir), result.output_pdf_path
+        return (
+            read_pdf(result.output_pdf_path, render_to_dir=render_to_dir),
+            result.output_pdf_path,
+        )
 
     if ocr_mode == "force":
         document, effective_path = _ocr_and_read(force_ocr=True)
@@ -128,8 +130,7 @@ def _read_pdf_with_optional_ocr(
             return document, effective_path, warnings
         except Exception as exc:
             raise RuntimeError(
-                "PDF appears to be scanned and OCR fallback failed: "
-                f"{exc}"
+                "PDF appears to be scanned and OCR fallback failed: " f"{exc}"
             ) from exc
 
 
@@ -242,10 +243,9 @@ def _build_activity_records(
                 text=activity.text,
             )
         )
-        has_image_options = (
-            peek["skip_reason"] == warning_codes.IMAGE_OPTION_DETECTED
-            or bool(crops_for_activity)
-        )
+        has_image_options = peek[
+            "skip_reason"
+        ] == warning_codes.IMAGE_OPTION_DETECTED or bool(crops_for_activity)
         has_matching = peek["skip_reason"] == warning_codes.MATCHING_EXERCISE_DETECTED
         for w in peek["warnings"]:
             if w["code"] == warning_codes.IMAGE_OPTION_DETECTED and crops_for_activity:
@@ -290,24 +290,26 @@ def _activities_summary(records: list[ActivityRecord]) -> list[dict[str, Any]]:
     """Compact preview-friendly summary the agent reads first."""
     summary: list[dict[str, Any]] = []
     for record in records:
-        summary.append({
-            "activity_number": record.activity_number,
-            "section": record.section,
-            "chapter_number": record.chapter_number,
-            "title": record.title,
-            "page_start": record.page_start,
-            "page_end": record.page_end,
-            "track_numbers": record.track_numbers,
-            "audio_filename": record.audio_filename,
-            "audio_exists": record.audio_exists,
-            "has_image_options": record.has_image_options,
-            "has_image_option_crops": bool(record.image_option_crops),
-            "has_matching": record.has_matching,
-            "has_answer_key": record.answer_key is not None,
-            "has_transcript": record.transcript is not None,
-            "extra_transcript_count": len(record.extra_transcripts),
-            "warning_count": len(record.warnings),
-        })
+        summary.append(
+            {
+                "activity_number": record.activity_number,
+                "section": record.section,
+                "chapter_number": record.chapter_number,
+                "title": record.title,
+                "page_start": record.page_start,
+                "page_end": record.page_end,
+                "track_numbers": record.track_numbers,
+                "audio_filename": record.audio_filename,
+                "audio_exists": record.audio_exists,
+                "has_image_options": record.has_image_options,
+                "has_image_option_crops": bool(record.image_option_crops),
+                "has_matching": record.has_matching,
+                "has_answer_key": record.answer_key is not None,
+                "has_transcript": record.transcript is not None,
+                "extra_transcript_count": len(record.extra_transcripts),
+                "warning_count": len(record.warnings),
+            }
+        )
     return summary
 
 
@@ -400,13 +402,15 @@ def analyze_delf_book_pdf(
         )
 
     try:
-        exercise_pdf, effective_exercise_pdf_path, ocr_warnings = _read_pdf_with_optional_ocr(
-            pdf_path=effective_exercise_pdf_path,
-            render_to_dir=pages_dir(workspace),
-            workspace=workspace,
-            role="exercise",
-            ocr_mode=ocr_mode,
-            ocr_language=ocr_language,
+        exercise_pdf, effective_exercise_pdf_path, ocr_warnings = (
+            _read_pdf_with_optional_ocr(
+                pdf_path=effective_exercise_pdf_path,
+                render_to_dir=pages_dir(workspace),
+                workspace=workspace,
+                role="exercise",
+                ocr_mode=ocr_mode,
+                ocr_language=ocr_language,
+            )
         )
         global_warnings.extend(ocr_warnings)
     except ValueError as exc:
@@ -439,13 +443,15 @@ def analyze_delf_book_pdf(
     transcripts = Transcripts()
     if answer_pdf_path is not None:
         try:
-            answer_pdf, effective_answer_pdf_path, ocr_warnings = _read_pdf_with_optional_ocr(
-                pdf_path=answer_pdf_path,
-                render_to_dir=None,
-                workspace=workspace,
-                role="answer",
-                ocr_mode=ocr_mode,
-                ocr_language=ocr_language,
+            answer_pdf, effective_answer_pdf_path, ocr_warnings = (
+                _read_pdf_with_optional_ocr(
+                    pdf_path=answer_pdf_path,
+                    render_to_dir=None,
+                    workspace=workspace,
+                    role="answer",
+                    ocr_mode=ocr_mode,
+                    ocr_language=ocr_language,
+                )
             )
             global_warnings.extend(ocr_warnings)
         except ValueError as exc:
@@ -524,7 +530,9 @@ def analyze_delf_book_pdf(
         variant=variant,
         exercise_pdf_path=os.path.abspath(effective_exercise_pdf_path),
         answer_pdf_path=(
-            os.path.abspath(effective_answer_pdf_path) if effective_answer_pdf_path else None
+            os.path.abspath(effective_answer_pdf_path)
+            if effective_answer_pdf_path
+            else None
         ),
         workspace_dir=workspace,
         source_book_id=source_book_id,

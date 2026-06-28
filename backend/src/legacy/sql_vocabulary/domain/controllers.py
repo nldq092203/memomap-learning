@@ -65,7 +65,9 @@ def list_vocab_cards_controller(
     }
 
 
-def get_vocab_card_controller(db: Session, user_id: str, card_id: str) -> dict[str, Any]:
+def get_vocab_card_controller(
+    db: Session, user_id: str, card_id: str
+) -> dict[str, Any]:
     card = VocabularyQueries.get_by_id(db, card_id, user_id)
     if not card:
         raise ResourceNotFoundError("Vocabulary card not found")
@@ -123,7 +125,9 @@ def review_vocab_cards_controller(
     }
 
 
-def get_vocab_stats_controller(db: Session, user_id: str, language: str) -> dict[str, Any]:
+def get_vocab_stats_controller(
+    db: Session, user_id: str, language: str
+) -> dict[str, Any]:
     if not language or language not in LEARNING_LANGS:
         raise ValidationError(
             f"language parameter is required and must be one of: {', '.join(LEARNING_LANGS)}"

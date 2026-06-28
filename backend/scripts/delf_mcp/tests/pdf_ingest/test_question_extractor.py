@@ -6,7 +6,9 @@ import os
 import sys
 
 _BACKEND_DIR = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    )
 )
 if _BACKEND_DIR not in sys.path:
     sys.path.insert(0, _BACKEND_DIR)
@@ -17,7 +19,6 @@ from scripts.delf_mcp.pdf_ingest.question_extractor import (
     DEFAULT_POINTS,
     extract_exercise,
 )
-
 
 CE_SINGLE_QUESTION_TEXT = """
 Compréhension écrite
@@ -214,11 +215,7 @@ def test_image_option_synthesizes_questions_when_text_has_none():
 
 
 def test_image_option_without_crops_still_skips():
-    text = (
-        "Activité 5\n"
-        "Cochez la photo qui correspond.\n\n"
-        "1. Trouvez l'image\n"
-    )
+    text = "Activité 5\n" "Cochez la photo qui correspond.\n\n" "1. Trouvez l'image\n"
     result = extract_exercise(
         activity_number=5,
         title="Activité 5",

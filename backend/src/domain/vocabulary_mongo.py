@@ -150,7 +150,6 @@ class MongoVocabularyRepository:
             {
                 "$set": {
                     "status": "suspended",
-                    "deleted_at": now,
                     "updated_at": now,
                 }
             },
@@ -190,12 +189,7 @@ class MongoVocabularyRepository:
         limit = max(1, min(limit, 100))
         offset = max(0, offset)
         total = self.cards.count_documents(query)
-        cursor = (
-            self.cards.find(query)
-            .sort("updated_at", -1)
-            .skip(offset)
-            .limit(limit)
-        )
+        cursor = self.cards.find(query).sort("updated_at", -1).skip(offset).limit(limit)
         return {
             "items": [serialize_vocab_card(doc) for doc in cursor],
             "total": total,
@@ -225,9 +219,7 @@ class MongoVocabularyRepository:
             query["language"] = _normalize_language(language)
 
         cursor = (
-            self.cards.find(query)
-            .sort("next_due_at", 1)
-            .limit(max(1, min(limit, 100)))
+            self.cards.find(query).sort("next_due_at", 1).limit(max(1, min(limit, 100)))
         )
         return [serialize_vocab_card(doc) for doc in cursor]
 

@@ -14,7 +14,6 @@ Contains all settings needed for the Learning backend:
 import os
 from dotenv import load_dotenv
 
-
 load_dotenv()
 
 
@@ -73,16 +72,18 @@ class LearningConfig:
     REDIS_URL = os.getenv("REDIS_URL", None)
     DEFAULT_CACHE_TTL = int(os.getenv("DEFAULT_CACHE_TTL", "3600"))
     REDIS_POOL_BLOCKING = os.getenv("REDIS_POOL_BLOCKING", "true").lower() == "true"
-    REDIS_POOL_BLOCKING_TIMEOUT = float(
-        os.getenv("REDIS_POOL_BLOCKING_TIMEOUT", "1.0")
-    )
+    REDIS_POOL_BLOCKING_TIMEOUT = float(os.getenv("REDIS_POOL_BLOCKING_TIMEOUT", "1.0"))
     REDIS_SOCKET_CONNECT_TIMEOUT = float(
         os.getenv("REDIS_SOCKET_CONNECT_TIMEOUT", "0.2")
     )
     REDIS_SOCKET_TIMEOUT = float(os.getenv("REDIS_SOCKET_TIMEOUT", "0.5"))
-    REDIS_SOCKET_KEEPALIVE = os.getenv("REDIS_SOCKET_KEEPALIVE", "true").lower() == "true"
+    REDIS_SOCKET_KEEPALIVE = (
+        os.getenv("REDIS_SOCKET_KEEPALIVE", "true").lower() == "true"
+    )
     REDIS_HEALTH_CHECK_INTERVAL = int(os.getenv("REDIS_HEALTH_CHECK_INTERVAL", "30"))
-    REDIS_RETRY_ON_TIMEOUT = os.getenv("REDIS_RETRY_ON_TIMEOUT", "false").lower() == "true"
+    REDIS_RETRY_ON_TIMEOUT = (
+        os.getenv("REDIS_RETRY_ON_TIMEOUT", "false").lower() == "true"
+    )
     REDIS_DISABLE_SECONDS = int(os.getenv("REDIS_DISABLE_SECONDS", "30"))
 
     # Numbers Dictation
@@ -110,7 +111,6 @@ class LearningConfig:
     DELF_LOCAL_ASSET_TOOL_ENABLED = (
         os.getenv("DELF_LOCAL_ASSET_TOOL_ENABLED", "false").lower() == "true"
     )
-
 
 
 # Alias for backward compatibility

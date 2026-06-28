@@ -6,7 +6,9 @@ import os
 import sys
 
 _BACKEND_DIR = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    )
 )
 if _BACKEND_DIR not in sys.path:
     sys.path.insert(0, _BACKEND_DIR)
@@ -29,7 +31,7 @@ def _page(text: str) -> PageContent:
 def test_parses_main_transcripts_after_section_header():
     text = (
         "Corrigés\n\n"
-        "Activité 1\n1. b   2. a\n\n"   # answer key, not transcript
+        "Activité 1\n1. b   2. a\n\n"  # answer key, not transcript
         "Transcriptions\n\n"
         "Activité 1\n"
         "Bonjour, je m'appelle Pierre et je travaille à Paris.\n\n"

@@ -21,7 +21,6 @@ from scripts.delf_mcp.assets.audio_naming import resolve_delf_audio_filename
 
 from . import warnings as warning_codes
 
-
 # Track-number patterns. Order matters: prefer the most specific match first.
 _TRACK_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\bpiste\s+(\d{1,3})\b", re.IGNORECASE),

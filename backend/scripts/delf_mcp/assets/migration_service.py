@@ -20,7 +20,6 @@ from src.shared.delf_practice.test_paper_repository import DelfTestPaperReposito
 from scripts.delf_mcp.assets.verify_service import verify_delf_asset_references
 from scripts.delf_mcp.validation import validate_content
 
-
 _IMAGE_EXTENSIONS = (".webp", ".png", ".jpg", ".jpeg")
 
 
@@ -31,28 +30,25 @@ def _is_image_ref(value: str) -> bool:
 def _is_standard_image_ref(
     *, value: str, test_id: str, question_number: int, label: str
 ) -> bool:
-    return (
-        value.strip().lstrip("/")
-        == nested_image_relative_path(
-            test_id=test_id,
-            question_number=question_number,
-            label=label,
-            extension=".webp",
-        )
+    return value.strip().lstrip("/") == nested_image_relative_path(
+        test_id=test_id,
+        question_number=question_number,
+        label=label,
+        extension=".webp",
     )
 
 
 def _filename_from_ref(value: str) -> str:
     stripped = value.strip().lstrip("/")
     if stripped.startswith("assets/"):
-        return stripped[len("assets/"):]
+        return stripped[len("assets/") :]
     return stripped
 
 
 def _replace_image_extension(value: str, extension: str) -> str:
     stripped = value.strip().lstrip("/")
     prefix = "assets/" if stripped.startswith("assets/") else ""
-    rest = stripped[len("assets/"):] if prefix else stripped
+    rest = stripped[len("assets/") :] if prefix else stripped
     lowered = rest.lower()
     for ext in _IMAGE_EXTENSIONS:
         if lowered.endswith(ext):
@@ -203,9 +199,7 @@ def migrate_legacy_image_assets(
     if row is None:
         return {
             "success": False,
-            "error": (
-                f"No DELF paper found for {level}/{variant}/{section}/{test_id}"
-            ),
+            "error": (f"No DELF paper found for {level}/{variant}/{section}/{test_id}"),
         }
 
     try:
@@ -271,11 +265,15 @@ def migrate_legacy_image_assets(
             label=ref["label"],
             extension=".webp",
         )
-        target_github_path = f"{scope_prefix(level, variant, section)}/{target_relative}"
+        target_github_path = (
+            f"{scope_prefix(level, variant, section)}/{target_relative}"
+        )
         initial_source_path = image_reference_github_path(
             level=level, variant=variant, section=section, img_url=value
         )
-        action = "copy_webp" if filename.lower().endswith(".webp") else "convert_to_webp"
+        action = (
+            "copy_webp" if filename.lower().endswith(".webp") else "convert_to_webp"
+        )
         plan = {
             "field": ref["field"],
             "from": value,
@@ -365,9 +363,7 @@ def migrate_legacy_image_assets(
                 github.create_file(
                     file_path=target_github_path,
                     content=asset_bytes,
-                    commit_message=(
-                        f"chore(delf): migrate asset for {test_id}"
-                    ),
+                    commit_message=(f"chore(delf): migrate asset for {test_id}"),
                 )
             plan["action"] = performed_action
             ref["container"]["img_url"] = target_relative

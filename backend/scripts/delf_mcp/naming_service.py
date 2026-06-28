@@ -5,7 +5,6 @@ from __future__ import annotations
 import re
 from typing import Any, Protocol
 
-
 _CANONICAL_RE = re.compile(r"^tp-(\d+)$")
 _NUMBERED_RE = re.compile(r"^tp-(\d+)(?:-.+)?$")
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
@@ -45,7 +44,9 @@ def _slugify(value: str | None) -> str:
     return slug[:40].strip("-")
 
 
-def _next_numbered_id(existing_ids: set[str], title: str | None = None) -> tuple[str, str]:
+def _next_numbered_id(
+    existing_ids: set[str], title: str | None = None
+) -> tuple[str, str]:
     numbered = []
     canonical_widths = []
     slugged_count = 0

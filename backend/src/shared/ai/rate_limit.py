@@ -10,4 +10,3 @@ def enforce_rate_limit(subject_id: str | None) -> dict[str, Any] | None:
     Returns None if allowed, info dict if exceeded.
     """
     return enforce_ai_rate_limit(subject_id)
-

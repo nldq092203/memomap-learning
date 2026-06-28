@@ -13,7 +13,6 @@ from src.domain.services.srs import MongoSRSService
 from src.domain.vocabulary_mongo import MongoVocabularyRepository
 from src.utils.response_builder import ResponseBuilder
 
-
 MONGO_ID_PREFIX = "mongo:"
 
 
@@ -85,6 +84,7 @@ def vocab_list_create(user_id: str, db: Session):
         page = repo.list_cards(
             user_id=user_id,
             language=request.args.get("language", "").strip() or None,
+            status=request.args.get("status", "").strip() or None,
             search_query=request.args.get("q", "").strip() or None,
             limit=_get_int_query("limit", 50),
             offset=_get_int_query("offset", 0),
@@ -143,7 +143,9 @@ def vocab_detail(card_id: str, user_id: str, db: Session):
         return ResponseBuilder().success(data=_mongo_card_to_web(card)).build()
 
     repo.soft_delete_card(user_id=user_id, card_id=raw_id)
-    return ResponseBuilder().success(message="Card suspended", status_code=204).build()
+    return (
+        ResponseBuilder().success(message="Card suspended", data={"ok": True}).build()
+    )
 
 
 @require_auth
@@ -156,7 +158,7 @@ def vocab_hard_delete(card_id: str, user_id: str, db: Session):
     )
     return (
         ResponseBuilder()
-        .success(message="Card deleted permanently", status_code=204)
+        .success(message="Card deleted permanently", data={"ok": True, "deleted": True})
         .build()
     )
 

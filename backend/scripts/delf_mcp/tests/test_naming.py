@@ -22,7 +22,6 @@ from scripts.delf_mcp.naming_service import (  # noqa: E402
     suggest_test_id_from_existing,
 )
 
-
 # ---------------------------------------------------------------------------
 # build_github_directory
 # ---------------------------------------------------------------------------
@@ -36,10 +35,7 @@ def test_build_github_directory_lowercases_level():
 
 
 def test_build_github_directory_preserves_variant_and_section():
-    assert (
-        build_github_directory("b1", "ecole-b1", "CO")
-        == "delf/b1/ecole-b1/CO/tp"
-    )
+    assert build_github_directory("b1", "ecole-b1", "CO") == "delf/b1/ecole-b1/CO/tp"
 
 
 # ---------------------------------------------------------------------------

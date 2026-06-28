@@ -205,11 +205,13 @@ def _collect_image_uploads_for_paper(
                 label=crop.label,
             )
             if expected in referenced:
-                uploads.append({
-                    "question_number": crop.question_number,
-                    "label": crop.label,
-                    "local_path": crop.local_path,
-                })
+                uploads.append(
+                    {
+                        "question_number": crop.question_number,
+                        "label": crop.label,
+                        "local_path": crop.local_path,
+                    }
+                )
     return uploads
 
 
@@ -234,7 +236,9 @@ def _upload_image_crops(
         question_number = upload.get("question_number")
         label = upload.get("label")
         if not local_path or question_number is None or not label:
-            failures.append({**upload, "error": "missing local_path/question_number/label"})
+            failures.append(
+                {**upload, "error": "missing local_path/question_number/label"}
+            )
             continue
         if not os.path.exists(local_path):
             failures.append({**upload, "error": f"local file not found: {local_path}"})
@@ -259,12 +263,14 @@ def _upload_image_crops(
         if not result.get("success"):
             failures.append({**upload, "error": result.get("error")})
             continue
-        uploaded.append({
-            "question_number": question_number,
-            "label": label,
-            "github_path": result.get("github_path"),
-            "relative_path": result.get("relative_path"),
-        })
+        uploaded.append(
+            {
+                "question_number": question_number,
+                "label": label,
+                "github_path": result.get("github_path"),
+                "relative_path": result.get("relative_path"),
+            }
+        )
     return uploaded, failures
 
 
@@ -513,14 +519,18 @@ def save_delf_book_drafts(
     for entry in selected_papers:
         content = entry.get("content") if isinstance(entry, dict) else None
         if not isinstance(content, dict):
-            skipped.append(_skip_record(
-                test_id=None,
-                reason=warning_codes.VALIDATION_FAILED,
-                details={"error": "selected_papers entry missing dict 'content'"},
-            ))
+            skipped.append(
+                _skip_record(
+                    test_id=None,
+                    reason=warning_codes.VALIDATION_FAILED,
+                    details={"error": "selected_papers entry missing dict 'content'"},
+                )
+            )
             continue
 
-        image_uploads_raw = entry.get("image_uploads") if isinstance(entry, dict) else None
+        image_uploads_raw = (
+            entry.get("image_uploads") if isinstance(entry, dict) else None
+        )
         if isinstance(image_uploads_raw, list):
             # Explicit override from the agent (e.g. after hand-editing).
             image_uploads: list[dict[str, Any]] = [

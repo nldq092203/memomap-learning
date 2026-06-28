@@ -80,7 +80,6 @@ from src.api.web.community import community_list_create, community_detail
 from src.api.errors import register_error_handlers
 from src.api.web.legacy import register_legacy_web_routes
 
-
 # Web blueprint
 web_bp = Blueprint("web", __name__)
 register_error_handlers(web_bp)

@@ -40,7 +40,9 @@ import sys
 from typing import Any
 
 # Allow `python scripts/delf_mcp/server.py` from `backend/` to resolve `src.*`.
-_BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_BACKEND_DIR = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
 if _BACKEND_DIR not in sys.path:
     sys.path.insert(0, _BACKEND_DIR)
 
@@ -71,7 +73,9 @@ from scripts.delf_mcp.delete_service import delete_draft  # noqa: E402
 from scripts.delf_mcp.draft_service import save_draft  # noqa: E402
 from scripts.delf_mcp.get_service import get_draft  # noqa: E402
 from scripts.delf_mcp.list_service import list_drafts  # noqa: E402
-from scripts.delf_mcp.naming_service import suggest_delf_test_id as suggest_test_id  # noqa: E402
+from scripts.delf_mcp.naming_service import (
+    suggest_delf_test_id as suggest_test_id,
+)  # noqa: E402
 from scripts.delf_mcp.pdf_ingest.analyze_service import (  # noqa: E402
     analyze_delf_book_pdf as do_analyze_book_pdf,
 )
@@ -84,7 +88,6 @@ from scripts.delf_mcp.pdf_ingest.save_service import (  # noqa: E402
 from scripts.delf_mcp.publish_service import publish_draft  # noqa: E402
 from scripts.delf_mcp.update_service import update_draft  # noqa: E402
 from scripts.delf_mcp.validation import validate_content_for_tool  # noqa: E402
-
 
 mcp = FastMCP("delf-ingest")
 

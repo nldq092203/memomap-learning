@@ -19,7 +19,9 @@ class SRSService:
         self.db = db
         self.model = FSRSModel()
 
-    def calculate_next_review(self, card: VocabularyCardORM, grade: Grade) -> dict[str, Any]:
+    def calculate_next_review(
+        self, card: VocabularyCardORM, grade: Grade
+    ) -> dict[str, Any]:
         state = FSRSState(
             stability=float(card.interval_days) if card.interval_days > 0 else 1.0,
             difficulty=card.ease / 100.0 if card.ease > 0 else 0.5,

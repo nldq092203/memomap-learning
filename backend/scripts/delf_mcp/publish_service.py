@@ -171,9 +171,7 @@ def publish_draft(
             ),
         }
 
-    validation = validate_content(
-        content_model.model_dump(mode="json", by_alias=True)
-    )
+    validation = validate_content(content_model.model_dump(mode="json", by_alias=True))
     if not validation["valid"]:
         return {
             "success": False,

@@ -295,7 +295,7 @@ def audio_lesson_save_questions(lesson_id: str, user_id: str):
         raise BadRequestError(str(e))
 
     questions = request.get_json(silent=True)
-    
+
     logger.info(
         f"[AUDIO-LESSONS] Questions payload debug: "
         f"get_json_result={questions}, "
@@ -304,18 +304,18 @@ def audio_lesson_save_questions(lesson_id: str, user_id: str):
         f"has_data={bool(request.data)}, "
         f"data_length={len(request.data) if request.data else 0}"
     )
-    
+
     if questions is None and request.data:
         try:
-            questions = json.loads(request.data.decode('utf-8'))
+            questions = json.loads(request.data.decode("utf-8"))
             logger.info(f"[AUDIO-LESSONS] Successfully parsed from request.data")
         except Exception as e:
             logger.error(f"[AUDIO-LESSONS] Failed to parse request.data: {e}")
             questions = {}
-    
+
     if questions is None:
         questions = {}
-    
+
     if not isinstance(questions, dict) or not questions:
         logger.warning(
             f"[AUDIO-LESSONS] Invalid questions payload after all attempts: "
@@ -324,7 +324,9 @@ def audio_lesson_save_questions(lesson_id: str, user_id: str):
         )
         raise BadRequestError("questions payload must be a non-empty JSON object")
 
-    variant = (request.args.get("variant") or request.args.get("type") or "").strip() or None
+    variant = (
+        request.args.get("variant") or request.args.get("type") or ""
+    ).strip() or None
 
     result = drive.save_audio_lesson_questions(
         lesson_id=lesson_id,

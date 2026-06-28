@@ -47,13 +47,12 @@ class CoCeExerciseRepository:
             stmt = select(CoCeExerciseORM).where(CoCeExerciseORM.id == exercise_id)
             return db.execute(stmt).scalar_one_or_none()
 
-    def get_by_level(self, level: str, topic: str | None = None) -> list[CoCeExerciseORM]:
+    def get_by_level(
+        self, level: str, topic: str | None = None
+    ) -> list[CoCeExerciseORM]:
         """Get all exercises for a specific level, optionally filtered by topic, ordered by creation date (newest first)."""
         with db_session() as db:
-            stmt = (
-                select(CoCeExerciseORM)
-                .where(CoCeExerciseORM.level == level.upper())
-            )
+            stmt = select(CoCeExerciseORM).where(CoCeExerciseORM.level == level.upper())
             if topic:
                 stmt = stmt.where(CoCeExerciseORM.topic == topic)
 
@@ -74,9 +73,7 @@ class CoCeExerciseRepository:
             stmt = select(CoCeExerciseORM).where(CoCeExerciseORM.media_id == media_id)
             return db.execute(stmt).scalar_one_or_none()
 
-    def update_exercise(
-        self, exercise_id: str, **updates
-    ) -> CoCeExerciseORM | None:
+    def update_exercise(self, exercise_id: str, **updates) -> CoCeExerciseORM | None:
         """Update exercise fields."""
         with db_session() as db:
             stmt = select(CoCeExerciseORM).where(CoCeExerciseORM.id == exercise_id)

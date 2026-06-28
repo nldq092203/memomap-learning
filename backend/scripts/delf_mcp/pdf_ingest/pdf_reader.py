@@ -13,7 +13,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-
 # Default rendering DPI. 200 is plenty for text-only born-digital PDFs and
 # keeps PNGs under 1MB per page on typical book layouts. v2 image-option
 # crops may want to bump this for sharper option boxes.
@@ -146,9 +145,7 @@ def read_pdf(
 
             image_path: str | None = None
             if render_to_dir is not None:
-                image_path = os.path.join(
-                    render_to_dir, f"page-{page_number:03d}.png"
-                )
+                image_path = os.path.join(render_to_dir, f"page-{page_number:03d}.png")
                 pixmap = page.get_pixmap(dpi=dpi)
                 pixmap.save(image_path)
 

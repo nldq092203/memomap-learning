@@ -9,7 +9,6 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-
 _SAFE_SEGMENT_RE = re.compile(r"[^a-z0-9_-]+")
 _IMAGE_EXTENSIONS = (".webp", ".png", ".jpg", ".jpeg")
 _AUDIO_EXTENSIONS = (".mp3", ".m4a", ".wav")
@@ -85,7 +84,7 @@ def legacy_flat_image_ref_to_nested(img_url: str) -> str | None:
     """
     value = img_url.strip().lstrip("/")
     if value.startswith("assets/"):
-        value = value[len("assets/"):]
+        value = value[len("assets/") :]
     if "/" in value:
         return None
 

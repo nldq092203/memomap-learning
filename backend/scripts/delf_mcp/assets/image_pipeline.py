@@ -19,7 +19,6 @@ from typing import Any
 
 from src.shared.delf_practice import local_asset_service as las
 
-
 _DEFAULT_MAX_MB = 20
 
 
@@ -79,10 +78,7 @@ def _parse_crop_dict(crop: dict[str, Any]) -> tuple[las.CropBox | None, str | No
 
 
 def _box_in_bounds(box: las.CropBox, width: int, height: int) -> bool:
-    return (
-        0 <= box.left < box.right <= width
-        and 0 <= box.top < box.bottom <= height
-    )
+    return 0 <= box.left < box.right <= width and 0 <= box.top < box.bottom <= height
 
 
 def _encode_crop(
@@ -91,9 +87,7 @@ def _encode_crop(
     label: str,
     quality: int,
 ) -> dict[str, Any]:
-    webp_bytes = las.export_crop_to_webp(
-        image_bgr=image_bgr, crop=box, quality=quality
-    )
+    webp_bytes = las.export_crop_to_webp(image_bgr=image_bgr, crop=box, quality=quality)
     return {
         "label": label,
         "content_base64": base64.b64encode(webp_bytes).decode("ascii"),
@@ -155,9 +149,7 @@ def crop_screenshot_to_webp(
     # Auto-detect path
     if auto_detect:
         try:
-            region_box, region_err = _parse_crop_dict(
-                auto_detect.get("region", {})
-            )
+            region_box, region_err = _parse_crop_dict(auto_detect.get("region", {}))
             if region_err is not None:
                 return {
                     "success": False,
@@ -218,31 +210,37 @@ def crop_screenshot_to_webp(
     errors: list[dict[str, Any]] = []
     for idx, crop in enumerate(crops):
         if not isinstance(crop, dict):
-            errors.append({
-                "field": f"crops[{idx}]",
-                "message": "crop must be an object",
-                "type": "type_error",
-            })
+            errors.append(
+                {
+                    "field": f"crops[{idx}]",
+                    "message": "crop must be an object",
+                    "type": "type_error",
+                }
+            )
             continue
         label = str(crop.get("label", chr(ord("a") + idx)))
         box, parse_err = _parse_crop_dict(crop)
         if parse_err is not None:
-            errors.append({
-                "field": f"crops[{idx}]",
-                "message": parse_err,
-                "type": "value_error",
-            })
+            errors.append(
+                {
+                    "field": f"crops[{idx}]",
+                    "message": parse_err,
+                    "type": "value_error",
+                }
+            )
             continue
         if not _box_in_bounds(box, width, height):
-            errors.append({
-                "field": f"crops[{idx}]",
-                "message": (
-                    f"Crop box is outside the screenshot ({width}x{height}): "
-                    f"left={box.left} top={box.top} right={box.right} "
-                    f"bottom={box.bottom}"
-                ),
-                "type": "value_error",
-            })
+            errors.append(
+                {
+                    "field": f"crops[{idx}]",
+                    "message": (
+                        f"Crop box is outside the screenshot ({width}x{height}): "
+                        f"left={box.left} top={box.top} right={box.right} "
+                        f"bottom={box.bottom}"
+                    ),
+                    "type": "value_error",
+                }
+            )
             continue
         crops_out.append(_encode_crop(image_bgr, box, label, webp_quality))
 

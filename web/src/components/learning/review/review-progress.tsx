@@ -18,7 +18,7 @@ export function ReviewProgress({ currentIndex, total, reviewed, right }: ReviewP
         <span className="text-muted-foreground">
           Card {Math.min(currentIndex + 1, Math.max(1, total))} of {total || 0}
         </span>
-        {right ?? (<span className="font-semibold text-primary">Reviewed: {reviewed}</span>)}
+        {right ?? (<span className="font-semibold text-[var(--vintage-desert-rock)]">Reviewed: {reviewed}</span>)}
       </div>
       <Progress value={progress} className="h-2" />
     </div>

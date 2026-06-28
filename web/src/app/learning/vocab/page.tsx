@@ -45,7 +45,7 @@ export default function VocabPage() {
   const limit = 30
   const reqIdRef = useRef(0)
   const [deleteTarget, setDeleteTarget] = useState<LearningVocabCard | null>(null)
-  const [hardDeleteTarget, setHardDeleteTarget] = useState<LearningVocabCard | null>(null)
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
   const pageCacheRef = useRef<Record<string, { items: LearningVocabCard[]; total: number }>>({})
   const [showAddModal, setShowAddModal] = useState(false)
 
@@ -129,13 +129,46 @@ export default function VocabPage() {
 
   const handleClearSelection = () => setSelectedCards(new Set())
 
+  const clearVocabCache = () => {
+    pageCacheRef.current = {}
+  }
+
+  const removeCardsFromList = (ids: Set<string>) => {
+    setList((prev) => prev.filter((card) => !ids.has(card.id)))
+    setTotal((prev) => Math.max(0, prev - ids.size))
+    clearVocabCache()
+  }
+
   const handleBulkAction = async (action: string) => {
-     if (action === "delete") {
-        // Simple confirmation before bulk delete logic (placeholder)
-        // In a real app we'd use the dialog. For now we just show a toast state mock
-        notificationService.success(`Deleted ${selectedCards.size} cards (Demo)`)
-        setSelectedCards(new Set())
-     }
+    if (selectedCards.size === 0) return
+
+    if (action === "suspend") {
+      const ids = new Set(selectedCards)
+      await notificationService.withLoading(
+        async () => {
+          await Promise.all(
+            [...ids].map((id) =>
+              learningVocabApi.update(id, { language, status: "suspended" }),
+            ),
+          )
+          setList((prev) =>
+            prev.map((card) =>
+              ids.has(card.id) ? { ...card, status: "suspended" } : card,
+            ),
+          )
+          setSelectedCards(new Set())
+          clearVocabCache()
+        },
+        "Suspension des cartes…",
+        "Cartes suspendues",
+        "Impossible de suspendre les cartes",
+      )
+      return
+    }
+
+    if (action === "delete") {
+      setBulkDeleteOpen(true)
+    }
   }
   
   // Update query state wrappers
@@ -144,7 +177,6 @@ export default function VocabPage() {
     setPage(0)
   }
   const handleStatusChange = (val: string) => {
-    console.log("Filter change:", val)
     setStatus(val === "all" ? "" : val)
     setPage(0)
   }
@@ -159,7 +191,7 @@ export default function VocabPage() {
              {/* Header Title Area */}
              <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-3">
-                   <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                   <div className="rounded-lg bg-[var(--vintage-cream)] p-2 text-[var(--vintage-desert-rock)]">
                       <BookOpen className="h-6 w-6" />
                    </div>
                    <h1 className="text-3xl font-bold tracking-tight">Laboratoire de vocabulaire</h1>
@@ -302,63 +334,61 @@ export default function VocabPage() {
             onOpenChange={(open) => {
               if (!open) setDeleteTarget(null)
             }}
-            title="Suspend vocabulary card?"
+            title="Supprimer cette carte ?"
             description={
               deleteTarget
-                ? `This will suspend "${deleteTarget.word}" for review. You can restore it later.`
-                : "This will suspend this card for review. You can restore it later."
+                ? `"${deleteTarget.word}" sera supprimé définitivement de votre vocabulaire.`
+                : "Cette carte sera supprimée définitivement de votre vocabulaire."
             }
-            confirmText="Suspend"
-            cancelText="Cancel"
+            confirmText="Supprimer"
+            cancelText="Annuler"
             variant="destructive"
             onConfirm={async () => {
               if (!deleteTarget) return
               const target = deleteTarget
-              // First perform a soft delete (suspend) for this language
+              setDeleteTarget(null)
               await notificationService.withLoading(
                 async () => {
-                  await learningVocabApi.remove(target.id)
-                  setList((prev) =>
-                    prev.filter((card) => card.id !== target.id),
-                  )
+                  await learningVocabApi.hardRemove(target.id, language)
+                  removeCardsFromList(new Set([target.id]))
+                  setSelectedCards((prev) => {
+                    const next = new Set(prev)
+                    next.delete(target.id)
+                    return next
+                  })
                 },
-                "Suspending card…",
-                "Card suspended",
-                "Failed to suspend card",
+                "Suppression de la carte…",
+                "Carte supprimée",
+                "Impossible de supprimer la carte",
               )
-              setDeleteTarget(null)
             }}
           />
 
           <ConfirmationDialog
-            open={!!hardDeleteTarget}
+            open={bulkDeleteOpen}
             onOpenChange={(open) => {
-              if (!open) setHardDeleteTarget(null)
+              setBulkDeleteOpen(open)
             }}
-            title="Delete vocabulary card permanently?"
-            description={
-              hardDeleteTarget
-                ? `This will permanently delete "${hardDeleteTarget.word}" from your vocabulary. You can't undo this.`
-                : "This will permanently delete this card. You can't undo this."
-            }
-            confirmText="Delete permanently"
-            cancelText="Cancel"
+            title="Supprimer les cartes sélectionnées ?"
+            description={`${selectedCards.size} carte${selectedCards.size > 1 ? "s seront supprimées" : " sera supprimée"} définitivement de votre vocabulaire.`}
+            confirmText="Supprimer"
+            cancelText="Annuler"
             variant="destructive"
             onConfirm={async () => {
-              if (!hardDeleteTarget) return
-              const target = hardDeleteTarget
-              setHardDeleteTarget(null)
+              const ids = new Set(selectedCards)
+              if (ids.size === 0) return
+              setBulkDeleteOpen(false)
               await notificationService.withLoading(
                 async () => {
-                  await learningVocabApi.hardRemove(target.id, language)
-                  setList((prev) =>
-                    prev.filter((card) => card.id !== target.id),
+                  await Promise.all(
+                    [...ids].map((id) => learningVocabApi.hardRemove(id, language)),
                   )
-                  setTotal((prev) => Math.max(0, prev - 1))
+                  removeCardsFromList(ids)
+                  setSelectedCards(new Set())
                 },
-                "Deleting card…",
-                "Card deleted",
-                "Failed to delete card",
+                "Suppression des cartes…",
+                "Cartes supprimées",
+                "Impossible de supprimer les cartes",
               )
             }}
           />

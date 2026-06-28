@@ -56,6 +56,7 @@ class VocabUpdateRequest(BaseModel):
     translation: str | None = None
     notes: list[str] | None = None
     tags: list[str] | None = None
+    status: str | None = Field(default=None, max_length=32)
     extra: dict[str, Any] | None = None
 
 
@@ -79,8 +80,6 @@ class ExerciseProgressUpdateRequest(BaseModel):
     saved_vocab_count: int | None = Field(default=None, ge=0)
     answers_snapshot: Any | None = None
     extra: dict[str, Any] | None = None
-
-
 
 
 class AIChatRequest(BaseModel):

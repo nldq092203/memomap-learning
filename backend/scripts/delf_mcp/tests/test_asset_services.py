@@ -28,7 +28,6 @@ from src.shared.delf_practice.asset_paths import (  # noqa: E402
     legacy_flat_image_ref_to_nested,
 )
 
-
 # ---------------------------------------------------------------------------
 # Fake GitHub manager
 # ---------------------------------------------------------------------------
@@ -47,12 +46,16 @@ class _FakeGithub:
     def create_file(self, file_path, content, commit_message):
         if file_path in self.files:
             raise FileExistsError(file_path)
-        self.files[file_path] = content if isinstance(content, bytes) else content.encode()
+        self.files[file_path] = (
+            content if isinstance(content, bytes) else content.encode()
+        )
         self.created.append(file_path)
         return {"path": file_path}
 
     def create_or_update_file(self, file_path, content, commit_message):
-        self.files[file_path] = content if isinstance(content, bytes) else content.encode()
+        self.files[file_path] = (
+            content if isinstance(content, bytes) else content.encode()
+        )
         self.updated.append(file_path)
         return {"path": file_path}
 
@@ -65,7 +68,7 @@ class _FakeGithub:
         for path in self.files:
             if not path.startswith(prefix):
                 continue
-            name = path[len(prefix):]
+            name = path[len(prefix) :]
             if "/" in name:
                 continue
             if extensions and not name.lower().endswith(
@@ -81,7 +84,7 @@ class _FakeGithub:
         for path in self.files:
             if not path.startswith(prefix):
                 continue
-            name = path[len(prefix):]
+            name = path[len(prefix) :]
             if extensions and not name.lower().endswith(
                 tuple(e.lower() for e in extensions)
             ):
@@ -161,9 +164,7 @@ def test_upload_image_writes_to_assets_directory():
         github=gh,
     )
     assert result["success"] is True
-    assert result["github_path"] == (
-        "delf/a2/tout-public-a2/CE/assets/tp-04-q1-a.webp"
-    )
+    assert result["github_path"] == ("delf/a2/tout-public-a2/CE/assets/tp-04-q1-a.webp")
     assert result["relative_path"] == "assets/tp-04-q1-a.webp"
     assert gh.files[result["github_path"]] == b"webpbytes"
 
@@ -203,18 +204,21 @@ def test_upload_audio_returns_bare_relative_path():
     )
     assert result["success"] is True
     assert result["relative_path"] == "DELF_TP_A2_Piste28.mp3"
-    assert result["github_path"].endswith(
-        "/audio/DELF_TP_A2_Piste28.mp3"
-    )
+    assert result["github_path"].endswith("/audio/DELF_TP_A2_Piste28.mp3")
 
 
 def test_upload_refuses_overwrite_by_default():
     path = "delf/a2/v/CE/assets/x.webp"
     gh = _FakeGithub({path: b"old"})
     result = upload_delf_asset(
-        level="A2", variant="v", section="CE", test_id="t",
-        filename="x.webp", content_base64=_b64(b"new"),
-        kind="image", github=gh,
+        level="A2",
+        variant="v",
+        section="CE",
+        test_id="t",
+        filename="x.webp",
+        content_base64=_b64(b"new"),
+        kind="image",
+        github=gh,
     )
     assert result["success"] is False
     assert "already exists" in result["error"]
@@ -225,9 +229,15 @@ def test_upload_allows_overwrite_when_flag_set():
     path = "delf/a2/v/CE/assets/x.webp"
     gh = _FakeGithub({path: b"old"})
     result = upload_delf_asset(
-        level="A2", variant="v", section="CE", test_id="t",
-        filename="x.webp", content_base64=_b64(b"new"),
-        kind="image", overwrite=True, github=gh,
+        level="A2",
+        variant="v",
+        section="CE",
+        test_id="t",
+        filename="x.webp",
+        content_base64=_b64(b"new"),
+        kind="image",
+        overwrite=True,
+        github=gh,
     )
     assert result["success"] is True
     assert result["overwritten"] is True
@@ -237,9 +247,14 @@ def test_upload_allows_overwrite_when_flag_set():
 def test_upload_rejects_extension_mismatch():
     gh = _FakeGithub()
     result = upload_delf_asset(
-        level="A2", variant="v", section="CE", test_id="t",
-        filename="x.txt", content_base64=_b64(b"x"),
-        kind="image", github=gh,
+        level="A2",
+        variant="v",
+        section="CE",
+        test_id="t",
+        filename="x.txt",
+        content_base64=_b64(b"x"),
+        kind="image",
+        github=gh,
     )
     assert result["success"] is False
     assert ".webp" in result["error"]
@@ -248,9 +263,14 @@ def test_upload_rejects_extension_mismatch():
 def test_upload_rejects_audio_extension_in_image_kind():
     gh = _FakeGithub()
     result = upload_delf_asset(
-        level="A2", variant="v", section="CO", test_id="t",
-        filename="track.mp3", content_base64=_b64(b"x"),
-        kind="image", github=gh,
+        level="A2",
+        variant="v",
+        section="CO",
+        test_id="t",
+        filename="track.mp3",
+        content_base64=_b64(b"x"),
+        kind="image",
+        github=gh,
     )
     assert result["success"] is False
 
@@ -258,9 +278,14 @@ def test_upload_rejects_audio_extension_in_image_kind():
 def test_upload_rejects_invalid_base64():
     gh = _FakeGithub()
     result = upload_delf_asset(
-        level="A2", variant="v", section="CE", test_id="t",
-        filename="x.webp", content_base64="not!!base64",
-        kind="image", github=gh,
+        level="A2",
+        variant="v",
+        section="CE",
+        test_id="t",
+        filename="x.webp",
+        content_base64="not!!base64",
+        kind="image",
+        github=gh,
     )
     assert result["success"] is False
     assert "base64" in result["error"]
@@ -269,9 +294,14 @@ def test_upload_rejects_invalid_base64():
 def test_upload_rejects_path_traversal_filename():
     gh = _FakeGithub()
     result = upload_delf_asset(
-        level="A2", variant="v", section="CE", test_id="t",
+        level="A2",
+        variant="v",
+        section="CE",
+        test_id="t",
         filename="../etc/passwd.webp",
-        content_base64=_b64(b"x"), kind="image", github=gh,
+        content_base64=_b64(b"x"),
+        kind="image",
+        github=gh,
     )
     assert result["success"] is False
 
@@ -279,9 +309,14 @@ def test_upload_rejects_path_traversal_filename():
 def test_upload_rejects_bad_kind():
     gh = _FakeGithub()
     result = upload_delf_asset(
-        level="A2", variant="v", section="CE", test_id="t",
-        filename="x.webp", content_base64=_b64(b"x"),
-        kind="movie", github=gh,
+        level="A2",
+        variant="v",
+        section="CE",
+        test_id="t",
+        filename="x.webp",
+        content_base64=_b64(b"x"),
+        kind="movie",
+        github=gh,
     )
     assert result["success"] is False
 
@@ -292,15 +327,21 @@ def test_upload_rejects_bad_kind():
 
 
 def test_list_image_assets_filters_extension_and_directory():
-    gh = _FakeGithub({
-        "delf/a2/v/CE/assets/a.webp": b"",
-        "delf/a2/v/CE/assets/tp-04/q01/a.webp": b"",
-        "delf/a2/v/CE/assets/b.png": b"",
-        "delf/a2/v/CE/assets/c.txt": b"",  # filtered out
-        "delf/a2/v/CO/audio/x.mp3": b"",   # different dir
-    })
+    gh = _FakeGithub(
+        {
+            "delf/a2/v/CE/assets/a.webp": b"",
+            "delf/a2/v/CE/assets/tp-04/q01/a.webp": b"",
+            "delf/a2/v/CE/assets/b.png": b"",
+            "delf/a2/v/CE/assets/c.txt": b"",  # filtered out
+            "delf/a2/v/CO/audio/x.mp3": b"",  # different dir
+        }
+    )
     result = list_delf_assets(
-        level="A2", variant="v", section="CE", kind="image", github=gh,
+        level="A2",
+        variant="v",
+        section="CE",
+        kind="image",
+        github=gh,
     )
     assert result["success"] is True
     assert result["files"] == ["a.webp", "b.png", "tp-04/q01/a.webp"]
@@ -308,12 +349,18 @@ def test_list_image_assets_filters_extension_and_directory():
 
 
 def test_list_audio_assets_uses_audio_directory():
-    gh = _FakeGithub({
-        "delf/a2/v/CO/audio/DELF_TP_A2_Piste01.mp3": b"",
-        "delf/a2/v/CO/audio/DELF_TP_A2_Piste02.mp3": b"",
-    })
+    gh = _FakeGithub(
+        {
+            "delf/a2/v/CO/audio/DELF_TP_A2_Piste01.mp3": b"",
+            "delf/a2/v/CO/audio/DELF_TP_A2_Piste02.mp3": b"",
+        }
+    )
     result = list_delf_assets(
-        level="A2", variant="v", section="CO", kind="audio", github=gh,
+        level="A2",
+        variant="v",
+        section="CO",
+        kind="audio",
+        github=gh,
     )
     assert result["success"] is True
     assert len(result["files"]) == 2
@@ -322,7 +369,11 @@ def test_list_audio_assets_uses_audio_directory():
 def test_list_empty_directory_returns_empty_list():
     gh = _FakeGithub()
     result = list_delf_assets(
-        level="A2", variant="v", section="CE", kind="image", github=gh,
+        level="A2",
+        variant="v",
+        section="CE",
+        kind="image",
+        github=gh,
     )
     assert result["success"] is True
     assert result["files"] == []
@@ -331,7 +382,10 @@ def test_list_empty_directory_returns_empty_list():
 
 def test_list_rejects_bad_kind():
     result = list_delf_assets(
-        level="A2", variant="v", section="CE", kind="bogus",
+        level="A2",
+        variant="v",
+        section="CE",
+        kind="bogus",
         github=_FakeGithub(),
     )
     assert result["success"] is False
@@ -344,6 +398,7 @@ def test_list_rejects_bad_kind():
 
 def test_verify_returns_all_present_when_assets_match():
     import copy
+
     paper = copy.deepcopy(fixtures.VALID_CE_PAPER)
     # Inject an image option referencing assets/foo.webp
     paper["exercises"][0]["options"] = [
@@ -351,12 +406,18 @@ def test_verify_returns_all_present_when_assets_match():
         {"label": "b", "img_url": "assets/bar.webp", "desc": "y"},
     ]
     paper["exercises"][0]["correct_answer"] = 0
-    gh = _FakeGithub({
-        "delf/a2/v/CE/assets/foo.webp": b"",
-        "delf/a2/v/CE/assets/bar.webp": b"",
-    })
+    gh = _FakeGithub(
+        {
+            "delf/a2/v/CE/assets/foo.webp": b"",
+            "delf/a2/v/CE/assets/bar.webp": b"",
+        }
+    )
     result = verify_delf_asset_references(
-        level="A2", variant="v", section="CE", content=paper, github=gh,
+        level="A2",
+        variant="v",
+        section="CE",
+        content=paper,
+        github=gh,
     )
     assert result["success"] is True
     assert result["all_present"] is True
@@ -366,18 +427,25 @@ def test_verify_returns_all_present_when_assets_match():
 
 def test_verify_returns_all_present_for_nested_assets():
     import copy
+
     paper = copy.deepcopy(fixtures.VALID_CE_PAPER)
     paper["exercises"][0]["options"] = [
         {"label": "a", "img_url": "assets/tp-04/q01/a.webp", "desc": "x"},
         {"label": "b", "img_url": "assets/tp-04/q01/b.webp", "desc": "y"},
     ]
     paper["exercises"][0]["correct_answer"] = 0
-    gh = _FakeGithub({
-        "delf/a2/v/CE/assets/tp-04/q01/a.webp": b"",
-        "delf/a2/v/CE/assets/tp-04/q01/b.webp": b"",
-    })
+    gh = _FakeGithub(
+        {
+            "delf/a2/v/CE/assets/tp-04/q01/a.webp": b"",
+            "delf/a2/v/CE/assets/tp-04/q01/b.webp": b"",
+        }
+    )
     result = verify_delf_asset_references(
-        level="A2", variant="v", section="CE", content=paper, github=gh,
+        level="A2",
+        variant="v",
+        section="CE",
+        content=paper,
+        github=gh,
     )
     assert result["success"] is True
     assert result["all_present"] is True
@@ -386,6 +454,7 @@ def test_verify_returns_all_present_for_nested_assets():
 
 def test_verify_flags_missing_image_with_field_path():
     import copy
+
     paper = copy.deepcopy(fixtures.VALID_CE_PAPER)
     paper["exercises"][1]["questions"][0]["options"] = [
         {"label": "a", "img_url": "assets/q1-a.webp", "desc": "x"},
@@ -396,27 +465,37 @@ def test_verify_flags_missing_image_with_field_path():
     # exercise to pass schema validation
     gh = _FakeGithub({"delf/a2/v/CE/assets/q1-a.webp": b""})
     result = verify_delf_asset_references(
-        level="A2", variant="v", section="CE", content=paper, github=gh,
+        level="A2",
+        variant="v",
+        section="CE",
+        content=paper,
+        github=gh,
     )
     assert result["success"] is True
     assert result["all_present"] is False
     assert any(
-        m["value"] == "assets/MISSING.webp"
-        and "questions[0].options[1]" in m["field"]
+        m["value"] == "assets/MISSING.webp" and "questions[0].options[1]" in m["field"]
         for m in result["missing"]
     )
 
 
 def test_verify_checks_audio_filename_for_co_papers():
     import copy
+
     paper = copy.deepcopy(fixtures.VALID_CE_PAPER)
     paper["section"] = "CO"
     paper["audio_filename"] = "DELF_TP_A2_Piste28.mp3"
-    gh = _FakeGithub({
-        "delf/a2/v/CO/audio/DELF_TP_A2_Piste28.mp3": b"",
-    })
+    gh = _FakeGithub(
+        {
+            "delf/a2/v/CO/audio/DELF_TP_A2_Piste28.mp3": b"",
+        }
+    )
     result = verify_delf_asset_references(
-        level="A2", variant="v", section="CO", content=paper, github=gh,
+        level="A2",
+        variant="v",
+        section="CO",
+        content=paper,
+        github=gh,
     )
     assert result["success"] is True
     assert result["all_present"] is True
@@ -424,14 +503,21 @@ def test_verify_checks_audio_filename_for_co_papers():
 
 def test_verify_normalizes_audio_directory_prefix_for_co_papers():
     import copy
+
     paper = copy.deepcopy(fixtures.VALID_CE_PAPER)
     paper["section"] = "CO"
     paper["audio_filename"] = "audio/audio/DELF_TP_A2_Piste28.mp3"
-    gh = _FakeGithub({
-        "delf/a2/v/CO/audio/DELF_TP_A2_Piste28.mp3": b"",
-    })
+    gh = _FakeGithub(
+        {
+            "delf/a2/v/CO/audio/DELF_TP_A2_Piste28.mp3": b"",
+        }
+    )
     result = verify_delf_asset_references(
-        level="A2", variant="v", section="CO", content=paper, github=gh,
+        level="A2",
+        variant="v",
+        section="CO",
+        content=paper,
+        github=gh,
     )
     assert result["success"] is True
     assert result["all_present"] is True
@@ -439,26 +525,33 @@ def test_verify_normalizes_audio_directory_prefix_for_co_papers():
 
 def test_verify_flags_missing_audio_filename():
     import copy
+
     paper = copy.deepcopy(fixtures.VALID_CE_PAPER)
     paper["section"] = "CO"
     paper["audio_filename"] = "DELF_TP_A2_Piste99.mp3"
     gh = _FakeGithub()
     result = verify_delf_asset_references(
-        level="A2", variant="v", section="CO", content=paper, github=gh,
+        level="A2",
+        variant="v",
+        section="CO",
+        content=paper,
+        github=gh,
     )
     assert result["success"] is True
     assert result["all_present"] is False
     assert any(
-        m["field"] == "audio_filename"
-        and m["value"] == "DELF_TP_A2_Piste99.mp3"
+        m["field"] == "audio_filename" and m["value"] == "DELF_TP_A2_Piste99.mp3"
         for m in result["missing"]
     )
 
 
 def test_verify_rejects_malformed_content():
     result = verify_delf_asset_references(
-        level="A2", variant="v", section="CE",
-        content="{not json", github=_FakeGithub(),
+        level="A2",
+        variant="v",
+        section="CE",
+        content="{not json",
+        github=_FakeGithub(),
     )
     assert result["success"] is False
 
@@ -487,9 +580,11 @@ def test_migrate_legacy_assets_dry_run_plans_without_writes():
         status="active",
         github_path="delf/a2/v/CE/tp/tp-04.json",
     )
-    gh = _FakeGithub({
-        "delf/a2/v/CE/assets/tp04-q1-a.webp": b"legacy",
-    })
+    gh = _FakeGithub(
+        {
+            "delf/a2/v/CE/assets/tp04-q1-a.webp": b"legacy",
+        }
+    )
 
     result = migrate_legacy_image_assets(
         level="A2",
@@ -529,10 +624,12 @@ def test_migrate_legacy_assets_copies_and_updates_json():
         status="active",
         github_path="delf/a2/v/CE/tp/tp-04.json",
     )
-    gh = _FakeGithub({
-        "delf/a2/v/CE/assets/tp04-q1-a.webp": b"a",
-        "delf/a2/v/CE/assets/tp04-q1-b.webp": b"b",
-    })
+    gh = _FakeGithub(
+        {
+            "delf/a2/v/CE/assets/tp04-q1-a.webp": b"a",
+            "delf/a2/v/CE/assets/tp04-q1-b.webp": b"b",
+        }
+    )
 
     result = migrate_legacy_image_assets(
         level="A2",
@@ -579,10 +676,12 @@ def test_migrate_legacy_assets_converts_png_to_webp_and_updates_json():
         status="active",
         github_path="delf/a2/v/CE/tp/tp-04.json",
     )
-    gh = _FakeGithub({
-        "delf/a2/v/CE/assets/tp04-q1-a.png": _png_bytes(),
-        "delf/a2/v/CE/assets/tp-04/q01/b.png": _png_bytes(),
-    })
+    gh = _FakeGithub(
+        {
+            "delf/a2/v/CE/assets/tp04-q1-a.png": _png_bytes(),
+            "delf/a2/v/CE/assets/tp-04/q01/b.png": _png_bytes(),
+        }
+    )
 
     result = migrate_legacy_image_assets(
         level="A2",
@@ -628,9 +727,11 @@ def test_migrate_legacy_assets_falls_back_when_json_webp_source_is_png():
         status="active",
         github_path="delf/a2/tout-public-a2/CE/tp/tp-06.json",
     )
-    gh = _FakeGithub({
-        "delf/a2/tout-public-a2/CE/assets/tp06-q4-a.png": _png_bytes(),
-    })
+    gh = _FakeGithub(
+        {
+            "delf/a2/tout-public-a2/CE/assets/tp06-q4-a.png": _png_bytes(),
+        }
+    )
 
     result = migrate_legacy_image_assets(
         level="A2",
@@ -650,9 +751,9 @@ def test_migrate_legacy_assets_falls_back_when_json_webp_source_is_png():
     assert updated_ref["source_resolution"] == "extension_fallback"
     assert updated_ref["resolved_source_ref"] == "assets/tp06-q4-a.png"
     assert updated_ref["action"] == "converted_to_webp"
-    assert gh.files[
-        "delf/a2/tout-public-a2/CE/assets/tp-06/q01/a.webp"
-    ].startswith(b"RIFF")
+    assert gh.files["delf/a2/tout-public-a2/CE/assets/tp-06/q01/a.webp"].startswith(
+        b"RIFF"
+    )
 
     updated_json = json.loads(gh.files["delf/a2/tout-public-a2/CE/tp/tp-06.json"])
     option = updated_json["exercises"][1]["questions"][0]["options"][0]

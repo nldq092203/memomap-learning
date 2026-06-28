@@ -4,7 +4,6 @@ from src.shared.numbers.blueprints import NumberType
 from src.shared.numbers.session_engine import NumbersSessionGenerator
 from src.config import Config
 
-
 # Singleton generator (pure sampling, no AI)
 _GENERATOR: NumbersSessionGenerator | None = None
 

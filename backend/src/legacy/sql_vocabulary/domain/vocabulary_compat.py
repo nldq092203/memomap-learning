@@ -13,7 +13,6 @@ from src.domain.vocabulary_mongo import MongoVocabularyRepository
 from src.legacy.sql_vocabulary.domain.db_queries import VocabularyQueries
 from src.legacy.sql_vocabulary.domain.services.srs import SRSService
 
-
 MONGO_ID_PREFIX = "mongo:"
 SQL_ID_PREFIX = "sql:"
 
@@ -166,15 +165,12 @@ class VocabularyCompatibilityService:
             )
         ]
         mongo_items = [
-            self._mongo_card_to_unified(card)
-            for card in mongo_page["items"]
+            self._mongo_card_to_unified(card) for card in mongo_page["items"]
         ]
 
         items = self._sort_cards([*mongo_items, *sql_items])
         sql_filtered_total = (
-            len(sql_items)
-            if status or tags or source_exercise_id
-            else sql_total
+            len(sql_items) if status or tags or source_exercise_id else sql_total
         )
         total = int(mongo_page["total"]) + sql_filtered_total
         return {

@@ -17,7 +17,9 @@ class AnalyticsService:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_vocab_stats(self, user_id: str, language: str | None = None) -> dict[str, Any]:
+    def get_vocab_stats(
+        self, user_id: str, language: str | None = None
+    ) -> dict[str, Any]:
         """Get vocabulary statistics."""
         return VocabularyQueries.get_stats(self.db, user_id, language)
 

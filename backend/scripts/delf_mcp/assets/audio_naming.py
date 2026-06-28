@@ -11,7 +11,6 @@ from typing import Any
 
 from src.shared.delf_practice.github_manager import GitHubDelfManager
 
-
 # Known per-level prefix conventions. Add new levels here as their audio
 # packs land in GitHub.
 _AUDIO_PREFIX_BY_LEVEL: dict[str, str] = {

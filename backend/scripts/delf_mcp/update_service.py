@@ -14,9 +14,7 @@ from src.shared.delf_practice.test_paper_repository import DelfTestPaperReposito
 from scripts.delf_mcp.validation import validate_content
 
 
-def _build_preview_url(
-    level: str, variant: str, section: str, test_id: str
-) -> str:
+def _build_preview_url(level: str, variant: str, section: str, test_id: str) -> str:
     origin = getattr(Config, "WEB_ORIGIN", "http://localhost:3000").rstrip("/")
     return f"{origin}/learning/delf-practice/{level}/{variant}/{section}/{test_id}"
 

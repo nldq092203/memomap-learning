@@ -5,7 +5,6 @@ from datetime import datetime, timezone
 from src.shared.numbers.models.stored import NumberDictationExercise
 from src.infra.drive.repository import DriveRepository
 
-
 ROOT_FOLDER = "NumbersDictation"
 MANIFEST_FILENAME = "manifest.json"
 

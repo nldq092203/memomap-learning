@@ -11,7 +11,9 @@ import os
 import sys
 
 _BACKEND_DIR = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    )
 )
 if _BACKEND_DIR not in sys.path:
     sys.path.insert(0, _BACKEND_DIR)
@@ -50,17 +52,20 @@ def test_analyze_ce_book_end_to_end(tmp_path):
     exercise_pdf = str(tmp_path / "book.pdf")
     answer_pdf = str(tmp_path / "answers.pdf")
 
-    _write_pdf(exercise_pdf, [
-        (
-            "Chapitre 1\n"
-            "Activite 1\n"
-            "Comprehension ecrite\n"
-            "Lisez le texte.\n\n"
-            "Paris est la capitale.\n\n"
-            "1. Quelle est la capitale ?\n"
-            "a) Lyon\nb) Paris\nc) Marseille"
-        ),
-    ])
+    _write_pdf(
+        exercise_pdf,
+        [
+            (
+                "Chapitre 1\n"
+                "Activite 1\n"
+                "Comprehension ecrite\n"
+                "Lisez le texte.\n\n"
+                "Paris est la capitale.\n\n"
+                "1. Quelle est la capitale ?\n"
+                "a) Lyon\nb) Paris\nc) Marseille"
+            ),
+        ],
+    )
     _write_pdf(answer_pdf, ["Activite 1\n1. b"])
 
     out = analyze_delf_book_pdf(
@@ -88,19 +93,24 @@ def test_analyze_ce_book_end_to_end(tmp_path):
 
 def test_analyze_co_book_resolves_audio(tmp_path):
     exercise_pdf = str(tmp_path / "book.pdf")
-    _write_pdf(exercise_pdf, [
-        (
-            "Activite 1\n"
-            "Comprehension orale\n"
-            "Ecoutez la Piste 5.\n\n"
-            "1. Question ?\n"
-            "a) Oui\nb) Non"
-        ),
-    ])
+    _write_pdf(
+        exercise_pdf,
+        [
+            (
+                "Activite 1\n"
+                "Comprehension orale\n"
+                "Ecoutez la Piste 5.\n\n"
+                "1. Question ?\n"
+                "a) Oui\nb) Non"
+            ),
+        ],
+    )
 
-    github = _FakeGithub({
-        "delf/a2/tout-public-a2/CO/audio/DELF_TP_A2_Piste05.mp3",
-    })
+    github = _FakeGithub(
+        {
+            "delf/a2/tout-public-a2/CO/audio/DELF_TP_A2_Piste05.mp3",
+        }
+    )
     out = analyze_delf_book_pdf(
         exercise_pdf_path=exercise_pdf,
         answer_pdf_path=None,
@@ -119,15 +129,18 @@ def test_analyze_co_book_resolves_audio(tmp_path):
 
 def test_analyze_co_warns_when_audio_missing(tmp_path):
     exercise_pdf = str(tmp_path / "book.pdf")
-    _write_pdf(exercise_pdf, [
-        (
-            "Activite 1\n"
-            "Comprehension orale\n"
-            "Ecoutez la Piste 99.\n\n"
-            "1. Question ?\n"
-            "a) Oui\nb) Non"
-        ),
-    ])
+    _write_pdf(
+        exercise_pdf,
+        [
+            (
+                "Activite 1\n"
+                "Comprehension orale\n"
+                "Ecoutez la Piste 99.\n\n"
+                "1. Question ?\n"
+                "a) Oui\nb) Non"
+            ),
+        ],
+    )
 
     github = _FakeGithub(set())  # nothing exists
     out = analyze_delf_book_pdf(
@@ -183,16 +196,19 @@ def test_analyze_auto_ocrs_scanned_pdf(tmp_path, monkeypatch):
         assert language == "fra"
         assert force_ocr is True
         os.makedirs(os.path.dirname(output_pdf_path), exist_ok=True)
-        _write_pdf(output_pdf_path, [
-            (
-                "Activite 1\n"
-                "Comprehension ecrite\n"
-                "Lisez le texte.\n\n"
-                "Paris est la capitale.\n\n"
-                "1. Quelle est la capitale ?\n"
-                "a) Lyon\nb) Paris\nc) Marseille"
-            ),
-        ])
+        _write_pdf(
+            output_pdf_path,
+            [
+                (
+                    "Activite 1\n"
+                    "Comprehension ecrite\n"
+                    "Lisez le texte.\n\n"
+                    "Paris est la capitale.\n\n"
+                    "1. Quelle est la capitale ?\n"
+                    "a) Lyon\nb) Paris\nc) Marseille"
+                ),
+            ],
+        )
         return OcrResult(
             output_pdf_path=output_pdf_path,
             command=["ocrmypdf", "-l", language, input_pdf_path, output_pdf_path],
@@ -268,27 +284,35 @@ def test_analyze_co_with_transcript_attaches_to_manifest(tmp_path):
     exercise_pdf = str(tmp_path / "book.pdf")
     answer_pdf = str(tmp_path / "answers.pdf")
 
-    _write_pdf(exercise_pdf, [
-        (
-            "Activite 1\n"
-            "Comprehension orale\n"
-            "Ecoutez la Piste 3.\n\n"
-            "1. Question ?\n"
-            "a) Oui\nb) Non"
-        ),
-    ])
-    _write_pdf(answer_pdf, [
-        (
-            "Activite 1\n1. a\n\n"
-            "Transcriptions\n\n"
-            "Activite 1\n"
-            "Bonjour a tous, voici l'enregistrement complet pour cette activite."
-        ),
-    ])
+    _write_pdf(
+        exercise_pdf,
+        [
+            (
+                "Activite 1\n"
+                "Comprehension orale\n"
+                "Ecoutez la Piste 3.\n\n"
+                "1. Question ?\n"
+                "a) Oui\nb) Non"
+            ),
+        ],
+    )
+    _write_pdf(
+        answer_pdf,
+        [
+            (
+                "Activite 1\n1. a\n\n"
+                "Transcriptions\n\n"
+                "Activite 1\n"
+                "Bonjour a tous, voici l'enregistrement complet pour cette activite."
+            ),
+        ],
+    )
 
-    github = _FakeGithub({
-        "delf/a2/tout-public-a2/CO/audio/DELF_TP_A2_Piste03.mp3",
-    })
+    github = _FakeGithub(
+        {
+            "delf/a2/tout-public-a2/CO/audio/DELF_TP_A2_Piste03.mp3",
+        }
+    )
 
     out = analyze_delf_book_pdf(
         exercise_pdf_path=exercise_pdf,

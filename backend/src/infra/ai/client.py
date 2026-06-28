@@ -81,9 +81,7 @@ class AIClient:
                     text = getattr(resp, "text", None)
                     if not text:
                         try:
-                            text = _extract_text(
-                                getattr(resp, "to_dict", lambda: {})()
-                            )
+                            text = _extract_text(getattr(resp, "to_dict", lambda: {})())
                         except Exception:
                             text = str(resp)
                     return text
@@ -112,6 +110,7 @@ class AIClient:
             data = json.loads(s)
         except Exception:
             import re
+
             m = re.search(r"\{.*\}", s, flags=re.S)
             if not m:
                 raise ValueError("AI did not return JSON object")
@@ -119,4 +118,3 @@ class AIClient:
         if not isinstance(data, dict):
             raise ValueError("AI returned non-object JSON")
         return data
-

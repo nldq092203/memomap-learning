@@ -40,9 +40,13 @@ class GitHubNumbersExerciseRepository(NumbersExerciseRepository):
         timeout: float = 10.0,
     ) -> None:
         if not base_url:
-            raise ValueError("base_url must be provided for GitHubNumbersExerciseRepository")
+            raise ValueError(
+                "base_url must be provided for GitHubNumbersExerciseRepository"
+            )
         if not version:
-            raise ValueError("version must be provided for GitHubNumbersExerciseRepository")
+            raise ValueError(
+                "version must be provided for GitHubNumbersExerciseRepository"
+            )
 
         self.base_url = base_url.rstrip("/")
         self.version = version

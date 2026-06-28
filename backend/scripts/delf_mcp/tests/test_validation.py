@@ -116,9 +116,7 @@ def test_correct_answer_out_of_range_flat():
 def test_correct_answer_out_of_range_nested():
     result = validate_content(fixtures.paper_correct_answer_out_of_range_nested())
     assert result["valid"] is False
-    errs = _errors_for_field(
-        result, "exercises[1].questions[0].correct_answer"
-    )
+    errs = _errors_for_field(result, "exercises[1].questions[0].correct_answer")
     assert errs
 
 
@@ -156,9 +154,9 @@ def test_unaccented_french_text_returns_quality_warning():
 
 def test_accented_french_text_has_no_warning_for_that_phrase():
     payload = fixtures.clone(fixtures.VALID_CE_PAPER)
-    payload["exercises"][0]["question_text"] = (
-        "Lisez le texte et choisissez la bonne r\u00e9ponse."
-    )
+    payload["exercises"][0][
+        "question_text"
+    ] = "Lisez le texte et choisissez la bonne r\u00e9ponse."
 
     result = validate_content(payload)
 

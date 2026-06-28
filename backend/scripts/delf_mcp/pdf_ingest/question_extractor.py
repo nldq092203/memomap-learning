@@ -23,7 +23,6 @@ from typing import Any
 from . import warnings as warning_codes
 from .manifest import ImageOptionCrop
 
-
 # Default points-per-question when the PDF doesn't expose values. The plan
 # (D9) commits to 1.0 across v1.
 DEFAULT_POINTS = 1.0
@@ -136,7 +135,11 @@ def _extract_questions(text: str) -> list[ExtractedQuestion]:
     questions: list[ExtractedQuestion] = []
     for idx, match in enumerate(question_matches):
         start = match.end()
-        end = question_matches[idx + 1].start() if idx + 1 < len(question_matches) else len(text)
+        end = (
+            question_matches[idx + 1].start()
+            if idx + 1 < len(question_matches)
+            else len(text)
+        )
         body = text[start:end]
 
         question_text = match.group(2).strip()
@@ -228,9 +231,7 @@ def _build_flat_exercise(
 ) -> dict[str, Any]:
     image_opts: list[dict[str, Any]] = []
     if crops_by_question:
-        image_opts = _image_options_for_question(
-            crops_by_question, question.number
-        )
+        image_opts = _image_options_for_question(crops_by_question, question.number)
 
     body: dict[str, Any] = {
         "id": exercise_id,

@@ -17,7 +17,6 @@ from typing import Any
 
 from .pdf_reader import PageContent
 
-
 _ACTIVITY_HEADER = re.compile(
     r"activit[ée]\s+(\d{1,3})\b",
     re.IGNORECASE,
@@ -64,7 +63,7 @@ def _scope_to_transcripts_section(text: str) -> str:
     for pattern in _TRANSCRIPT_SECTION_HEADERS:
         match = pattern.search(text)
         if match is not None:
-            return text[match.start():]
+            return text[match.start() :]
     return text
 
 
@@ -108,10 +107,12 @@ def _split_extra_documents(
         content = block_text[start:end].strip()
         if not content:
             continue
-        extras.append({
-            "id": f"act-{activity_number}-doc-{doc_number}",
-            "content": content,
-        })
+        extras.append(
+            {
+                "id": f"act-{activity_number}-doc-{doc_number}",
+                "content": content,
+            }
+        )
     return main_text, extras
 
 
@@ -138,13 +139,15 @@ def parse_transcript_pdf(pages: list[PageContent]) -> Transcripts:
         if len(main_text) < 15 and not extra_docs:
             continue
         if activity_number in main:
-            warnings.append({
-                "code": "ambiguous_transcript",
-                "message": (
-                    f"Activity {activity_number}: transcript block appeared "
-                    "more than once; keeping the first."
-                ),
-            })
+            warnings.append(
+                {
+                    "code": "ambiguous_transcript",
+                    "message": (
+                        f"Activity {activity_number}: transcript block appeared "
+                        "more than once; keeping the first."
+                    ),
+                }
+            )
             continue
         if main_text:
             main[activity_number] = main_text

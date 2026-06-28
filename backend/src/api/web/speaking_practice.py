@@ -20,13 +20,18 @@ from src.utils.response_builder import ResponseBuilder
 from src.config import Config
 from src.extensions import logger
 
+
 def _is_guest_mode() -> bool:
     raw = (request.args.get("guest_mode") or "").strip().lower()
     return raw in ("1", "true", "yes")
 
 
-def _filter_guest_preview_list(items: list[dict[str, Any]], limit: int = 2) -> list[dict[str, Any]]:
-    flagged = [item for item in items if isinstance(item, dict) and item.get("guest_preview")]
+def _filter_guest_preview_list(
+    items: list[dict[str, Any]], limit: int = 2
+) -> list[dict[str, Any]]:
+    flagged = [
+        item for item in items if isinstance(item, dict) and item.get("guest_preview")
+    ]
     if flagged:
         return flagged[:limit]
     return items[:limit]
@@ -88,7 +93,9 @@ def _resolve_guest_topic_access(
         try:
             manifest = repo.get_manifest(topic_id)
         except Exception as e:
-            logger.warning(f"[SPEAKING-PRACTICE] Could not fetch manifest for {topic_id}: {e}")
+            logger.warning(
+                f"[SPEAKING-PRACTICE] Could not fetch manifest for {topic_id}: {e}"
+            )
             continue
 
         subtopics = manifest.get("subtopics", [])
@@ -146,21 +153,26 @@ def speaking_practice_create(user_id: str):
 
 # ==================== Retrieval Endpoints (GitHub-backed) ====================
 
+
 def speaking_practice_list_topics():
     """
     GET /web/speaking-practice/topics
-    
+
     List all available speaking practice topics from GitHub.
     No authentication required (public content).
     """
     repo = SpeakingPracticeRepository(base_url=Config.NUMBERS_AUDIO_BASE_URL)
-    
+
     try:
         guest_access = None
         if _is_guest_mode():
             guest_access, _ = _resolve_guest_topic_access(repo)
 
-        topic_ids = list(guest_access.keys()) if guest_access is not None else repo.list_topics()
+        topic_ids = (
+            list(guest_access.keys())
+            if guest_access is not None
+            else repo.list_topics()
+        )
 
         topics = []
         for topic_id in topic_ids:
@@ -171,17 +183,23 @@ def speaking_practice_list_topics():
                     else repo.get_manifest(topic_id)
                 )
                 subtopics = manifest.get("subtopics", [])
-                topics.append({
-                    "id": topic_id,
-                    "title": manifest.get("title", topic_id.replace("_", " ").title()),
-                    "subtopics_count": len(subtopics),
-                })
+                topics.append(
+                    {
+                        "id": topic_id,
+                        "title": manifest.get(
+                            "title", topic_id.replace("_", " ").title()
+                        ),
+                        "subtopics_count": len(subtopics),
+                    }
+                )
             except Exception as e:
-                logger.warning(f"[SPEAKING-PRACTICE] Could not fetch manifest for {topic_id}: {e}")
+                logger.warning(
+                    f"[SPEAKING-PRACTICE] Could not fetch manifest for {topic_id}: {e}"
+                )
                 continue
-        
+
         return ResponseBuilder().success(data={"topics": topics}).build()
-    
+
     except Exception as e:
         raise BadRequestError(f"Failed to list topics: {e}")
 
@@ -189,12 +207,12 @@ def speaking_practice_list_topics():
 def speaking_practice_get_manifest(topic_id: str):
     """
     GET /web/speaking-practice/topics/{topic_id}
-    
+
     Get manifest for a specific topic, listing all subtopics.
     No authentication required (public content).
     """
     repo = SpeakingPracticeRepository(base_url=Config.NUMBERS_AUDIO_BASE_URL)
-    
+
     try:
         if _is_guest_mode():
             guest_access, _ = _resolve_guest_topic_access(repo)
@@ -205,7 +223,7 @@ def speaking_practice_get_manifest(topic_id: str):
         else:
             manifest = repo.get_manifest(topic_id)
         return ResponseBuilder().success(data=manifest).build()
-    
+
     except requests.HTTPError as e:
         if e.response.status_code == 404:
             raise BadRequestError(f"Topic '{topic_id}' not found")
@@ -217,18 +235,18 @@ def speaking_practice_get_manifest(topic_id: str):
 def speaking_practice_get_content():
     """
     GET /web/speaking-practice/content?path={contentPath}
-    
+
     Get practice content from a specific path.
     No authentication required (public content).
-    
+
     Example: ?path=speaking-practice/alimentation/modes_consommation/content.json
     """
     content_path = request.args.get("path", "").strip()
     if not content_path:
         raise BadRequestError("path parameter is required")
-    
+
     repo = SpeakingPracticeRepository(base_url=Config.NUMBERS_AUDIO_BASE_URL)
-    
+
     try:
         if _is_guest_mode():
             topic_id = _extract_topic_id_from_content_path(content_path)
@@ -245,7 +263,7 @@ def speaking_practice_get_content():
             if isinstance(items, list):
                 content = {**content, "items": _filter_guest_preview_list(items)}
         return ResponseBuilder().success(data=content).build()
-    
+
     except requests.HTTPError as e:
         if e.response.status_code == 404:
             raise BadRequestError(f"Content not found at path: {content_path}")
@@ -257,21 +275,23 @@ def speaking_practice_get_content():
 def speaking_practice_stream_audio():
     """
     GET /web/speaking-practice/audio?path={audioPath}
-    
+
     Stream audio file from GitHub.
     No authentication required (public content).
-    
+
     Example: ?path=speaking-practice/alimentation/modes_consommation/audio/intro.mp3
     """
     audio_path = request.args.get("path", "").strip()
     if not audio_path:
         raise BadRequestError("path parameter is required")
-    
+
     repo = SpeakingPracticeRepository(base_url=Config.NUMBERS_AUDIO_BASE_URL)
-    
+
     try:
         if _is_guest_mode():
-            topic_id, subtopic_id = _extract_topic_and_subtopic_from_audio_path(audio_path)
+            topic_id, subtopic_id = _extract_topic_and_subtopic_from_audio_path(
+                audio_path
+            )
             guest_access, _ = _resolve_guest_topic_access(repo)
             guest_entry = guest_access.get(topic_id)
             if not guest_entry:
@@ -282,7 +302,7 @@ def speaking_practice_stream_audio():
                 raise NotFoundError("Audio not available in guest mode")
         audio_bytes = repo.get_audio(audio_path)
         return Response(audio_bytes, mimetype="audio/mpeg")
-    
+
     except requests.HTTPError as e:
         if e.response.status_code == 404:
             raise BadRequestError(f"Audio file not found at path: {audio_path}")
@@ -336,9 +356,7 @@ def speaking_practice_admin_mark_guest_preview(user_id: str):
         raise BadRequestError("Invalid manifest: subtopics must be a list")
 
     selected_subtopics = [
-        subtopic
-        for subtopic in subtopics
-        if isinstance(subtopic, dict)
+        subtopic for subtopic in subtopics if isinstance(subtopic, dict)
     ][:subtopic_count]
     selected_subtopic_ids = {
         str(subtopic.get("id"))
@@ -394,7 +412,9 @@ def speaking_practice_admin_mark_guest_preview(user_id: str):
             continue
         except Exception as e:
             if subtopic_id in selected_subtopic_ids:
-                raise BadRequestError(f"Failed to fetch content for subtopic '{subtopic_id}': {e}")
+                raise BadRequestError(
+                    f"Failed to fetch content for subtopic '{subtopic_id}': {e}"
+                )
             logger.warning(
                 "[SPEAKING-PRACTICE] Skipping guest preview update for %s: %s",
                 content_path,
@@ -410,11 +430,15 @@ def speaking_practice_admin_mark_guest_preview(user_id: str):
                 )
             continue
 
-        selected_item_ids = {
-            str(item.get("id"))
-            for item in items[:item_count]
-            if isinstance(item, dict) and str(item.get("id") or "").strip()
-        } if subtopic_id in selected_subtopic_ids else set()
+        selected_item_ids = (
+            {
+                str(item.get("id"))
+                for item in items[:item_count]
+                if isinstance(item, dict) and str(item.get("id") or "").strip()
+            }
+            if subtopic_id in selected_subtopic_ids
+            else set()
+        )
 
         normalized_items: list[dict[str, Any]] = []
         for item in items:
@@ -438,19 +462,25 @@ def speaking_practice_admin_mark_guest_preview(user_id: str):
         if subtopic_id in selected_subtopic_ids:
             content_item_counts[content_path] = len(selected_item_ids)
 
-    return ResponseBuilder().success(
-        data={
-            "topic_id": topic_id,
-            "subtopic_count": subtopic_count,
-            "item_count": item_count,
-            "selected_subtopic_ids": list(selected_subtopic_ids),
-            "updated_subtopic_ids": updated_subtopic_ids,
-            "selected_content_paths": selected_content_paths,
-            "updated_content_paths": updated_content_paths,
-            "content_item_counts": content_item_counts,
-            "manifest_github_url": manifest_result.get("content", {}).get("html_url"),
-        }
-    ).build()
+    return (
+        ResponseBuilder()
+        .success(
+            data={
+                "topic_id": topic_id,
+                "subtopic_count": subtopic_count,
+                "item_count": item_count,
+                "selected_subtopic_ids": list(selected_subtopic_ids),
+                "updated_subtopic_ids": updated_subtopic_ids,
+                "selected_content_paths": selected_content_paths,
+                "updated_content_paths": updated_content_paths,
+                "content_item_counts": content_item_counts,
+                "manifest_github_url": manifest_result.get("content", {}).get(
+                    "html_url"
+                ),
+            }
+        )
+        .build()
+    )
 
 
 __all__ = [

@@ -11,7 +11,6 @@ from typing import Any, Literal
 from src.domain.errors import ResourceNotFoundError
 from src.domain.vocabulary_mongo import MongoVocabularyRepository
 
-
 Grade = Literal["again", "hard", "good", "easy"]
 
 
@@ -135,8 +134,12 @@ class FSRSModel:
                 base_grow = (1 - state.difficulty) * grow
                 R_factor = 1.0 + (1.0 - R) * 0.5
                 new_stability = state.stability * (1 + base_grow * R_factor)
-                new_stability = max(p.min_stability, min(new_stability, p.max_stability))
-                new_difficulty = max(p.min_difficulty, min(state.difficulty + d_delta, p.max_difficulty))
+                new_stability = max(
+                    p.min_stability, min(new_stability, p.max_stability)
+                )
+                new_difficulty = max(
+                    p.min_difficulty, min(state.difficulty + d_delta, p.max_difficulty)
+                )
                 new_reps = state.reps + 1
                 new_lapses = state.lapses
 

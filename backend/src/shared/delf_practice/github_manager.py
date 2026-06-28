@@ -69,9 +69,7 @@ class GitHubDelfManager(GitHubContentManager):
         if not isinstance(entries, list):
             return []
 
-        allowed = (
-            tuple(ext.lower() for ext in extensions) if extensions else None
-        )
+        allowed = tuple(ext.lower() for ext in extensions) if extensions else None
         names: list[str] = []
         for entry in entries:
             if entry.get("type") != "file":
@@ -96,9 +94,7 @@ class GitHubDelfManager(GitHubContentManager):
         A missing directory returns an empty list.
         """
         root = directory_path.strip("/")
-        allowed = (
-            tuple(ext.lower() for ext in extensions) if extensions else None
-        )
+        allowed = tuple(ext.lower() for ext in extensions) if extensions else None
         results: list[str] = []
 
         def walk(path: str, rel_prefix: str = "") -> None:
@@ -160,7 +156,9 @@ class GitHubDelfManager(GitHubContentManager):
         try:
             return base64.b64decode(encoded.replace("\n", ""), validate=False)
         except (binascii.Error, ValueError) as exc:
-            raise ValueError(f"Could not decode GitHub file content for {file_path}") from exc
+            raise ValueError(
+                f"Could not decode GitHub file content for {file_path}"
+            ) from exc
 
     def create_file(
         self,

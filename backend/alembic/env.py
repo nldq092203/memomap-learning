@@ -3,7 +3,7 @@ from logging.config import fileConfig
 from alembic import context
 from src.config import Config
 from src.infra.db.connection import engine
-from src.infra.db.orm import Base  
+from src.infra.db.orm import Base
 
 config = context.config
 

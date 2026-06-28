@@ -70,9 +70,7 @@ def test_directory_lowercases_level():
 
 
 def test_resolve_returns_exists_true_when_file_present():
-    fake = _FakeGithub({
-        "delf/a2/tout-public-a2/CO/audio/DELF_TP_A2_Piste28.mp3"
-    })
+    fake = _FakeGithub({"delf/a2/tout-public-a2/CO/audio/DELF_TP_A2_Piste28.mp3"})
     result = resolve_delf_audio_filename(
         level="A2",
         variant="tout-public-a2",

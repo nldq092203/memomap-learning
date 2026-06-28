@@ -191,42 +191,42 @@ export function Flashcard({
     <>
     <div className="relative flex-1 flex items-center justify-center min-h-0 w-full p-2 md:p-4">
       <Card
-        className={`w-full ${maxWidthClass} h-[520px] max-h-full cursor-pointer border border-white/60 bg-surface-gradient-strong
-          shadow-[0_20px_60px_-32px_rgba(15,23,42,0.28)] transition-all duration-300 hover:shadow-[0_24px_70px_-36px_rgba(15,23,42,0.32)]
+        className={`w-full ${maxWidthClass} h-[520px] max-h-full cursor-pointer border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/95
+          shadow-[0_20px_60px_-32px_rgba(74,51,35,0.34)] transition-all duration-300 hover:shadow-[0_24px_70px_-36px_rgba(74,51,35,0.38)]
           relative overflow-hidden rounded-[28px] backdrop-blur
         `}
         onClick={onFlip}
       >
-        <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top,rgba(52,211,153,0.08),transparent_70%)]" />
+        <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top,rgba(164,141,120,0.14),transparent_70%)]" />
 
         {/* Action Buttons (Top Right) */}
         <div className="absolute top-4 right-4 z-20 flex gap-2">
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-full border border-white/60 bg-background/70 backdrop-blur-sm hover:bg-background"
+            className="h-9 w-9 rounded-full border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/80 text-[var(--vintage-muted-ink)] backdrop-blur-sm hover:bg-[var(--vintage-porcelain-mist)]"
             onClick={handleSpeak}
           >
-            <Volume2 className={`h-4 w-4 ${isSpeaking ? "text-primary" : "text-muted-foreground"}`} />
+            <Volume2 className={`h-4 w-4 ${isSpeaking ? "text-[var(--vintage-desert-rock)]" : "text-[var(--vintage-muted-ink)]"}`} />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-full border border-white/60 bg-background/70 backdrop-blur-sm hover:bg-background"
+            className="h-9 w-9 rounded-full border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/80 text-[var(--vintage-muted-ink)] backdrop-blur-sm hover:bg-[var(--vintage-porcelain-mist)]"
             onClick={handleCopy}
           >
-            <Copy className="h-4 w-4 text-muted-foreground" />
+            <Copy className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-full border border-white/60 bg-background/70 backdrop-blur-sm hover:bg-background"
+            className="h-9 w-9 rounded-full border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/80 text-[var(--vintage-muted-ink)] backdrop-blur-sm hover:bg-[var(--vintage-porcelain-mist)]"
             onClick={e => {
               e.stopPropagation()
               onInfo()
             }}
           >
-            <Info className="h-4 w-4 text-muted-foreground" />
+            <Info className="h-4 w-4" />
           </Button>
         </div>
 
@@ -238,11 +238,11 @@ export function Flashcard({
           >
             <div className="absolute inset-0 flex flex-col justify-center px-8 py-10 text-center [backface-visibility:hidden] md:px-12">
               <div className="mx-auto flex max-w-3xl flex-col items-center">
-                <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.26em] text-slate-500">
+                <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.26em] text-[var(--vintage-desert-rock)]">
                   {direction === "word_to_translation" ? language : "Traduction"}
                 </p>
                 <div className="flex items-start justify-center gap-3">
-                  <h2 className={`${getFontSizeClass(questionText, false)} font-semibold text-slate-800 leading-tight`}>
+                  <h2 className={`${getFontSizeClass(questionText, false)} font-semibold text-[var(--vintage-ink)] leading-tight`}>
                     {questionText}
                   </h2>
                   <button
@@ -251,14 +251,14 @@ export function Flashcard({
                       e.stopPropagation()
                       setShowAiTutor(true)
                     }}
-                    className="mt-2 inline-flex h-10 w-10 items-center justify-center rounded-full border border-primary/15 bg-primary/5 text-primary transition hover:bg-primary/10"
+                    className="mt-2 inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-cream)] text-[var(--vintage-desert-rock)] transition hover:bg-[var(--vintage-soft-sandstone)]"
                     aria-label="Ouvrir le tuteur IA"
                   >
                     <Sparkles className="h-4 w-4" />
                   </button>
                 </div>
                 {!isFlipped && (
-                  <p className="mt-8 text-sm text-slate-500">
+                  <p className="mt-8 text-sm text-[var(--vintage-muted-ink)]">
                     Appuyez pour révéler la réponse
                   </p>
                 )}
@@ -267,13 +267,13 @@ export function Flashcard({
 
             <div className="absolute inset-0 flex [transform:rotateY(180deg)] flex-col justify-between px-8 py-10 [backface-visibility:hidden] md:px-12">
               <div className="flex h-full flex-col">
-                <div className="mx-auto mb-6 h-1 w-16 rounded-full bg-slate-200" />
+                <div className="mx-auto mb-6 h-1 w-16 rounded-full bg-[var(--vintage-soft-sandstone)]" />
                 <div className="mb-6 text-center">
-                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.26em] text-slate-500">
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.26em] text-[var(--vintage-desert-rock)]">
                     Réponse
                   </p>
                   <div className="flex items-start justify-center gap-3">
-                    <p className={`${getFontSizeClass(answerText, true)} font-semibold text-slate-800 leading-relaxed`}>
+                    <p className={`${getFontSizeClass(answerText, true)} font-semibold text-[var(--vintage-ink)] leading-relaxed`}>
                       {answerText}
                     </p>
                     <button
@@ -282,7 +282,7 @@ export function Flashcard({
                         e.stopPropagation()
                         setShowAiTutor(true)
                       }}
-                      className="mt-1 inline-flex h-10 w-10 items-center justify-center rounded-full border border-primary/15 bg-primary/5 text-primary transition hover:bg-primary/10"
+                      className="mt-1 inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-cream)] text-[var(--vintage-desert-rock)] transition hover:bg-[var(--vintage-soft-sandstone)]"
                       aria-label="Ouvrir le tuteur IA"
                     >
                       <Sparkles className="h-4 w-4" />
@@ -290,30 +290,30 @@ export function Flashcard({
                   </div>
                 </div>
 
-                <div className="mx-auto grid w-full max-w-2xl gap-5 rounded-[24px] border border-slate-200 bg-white/80 px-5 py-5 shadow-sm md:grid-cols-[1.2fr_0.8fr]">
+                <div className="mx-auto grid w-full max-w-2xl gap-5 rounded-[24px] border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-porcelain-mist)]/70 px-5 py-5 shadow-sm md:grid-cols-[1.2fr_0.8fr]">
                   <div className="space-y-2 text-left">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--vintage-desert-rock)]">
                       Sens principal
                     </p>
-                    <p className="text-lg font-medium text-slate-800">
+                    <p className="text-lg font-medium text-[var(--vintage-ink)]">
                       {answerText}
                     </p>
                   </div>
                   <div className="space-y-2 text-left">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--vintage-desert-rock)]">
                       {secondaryLabel}
                     </p>
-                    <p className="text-base text-slate-600">
+                    <p className="text-base text-[var(--vintage-muted-ink)]">
                       {secondaryText}
                     </p>
                   </div>
                 </div>
 
-                <div className="mt-auto rounded-[22px] border border-dashed border-slate-200 bg-slate-50/70 px-5 py-4 text-left">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                <div className="mt-auto rounded-[22px] border border-dashed border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-cream)]/55 px-5 py-4 text-left">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--vintage-desert-rock)]">
                     Exemple
                   </p>
-                  <p className="mt-2 text-sm italic leading-6 text-slate-500">
+                  <p className="mt-2 text-sm italic leading-6 text-[var(--vintage-muted-ink)]">
                     {exampleSentence}
                   </p>
                 </div>

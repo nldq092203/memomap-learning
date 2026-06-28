@@ -7,4 +7,3 @@ Provides:
 - ai: AI client and rate limiting
 - auth: JWT and OAuth helpers
 """
-

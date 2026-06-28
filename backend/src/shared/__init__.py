@@ -8,4 +8,3 @@ Shared features used across the Learning application.
 from src.shared.ai import AIService, enforce_rate_limit
 
 __all__ = ["AIService", "enforce_rate_limit"]
-

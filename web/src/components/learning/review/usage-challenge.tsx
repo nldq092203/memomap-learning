@@ -30,10 +30,10 @@ export function UsageChallenge({ card, language }: UsageChallengeProps) {
   
   if (hasFeedback) {
     statusLabel = "Feedback received"
-    statusClass = "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+    statusClass = "bg-[var(--vintage-cream)] text-[var(--vintage-desert-rock)]"
   } else if (isChatting) {
     statusLabel = "AI is thinking…"
-    statusClass = "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+    statusClass = "bg-[var(--vintage-porcelain-mist)] text-[var(--vintage-muted-ink)]"
   } else if (hasSentence) {
     statusLabel = "Drafting"
     statusClass = "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
@@ -99,7 +99,7 @@ export function UsageChallenge({ card, language }: UsageChallengeProps) {
                  onChange={(e) => setSentence(e.target.value)}
                  placeholder={`Example: I used the ${word} to...`}
                  disabled={isChatting}
-                 className="min-h-[120px] resize-none text-base p-4 bg-muted/30 focus:bg-background transition-colors border-muted-foreground/20 focus-visible:ring-primary/20"
+                 className="min-h-[120px] resize-none border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-porcelain-mist)]/50 p-4 text-base transition-colors focus:bg-[var(--vintage-feather-white)] focus-visible:ring-[var(--vintage-desert-rock)]/20"
                  onKeyDown={(e) => {
                    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
                      e.preventDefault()
@@ -124,7 +124,7 @@ export function UsageChallenge({ card, language }: UsageChallengeProps) {
             {/* Feedback Section */}
             <div className="relative flex flex-col h-full min-h-[120px] rounded-xl border bg-muted/10 p-0 overflow-hidden">
                <div className="bg-muted/30 px-4 py-2 border-b flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                  <div className="h-2 w-2 animate-pulse rounded-full bg-[var(--vintage-desert-rock)]" />
                   <span className="text-xs font-semibold text-muted-foreground">AI Tutor Feedback</span>
                </div>
                <div className="p-4 text-sm leading-relaxed text-foreground/90 flex-1 overflow-y-auto">

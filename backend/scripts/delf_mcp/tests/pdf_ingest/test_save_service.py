@@ -12,7 +12,9 @@ import sys
 from dataclasses import dataclass
 
 _BACKEND_DIR = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    )
 )
 if _BACKEND_DIR not in sys.path:
     sys.path.insert(0, _BACKEND_DIR)
@@ -27,7 +29,6 @@ from scripts.delf_mcp.pdf_ingest.manifest import (
     init_workspace,
     write_manifest,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fakes
@@ -125,13 +126,17 @@ class _FakeGithubManager:
     def create_file(self, file_path, content, commit_message):
         self.created.append((file_path, content))
         self.existing_paths.add(file_path)
-        self.files[file_path] = content if isinstance(content, bytes) else content.encode()
+        self.files[file_path] = (
+            content if isinstance(content, bytes) else content.encode()
+        )
         return {"content": {"html_url": f"https://example.com/{file_path}"}}
 
     def create_or_update_file(self, file_path, content, commit_message):
         self.created_or_updated.append((file_path, content))
         self.existing_paths.add(file_path)
-        self.files[file_path] = content if isinstance(content, bytes) else content.encode()
+        self.files[file_path] = (
+            content if isinstance(content, bytes) else content.encode()
+        )
         return {"content": {"html_url": f"https://example.com/{file_path}"}}
 
     def list_json_stems(self, directory_path: str) -> list[str]:
@@ -232,8 +237,12 @@ def _patch_deep_deps(monkeypatch):
     # Cache invalidation is a Redis call; no-op it.
     from scripts.delf_mcp import draft_service, update_service
 
-    monkeypatch.setattr(draft_service, "invalidate_delf_content_cache", lambda **_: None)
-    monkeypatch.setattr(update_service, "invalidate_delf_content_cache", lambda **_: None)
+    monkeypatch.setattr(
+        draft_service, "invalidate_delf_content_cache", lambda **_: None
+    )
+    monkeypatch.setattr(
+        update_service, "invalidate_delf_content_cache", lambda **_: None
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -318,9 +327,7 @@ def test_save_happy_path_creates_draft_via_save_route(tmp_path):
     assert saved["test_id"] == "tp-01"
     assert repo.create_calls, "expected draft_service.save_draft to create a DB row"
     # GitHub write also occurred.
-    assert any(
-        path.endswith("tp-01.json") for path, _ in gh.created
-    )
+    assert any(path.endswith("tp-01.json") for path, _ in gh.created)
 
 
 def test_save_existing_draft_routes_to_update(tmp_path):
@@ -336,9 +343,11 @@ def test_save_existing_draft_routes_to_update(tmp_path):
         status="draft",
     )
     repo = _FakeRepo([existing])
-    gh = _FakeGithubManager(existing_paths={
-        "delf/a2/tout-public-a2/CE/tp/tp-01.json",
-    })
+    gh = _FakeGithubManager(
+        existing_paths={
+            "delf/a2/tout-public-a2/CE/tp/tp-01.json",
+        }
+    )
 
     out = save_module.save_delf_book_drafts(
         analysis_id=analysis_id,
@@ -438,8 +447,16 @@ def _image_option_paper(test_id: str = "tp-01") -> dict:
                 "type": "multiple_choice_image",
                 "question_text": "Quelle scène ?",
                 "options": [
-                    {"label": "a", "img_url": f"assets/{test_id}/q01/a.webp", "desc": ""},
-                    {"label": "b", "img_url": f"assets/{test_id}/q01/b.webp", "desc": ""},
+                    {
+                        "label": "a",
+                        "img_url": f"assets/{test_id}/q01/a.webp",
+                        "desc": "",
+                    },
+                    {
+                        "label": "b",
+                        "img_url": f"assets/{test_id}/q01/b.webp",
+                        "desc": "",
+                    },
                 ],
                 "correct_answer": 1,
                 "points": 1.0,
@@ -460,23 +477,25 @@ def test_save_uploads_crops_then_creates_draft(tmp_path):
     gh = _FakeGithubManager()
 
     paper = _image_option_paper()
-    selected = [{
-        "content": paper,
-        "image_uploads": [
-            {
-                "local_path": str(crop_a),
-                "img_url": "assets/tp-01/q01/a.webp",
-                "question_number": 1,
-                "label": "a",
-            },
-            {
-                "local_path": str(crop_b),
-                "img_url": "assets/tp-01/q01/b.webp",
-                "question_number": 1,
-                "label": "b",
-            },
-        ],
-    }]
+    selected = [
+        {
+            "content": paper,
+            "image_uploads": [
+                {
+                    "local_path": str(crop_a),
+                    "img_url": "assets/tp-01/q01/a.webp",
+                    "question_number": 1,
+                    "label": "a",
+                },
+                {
+                    "local_path": str(crop_b),
+                    "img_url": "assets/tp-01/q01/b.webp",
+                    "question_number": 1,
+                    "label": "b",
+                },
+            ],
+        }
+    ]
 
     out = save_module.save_delf_book_drafts(
         analysis_id=analysis_id,
@@ -493,8 +512,7 @@ def test_save_uploads_crops_then_creates_draft(tmp_path):
     assert saved["route"] == "save"
     # Both crops uploaded before draft commit.
     image_writes = [
-        path for path, _ in gh.created
-        if "/assets/" in path and path.endswith(".webp")
+        path for path, _ in gh.created if "/assets/" in path and path.endswith(".webp")
     ]
     assert any(path.endswith("/q01/a.webp") for path in image_writes)
     assert any(path.endswith("/q01/b.webp") for path in image_writes)
@@ -505,17 +523,19 @@ def test_save_uploads_crops_then_creates_draft(tmp_path):
 def test_save_skips_paper_when_local_crop_missing(tmp_path):
     analysis_id = _seed_manifest(tmp_path)
     paper = _image_option_paper()
-    selected = [{
-        "content": paper,
-        "image_uploads": [
-            {
-                "local_path": "/tmp/does-not-exist.webp",
-                "img_url": "assets/tp-01/q01/a.webp",
-                "question_number": 1,
-                "label": "a",
-            },
-        ],
-    }]
+    selected = [
+        {
+            "content": paper,
+            "image_uploads": [
+                {
+                    "local_path": "/tmp/does-not-exist.webp",
+                    "img_url": "assets/tp-01/q01/a.webp",
+                    "question_number": 1,
+                    "label": "a",
+                },
+            ],
+        }
+    ]
     out = save_module.save_delf_book_drafts(
         analysis_id=analysis_id,
         selected_papers=selected,

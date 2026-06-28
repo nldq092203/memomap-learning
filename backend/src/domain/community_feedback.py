@@ -89,7 +89,9 @@ class CommunityFeedbackService:
 
         if content is not None:
             CommunityFeedbackService._require_owner(doc, actor_user_id)
-            update_fields["content"] = CommunityFeedbackService._normalize_content(content)
+            update_fields["content"] = CommunityFeedbackService._normalize_content(
+                content
+            )
 
         if is_incognito is not None:
             CommunityFeedbackService._require_owner(doc, actor_user_id)

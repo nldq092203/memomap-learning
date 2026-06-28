@@ -63,7 +63,9 @@ def list_sessions_controller(
     }
 
 
-def get_session_controller(db: Session, user_id: str, session_id: str) -> dict[str, Any]:
+def get_session_controller(
+    db: Session, user_id: str, session_id: str
+) -> dict[str, Any]:
     session = SessionQueries.get_by_id(db, session_id, user_id)
     if not session:
         raise ResourceNotFoundError("Session not found")

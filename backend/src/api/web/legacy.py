@@ -13,7 +13,6 @@ from flask import Blueprint
 
 from src.utils.response_builder import ResponseBuilder
 
-
 LEGACY_WRITE_DISABLED_MESSAGE = (
     "This legacy write flow has been disabled during the revamp."
 )

@@ -50,13 +50,13 @@ export function VocabControlBar({
   
   if (selectedCount > 0) {
     return (
-      <div className="animate-in slide-in-from-top-2 duration-200 rounded-[20px] border border-primary/20 bg-primary/5 p-2">
+      <div className="animate-in slide-in-from-top-2 rounded-[20px] border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-cream)]/55 p-2 duration-200">
         <div className="flex flex-col gap-3 px-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
            <Button variant="ghost" size="icon" onClick={onClearSelection} className="h-8 w-8">
              <X className="h-4 w-4" />
            </Button>
-           <span className="text-sm font-medium text-primary">
+           <span className="text-sm font-medium text-[var(--vintage-desert-rock)]">
              {selectedCount} sélectionné{selectedCount > 1 ? "s" : ""}
            </span>
             <Separator orientation="vertical" className="hidden h-4 sm:block" />
@@ -86,7 +86,7 @@ export function VocabControlBar({
           placeholder={`Rechercher parmi ${totalCount} mots...`} 
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="h-11 rounded-2xl border border-white/60 bg-white/70 pl-9 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-sm focus-visible:ring-primary/15"
+          className="h-11 rounded-2xl border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/80 pl-9 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-sm focus-visible:ring-[var(--vintage-desert-rock)]/20"
         />
       </div>
 
@@ -101,6 +101,7 @@ export function VocabControlBar({
                  {statusFilter === "all" ? "Tous les statuts" : 
                   statusFilter === "review" ? "Maîtrisé" : 
                   statusFilter === "learning" ? "En apprentissage" :
+                  statusFilter === "suspended" ? "Suspendu" :
                   "Nouveau"}
                </span>
              </div>
@@ -110,6 +111,7 @@ export function VocabControlBar({
             <SelectItem value="new">Nouveau</SelectItem>
             <SelectItem value="learning">En apprentissage</SelectItem>
             <SelectItem value="review">Maîtrisé</SelectItem>
+            <SelectItem value="suspended">Suspendu</SelectItem>
           </SelectContent>
         </Select>
 

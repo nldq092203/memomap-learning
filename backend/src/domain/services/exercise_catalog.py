@@ -14,7 +14,6 @@ from src.domain.db_queries import ExerciseProgressQueries
 from src.infra.db.orm import CoCeExerciseORM, DelfTestPaperORM
 from src.shared.numbers.blueprints import get_all_number_blueprints
 
-
 CATALOG_SECTIONS = {"CO", "CE", "PO", "PE"}
 CATALOG_SOURCE_TYPES = {
     "numbers",
@@ -323,8 +322,7 @@ class ExerciseCatalogService:
             filters.level = filters.level.upper()
         if filters.source_type and filters.source_type not in CATALOG_SOURCE_TYPES:
             raise ValueError(
-                "source_type must be one of: "
-                + ", ".join(sorted(CATALOG_SOURCE_TYPES))
+                "source_type must be one of: " + ", ".join(sorted(CATALOG_SOURCE_TYPES))
             )
         if filters.status and filters.status not in CATALOG_STATUSES:
             raise ValueError(
@@ -399,14 +397,9 @@ def _coce_item(
         title=exercise.name,
         duration_seconds=exercise.duration_seconds,
         topic=exercise.topic,
-        route=(
-            "/co/videos-podcasts"
-            if section == "CO"
-            else "/ce/videos-podcasts"
-        ),
+        route=("/co/videos-podcasts" if section == "CO" else "/ce/videos-podcasts"),
         detail_endpoint=(
-            f"/api/web/coce/exercises/{exercise.id}/questions"
-            f"?type={question_type}"
+            f"/api/web/coce/exercises/{exercise.id}/questions" f"?type={question_type}"
         ),
         metadata={
             "coce_exercise_id": exercise.id,

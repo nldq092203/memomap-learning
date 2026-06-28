@@ -14,7 +14,6 @@ import requests
 from src.config import Config
 from src.extensions import logger
 
-
 GOOGLE_TOKENINFO_URL = "https://oauth2.googleapis.com/tokeninfo"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 DEFAULT_POSTMESSAGE_REDIRECT_URI = "postmessage"
@@ -107,8 +106,7 @@ def _normalize_google_payload(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 
     email_verified_raw = data.get("email_verified")
     email_verified = (
-        email_verified_raw is True
-        or str(email_verified_raw).lower() == "true"
+        email_verified_raw is True or str(email_verified_raw).lower() == "true"
     )
 
     return {
@@ -169,7 +167,11 @@ def _call_google_token_endpoint(data: Dict[str, str]) -> Dict[str, Any]:
             status_code=resp.status_code,
             payload=payload,
         )
-        error_message = payload.get("error_description") or payload.get("error") or "Google OAuth request failed"
+        error_message = (
+            payload.get("error_description")
+            or payload.get("error")
+            or "Google OAuth request failed"
+        )
         raise GoogleOAuthExchangeError(error_message)
 
     return payload
@@ -184,7 +186,9 @@ def exchange_google_auth_code(
     if not code:
         raise GoogleOAuthExchangeError("Authorization code is required")
 
-    client_id = getattr(Config, "GOOGLE_WEB_CLIENT_ID", None) or getattr(Config, "GOOGLE_CLIENT_ID", None)
+    client_id = getattr(Config, "GOOGLE_WEB_CLIENT_ID", None) or getattr(
+        Config, "GOOGLE_CLIENT_ID", None
+    )
     client_secret = getattr(Config, "GOOGLE_CLIENT_SECRET", None)
     if not client_id or not client_secret:
         raise GoogleOAuthExchangeError("Google OAuth is not configured")
@@ -200,7 +204,9 @@ def exchange_google_auth_code(
     )
 
 
-def get_google_user_from_token_response(token_payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def get_google_user_from_token_response(
+    token_payload: Dict[str, Any],
+) -> Optional[Dict[str, Any]]:
     """Extract normalized user identity from a token exchange response."""
     id_token = token_payload.get("id_token")
     if id_token:

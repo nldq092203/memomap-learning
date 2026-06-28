@@ -111,11 +111,13 @@ def test_save_skips_active_existing_paper_before_uploading_crops():
         paper_content=paper,
         level="A2",
         variant="tout-public-a2",
-        image_uploads=[{
-            "local_path": "/does/not/exist.webp",
-            "question_number": 1,
-            "label": "a",
-        }],
+        image_uploads=[
+            {
+                "local_path": "/does/not/exist.webp",
+                "question_number": 1,
+                "label": "a",
+            }
+        ],
         repo=_Repo(_Row(id="active-1", test_id="tp-01", status="active")),
         github_mgr=_Github(),
         github_repo=_Github(),
@@ -136,15 +138,19 @@ def test_save_skips_github_only_existing_paper_before_uploading_crops():
         paper_content=paper,
         level="A2",
         variant="tout-public-a2",
-        image_uploads=[{
-            "local_path": "/does/not/exist.webp",
-            "question_number": 1,
-            "label": "a",
-        }],
+        image_uploads=[
+            {
+                "local_path": "/does/not/exist.webp",
+                "question_number": 1,
+                "label": "a",
+            }
+        ],
         repo=_Repo(None),
-        github_mgr=_Github({
-            "delf/a2/tout-public-a2/CE/tp/tp-99.json",
-        }),
+        github_mgr=_Github(
+            {
+                "delf/a2/tout-public-a2/CE/tp/tp-99.json",
+            }
+        ),
         github_repo=_Github(),
     )
 

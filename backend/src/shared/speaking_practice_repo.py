@@ -39,10 +39,10 @@ class SpeakingPracticeRepository:
         """Fetch and parse JSON file from GitHub."""
         url = f"{self.base_url}/{path}"
         logger.info(f"[SPEAKING-PRACTICE] Fetching JSON from {url}")
-        
+
         resp = requests.get(url, timeout=self.timeout)
         resp.raise_for_status()
-        
+
         try:
             return resp.json()
         except ValueError as e:
@@ -57,7 +57,7 @@ class SpeakingPracticeRepository:
         """Fetch raw file bytes from GitHub."""
         url = f"{self.base_url}/{path}"
         logger.info(f"[SPEAKING-PRACTICE] Fetching file from {url}")
-        
+
         resp = requests.get(url, timeout=self.timeout)
         resp.raise_for_status()
         return resp.content
@@ -78,10 +78,10 @@ class SpeakingPracticeRepository:
     def list_topics(self) -> list[str]:
         """
         List all available topics by fetching the root index.
-        
+
         Note: This requires a topics.json file at the root:
         {BASE_URL}/speaking-practice/topics.json
-        
+
         Format: {"topics": ["alimentation", "environnement", ...]}
         """
         try:

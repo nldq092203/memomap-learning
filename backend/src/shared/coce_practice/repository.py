@@ -24,6 +24,7 @@ from src.shared.coce_practice.schemas import (
     CoCeQuestionsFile,
 )
 
+
 class CoCeExercise:
     """Internal representation of a CO/CE exercise."""
 

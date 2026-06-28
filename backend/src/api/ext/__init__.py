@@ -12,7 +12,6 @@ from src.api.ext.vocab import ext_vocab_list, ext_vocab_create, ext_vocab_update
 from src.api.ext.ai import ext_ai_chat
 from src.api.errors import register_error_handlers
 
-
 # Extension blueprint
 ext_bp = Blueprint("ext", __name__)
 register_error_handlers(ext_bp)

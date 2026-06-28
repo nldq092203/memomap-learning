@@ -23,9 +23,7 @@ def _build_github_path(level: str, variant: str, section: str, test_id: str) -> 
     return f"delf/{level.lower()}/{variant}/{section}/tp/{test_id}.json"
 
 
-def _build_preview_url(
-    level: str, variant: str, section: str, test_id: str
-) -> str:
+def _build_preview_url(level: str, variant: str, section: str, test_id: str) -> str:
     origin = getattr(Config, "WEB_ORIGIN", "http://localhost:3000").rstrip("/")
     return f"{origin}/learning/delf-practice/{level}/{variant}/{section}/{test_id}"
 
@@ -162,9 +160,7 @@ def save_draft(
             test_id=test_id,
         )
     except Exception as exc:
-        logger.warning(
-            "[DELF-MCP] Cache invalidation failed for {}: {}", test_id, exc
-        )
+        logger.warning("[DELF-MCP] Cache invalidation failed for {}: {}", test_id, exc)
 
     result = {
         "success": True,

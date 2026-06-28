@@ -102,7 +102,9 @@ class LearningDriveServices:
                 "name": transcript_doc["name"],
                 "updatedAt": now,
                 "language": language or "",
-                "durationSeconds": str(duration_seconds) if duration_seconds is not None else "",
+                "durationSeconds": (
+                    str(duration_seconds) if duration_seconds is not None else ""
+                ),
             },
         )
 
@@ -117,7 +119,9 @@ class LearningDriveServices:
                 "name": transcript_doc["name"],
                 "updatedAt": now,
                 "language": language or "",
-                "durationSeconds": str(duration_seconds) if duration_seconds is not None else "",
+                "durationSeconds": (
+                    str(duration_seconds) if duration_seconds is not None else ""
+                ),
             },
         )
 
@@ -125,7 +129,10 @@ class LearningDriveServices:
             "lesson_id": lesson_id,
             "folder_id": lesson_folder_id,
             "audio_file": {"id": audio_file_id, "name": audio_name},
-            "transcript_file": {"id": transcript_result.get("id"), "name": "transcript.json"},
+            "transcript_file": {
+                "id": transcript_result.get("id"),
+                "name": "transcript.json",
+            },
         }
 
     def list_audio_lessons(
@@ -174,7 +181,9 @@ class LearningDriveServices:
         lesson_folder_id = self.repo._find_folder(lesson_id, audio_root_id)
         if not lesson_folder_id:
             # Then try under the autoAudio subfolder (for TTS-generated lessons)
-            auto_root_id = self.repo._find_folder(self.AUTO_AUDIO_SUBFOLDER, audio_root_id)
+            auto_root_id = self.repo._find_folder(
+                self.AUTO_AUDIO_SUBFOLDER, audio_root_id
+            )
             if auto_root_id:
                 lesson_folder_id = self.repo._find_folder(lesson_id, auto_root_id)
 
@@ -189,14 +198,18 @@ class LearningDriveServices:
         lesson_folder_id = self.repo._find_folder(lesson_id, audio_root_id)
         if not lesson_folder_id:
             # Then try under the autoAudio subfolder (for TTS-generated lessons)
-            auto_root_id = self.repo._find_folder(self.AUTO_AUDIO_SUBFOLDER, audio_root_id)
+            auto_root_id = self.repo._find_folder(
+                self.AUTO_AUDIO_SUBFOLDER, audio_root_id
+            )
             if auto_root_id:
                 lesson_folder_id = self.repo._find_folder(lesson_id, auto_root_id)
 
         if not lesson_folder_id:
             return None
 
-        file_id = self.repo.find_file_by_property(lesson_folder_id, "id", f"{lesson_id}:audio")
+        file_id = self.repo.find_file_by_property(
+            lesson_folder_id, "id", f"{lesson_id}:audio"
+        )
         if not file_id:
             # fallback: scan for "audio.*"
             listing = self.repo.list_items(parent_id=lesson_folder_id, page_size=50)
@@ -300,7 +313,9 @@ class LearningDriveServices:
         lesson_folder_id = self.repo._find_folder(lesson_id, audio_root_id)
         if not lesson_folder_id:
             # Then try under the autoAudio subfolder (for TTS-generated lessons)
-            auto_root_id = self.repo._find_folder(self.AUTO_AUDIO_SUBFOLDER, audio_root_id)
+            auto_root_id = self.repo._find_folder(
+                self.AUTO_AUDIO_SUBFOLDER, audio_root_id
+            )
             if auto_root_id:
                 lesson_folder_id = self.repo._find_folder(lesson_id, auto_root_id)
 
@@ -413,4 +428,8 @@ def parse_optional_json(raw: str | None) -> Any | None:
     return json.loads(raw)
 
 
-__all__ = ["LearningDriveServices", "get_drive_services_for_user", "parse_optional_json"]
+__all__ = [
+    "LearningDriveServices",
+    "get_drive_services_for_user",
+    "parse_optional_json",
+]

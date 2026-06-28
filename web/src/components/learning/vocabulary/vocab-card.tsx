@@ -65,11 +65,19 @@ export function VocabCard({
         progressClass: "bg-amber-400",
       }
     }
+    if (card.status === "suspended") {
+      return {
+        label: "Suspendu",
+        progress: 0,
+        badgeClass: "border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-cream)] text-[var(--vintage-desert-rock)]",
+        progressClass: "bg-[var(--vintage-soft-sandstone)]",
+      }
+    }
     return {
       label: "Maîtrisé",
       progress: card.ease > 2.5 ? 96 : 82,
-      badgeClass: "border-emerald-200 bg-emerald-50 text-emerald-700",
-      progressClass: "bg-emerald-400",
+      badgeClass: "border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-cream)] text-[var(--vintage-desert-rock)]",
+      progressClass: "bg-[var(--vintage-desert-rock)]",
     }
   }
 
@@ -108,7 +116,7 @@ export function VocabCard({
       <Card 
         className={cn(
           "relative flex flex-col p-5 group transition-all duration-200 hover:shadow-md border-border/60",
-          selected && "border-primary ring-1 ring-primary bg-primary/5"
+          selected && "border-[var(--vintage-desert-rock)] bg-[var(--vintage-cream)]/40 ring-1 ring-[var(--vintage-desert-rock)]"
         )}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -148,7 +156,7 @@ export function VocabCard({
                <h3 className="text-2xl font-semibold text-slate-900">{card.word}</h3>
                <button 
                   onClick={() => onPlayAudio(card.word)}
-                  className="text-muted-foreground hover:text-primary transition-colors p-1 rounded-full hover:bg-primary/10"
+                  className="rounded-full p-1 text-[var(--vintage-muted-ink)] transition-colors hover:bg-[var(--vintage-cream)] hover:text-[var(--vintage-desert-rock)]"
                 >
                   <Volume2 className="h-4 w-4" />
                 </button>
@@ -170,7 +178,7 @@ export function VocabCard({
                {card.translation}
             </p>
             {card.notes?.[0] && (
-              <div className="mx-2 rounded-xl border-l-2 border-primary/25 bg-slate-50/80 px-3 py-2">
+              <div className="mx-2 rounded-xl border-l-2 border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-porcelain-mist)]/80 px-3 py-2">
                 <p className="line-clamp-2 text-xs italic text-slate-500">
                   {card.notes[0]}
                 </p>
@@ -191,7 +199,7 @@ export function VocabCard({
     <div 
       className={cn(
         "group relative grid grid-cols-[auto_minmax(220px,0.9fr)_minmax(0,1.2fr)_auto] gap-5 items-center rounded-[22px] border border-slate-200/80 bg-white/80 px-4 py-5 transition-all duration-200 hover:border-slate-200 hover:bg-white even:bg-slate-50/40",
-        selected && "bg-primary/5 border-primary/20 hover:bg-primary/10"
+        selected && "border-[var(--vintage-desert-rock)] bg-[var(--vintage-cream)]/40 hover:bg-[var(--vintage-cream)]/55"
       )}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -214,7 +222,7 @@ export function VocabCard({
           <h3 className="text-xl font-semibold text-slate-900">{card.word}</h3>
           <button
              onClick={() => onPlayAudio(card.word)}
-             className="text-muted-foreground hover:text-primary transition-colors p-1"
+             className="p-1 text-[var(--vintage-muted-ink)] transition-colors hover:text-[var(--vintage-desert-rock)]"
              aria-label="Lire la prononciation"
           >
              <Volume2 className="h-4 w-4" />
@@ -237,7 +245,7 @@ export function VocabCard({
 	            {masteryProgress}
 	         </div>
          {card.notes?.[0] && (
-           <div className="max-w-2xl border-l-2 border-primary/25 pl-3">
+           <div className="max-w-2xl border-l-2 border-[var(--vintage-soft-sandstone)] pl-3">
              <p className="truncate pr-4 text-sm italic text-slate-500">
                {card.notes[0]}
              </p>
@@ -250,7 +258,7 @@ export function VocabCard({
          <Button 
             variant="ghost" 
             size="icon" 
-            className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
+            className="h-8 w-8 text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-cream)] hover:text-[var(--vintage-desert-rock)]"
             onClick={() => onEdit(card)}
             title="Modifier la carte"
          >

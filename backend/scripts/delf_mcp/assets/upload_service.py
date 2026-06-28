@@ -13,7 +13,6 @@ from src.shared.delf_practice.asset_paths import (
 )
 from src.shared.delf_practice.github_manager import GitHubDelfManager
 
-
 _IMAGE_EXTS: tuple[str, ...] = (".webp", ".png", ".jpg", ".jpeg")
 _AUDIO_EXTS: tuple[str, ...] = (".mp3", ".m4a", ".wav")
 

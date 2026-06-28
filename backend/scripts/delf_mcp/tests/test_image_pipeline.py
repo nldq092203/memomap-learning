@@ -23,6 +23,7 @@ if _BACKEND_DIR not in sys.path:
 try:
     from PIL import Image  # type: ignore
     import cv2  # type: ignore  # noqa: F401
+
     _DEPS_AVAILABLE = True
 except ImportError:
     _DEPS_AVAILABLE = False
@@ -63,11 +64,15 @@ class _FakeGithub:
     def create_file(self, file_path, content, commit_message):
         if file_path in self.files:
             raise FileExistsError(file_path)
-        self.files[file_path] = content if isinstance(content, bytes) else content.encode()
+        self.files[file_path] = (
+            content if isinstance(content, bytes) else content.encode()
+        )
         return {"path": file_path}
 
     def create_or_update_file(self, file_path, content, commit_message):
-        self.files[file_path] = content if isinstance(content, bytes) else content.encode()
+        self.files[file_path] = (
+            content if isinstance(content, bytes) else content.encode()
+        )
         return {"path": file_path}
 
 
@@ -97,9 +102,7 @@ def test_explicit_crops_return_webp_bytes():
 def test_crop_out_of_bounds_returns_structured_error():
     result = crop_screenshot_to_webp(
         screenshot_base64=_make_screenshot(width=100, height=100),
-        crops=[
-            {"label": "x", "left": 0, "top": 0, "right": 500, "bottom": 500}
-        ],
+        crops=[{"label": "x", "left": 0, "top": 0, "right": 500, "bottom": 500}],
     )
     assert result["success"] is False
     assert result["error_count"] == 1
@@ -107,9 +110,7 @@ def test_crop_out_of_bounds_returns_structured_error():
 
 
 def test_invalid_base64_returns_error():
-    result = crop_screenshot_to_webp(
-        screenshot_base64="not!!base64", crops=[]
-    )
+    result = crop_screenshot_to_webp(screenshot_base64="not!!base64", crops=[])
     assert result["success"] is False
 
 
@@ -142,15 +143,18 @@ def test_process_screenshot_uploads_canonical_filenames():
             {
                 "question_number": 1,
                 "options": [
-                    {"label": "a", "crop": {
-                        "left": 0, "top": 0, "right": 100, "bottom": 100
-                    }},
-                    {"label": "b", "crop": {
-                        "left": 100, "top": 0, "right": 200, "bottom": 100
-                    }},
-                    {"label": "c", "crop": {
-                        "left": 200, "top": 0, "right": 300, "bottom": 100
-                    }},
+                    {
+                        "label": "a",
+                        "crop": {"left": 0, "top": 0, "right": 100, "bottom": 100},
+                    },
+                    {
+                        "label": "b",
+                        "crop": {"left": 100, "top": 0, "right": 200, "bottom": 100},
+                    },
+                    {
+                        "label": "c",
+                        "crop": {"left": 200, "top": 0, "right": 300, "bottom": 100},
+                    },
                 ],
             }
         ],
@@ -184,12 +188,14 @@ def test_process_screenshot_records_partial_failures():
             {
                 "question_number": 1,
                 "options": [
-                    {"label": "a", "crop": {
-                        "left": 0, "top": 0, "right": 100, "bottom": 100
-                    }},
-                    {"label": "b", "crop": {
-                        "left": 100, "top": 0, "right": 200, "bottom": 100
-                    }},
+                    {
+                        "label": "a",
+                        "crop": {"left": 0, "top": 0, "right": 100, "bottom": 100},
+                    },
+                    {
+                        "label": "b",
+                        "crop": {"left": 100, "top": 0, "right": 200, "bottom": 100},
+                    },
                 ],
             }
         ],
@@ -199,9 +205,7 @@ def test_process_screenshot_records_partial_failures():
     assert result["failure_count"] == 1
     assert result["failures"][0]["label"] == "b"
     # The successful upload still appears in results
-    successful_labels = [
-        o["label"] for o in result["results"][0]["options"]
-    ]
+    successful_labels = [o["label"] for o in result["results"][0]["options"]]
     assert successful_labels == ["a"]
 
 

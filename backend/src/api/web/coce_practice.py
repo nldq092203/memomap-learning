@@ -70,7 +70,10 @@ def _is_guest_accessible_exercise(
     limit: int = 2,
 ) -> bool:
     exercises = repo.get_by_level(exercise.level, topic=topic)
-    allowed_ids = {candidate.id for candidate in _filter_guest_preview_records(exercises, limit=limit)}
+    allowed_ids = {
+        candidate.id
+        for candidate in _filter_guest_preview_records(exercises, limit=limit)
+    }
     return exercise.id in allowed_ids
 
 
@@ -101,9 +104,15 @@ def coce_list_exercises():
     items = []
     for ex in exercises:
         # Construct computed fields
-        video_url = f"https://www.youtube.com/embed/{ex.media_id}" if ex.media_type == "video" else None
-        audio_url = github_repo.audio_url(ex.media_id) if ex.media_type != "video" else None
-        
+        video_url = (
+            f"https://www.youtube.com/embed/{ex.media_id}"
+            if ex.media_type == "video"
+            else None
+        )
+        audio_url = (
+            github_repo.audio_url(ex.media_id) if ex.media_type != "video" else None
+        )
+
         item = ExerciseResponse(
             id=ex.id,
             name=ex.name,
@@ -143,14 +152,24 @@ def coce_get_exercise(exercise_id: str):
 
     github_repo = GitHubCoCePracticeRepository(level=ex.level)
     base_url = github_repo._root_prefix()
-    
+
     # Construct computed fields
-    video_url = f"https://www.youtube.com/embed/{ex.media_id}" if ex.media_type == "video" else None
+    video_url = (
+        f"https://www.youtube.com/embed/{ex.media_id}"
+        if ex.media_type == "video"
+        else None
+    )
     audio_url = github_repo.audio_url(ex.media_id) if ex.media_type != "video" else None
-    
-    co_github_url = f"{base_url}/{ex.media_id}/questions_co.json" if ex.co_path else None
-    ce_github_url = f"{base_url}/{ex.media_id}/questions_ce.json" if ex.ce_path else None
-    transcript_github_url = f"{base_url}/{ex.media_id}/transcript.json" if ex.transcript_path else None
+
+    co_github_url = (
+        f"{base_url}/{ex.media_id}/questions_co.json" if ex.co_path else None
+    )
+    ce_github_url = (
+        f"{base_url}/{ex.media_id}/questions_ce.json" if ex.ce_path else None
+    )
+    transcript_github_url = (
+        f"{base_url}/{ex.media_id}/transcript.json" if ex.transcript_path else None
+    )
 
     result = ExerciseDetail(
         id=ex.id,
@@ -171,7 +190,7 @@ def coce_get_exercise(exercise_id: str):
         ce_github_url=ce_github_url,
         transcript_github_url=transcript_github_url,
     )
-    
+
     return ResponseBuilder().success(data=result.model_dump(mode="json")).build()
 
 
@@ -316,7 +335,7 @@ def admin_update_exercise(user_id: str, exercise_id: str):
         raise BadRequestError(str(e))
 
     exercise_repo = CoCeExerciseRepository()
-    
+
     # Only update fields that were provided
     updates = {k: v for k, v in req.model_dump().items() if v is not None}
     exercise = exercise_repo.update_exercise(exercise_id, **updates)
@@ -526,7 +545,6 @@ def admin_generate_youtube_transcript(user_id: str):
             exercise_id, duration_seconds=yt_data["duration_seconds"]
         )
 
-
     github_mgr = GitHubCoCeManager()
     content = json.dumps(transcript_data, indent=2, ensure_ascii=False)
 
@@ -587,15 +605,19 @@ def admin_mark_guest_preview(user_id: str):
         if repo.update_exercise(exercise.id, extra=extra):
             updated_ids.append(exercise.id)
 
-    return ResponseBuilder().success(
-        data={
-            "level": level,
-            "topic": topic,
-            "count": count,
-            "selected_ids": list(selected_ids),
-            "updated_ids": updated_ids,
-        }
-    ).build()
+    return (
+        ResponseBuilder()
+        .success(
+            data={
+                "level": level,
+                "topic": topic,
+                "count": count,
+                "selected_ids": list(selected_ids),
+                "updated_ids": updated_ids,
+            }
+        )
+        .build()
+    )
 
 
 # Export all endpoints

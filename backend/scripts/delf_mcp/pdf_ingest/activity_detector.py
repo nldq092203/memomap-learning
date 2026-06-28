@@ -19,7 +19,6 @@ from dataclasses import dataclass
 
 from .pdf_reader import PageContent
 
-
 # Activity-header patterns. A line matching any of these starts a new
 # activity boundary. The capture group returns the activity number string.
 _ACTIVITY_HEADER_PATTERNS: tuple[re.Pattern[str], ...] = (
@@ -193,9 +192,7 @@ def find_chapter_boundaries(
     return chapters
 
 
-def _chapter_for_page(
-    page_number: int, chapters: list[ChapterBoundary]
-) -> int | None:
+def _chapter_for_page(page_number: int, chapters: list[ChapterBoundary]) -> int | None:
     """Most recent chapter header at or before `page_number`."""
     current: int | None = None
     for chapter in chapters:
@@ -238,7 +235,9 @@ def _assemble_text(
     Returns (text, page_end).
     """
     end_page = (
-        next_boundary.page_number - 1 if next_boundary is not None else fallback_end_page
+        next_boundary.page_number - 1
+        if next_boundary is not None
+        else fallback_end_page
     )
     if end_page < boundary.page_number:
         end_page = boundary.page_number

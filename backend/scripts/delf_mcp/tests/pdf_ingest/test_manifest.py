@@ -6,7 +6,9 @@ import os
 import sys
 
 _BACKEND_DIR = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    )
 )
 if _BACKEND_DIR not in sys.path:
     sys.path.insert(0, _BACKEND_DIR)
@@ -85,7 +87,9 @@ def test_manifest_schema_version_mismatch(tmp_path):
     analysis_id, workspace = init_workspace(workspace_root=str(tmp_path))
     bad_path = os.path.join(workspace, "manifest.json")
     with open(bad_path, "w", encoding="utf-8") as fh:
-        fh.write('{"schema_version": 99, "analysis_id": "x", "level": "A2",'
-                 ' "variant": "v", "exercise_pdf_path": "p", "workspace_dir": "w"}')
+        fh.write(
+            '{"schema_version": 99, "analysis_id": "x", "level": "A2",'
+            ' "variant": "v", "exercise_pdf_path": "p", "workspace_dir": "w"}'
+        )
     with pytest.raises(ValueError):
         read_manifest(analysis_id, workspace_root=str(tmp_path))

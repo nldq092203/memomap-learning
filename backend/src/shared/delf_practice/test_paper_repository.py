@@ -111,9 +111,7 @@ class DelfTestPaperRepository:
     ) -> list[DelfTestPaperORM]:
         """List papers in a given status (newest first), with optional filters."""
         with db_session() as db:
-            stmt = select(DelfTestPaperORM).where(
-                DelfTestPaperORM.status == status
-            )
+            stmt = select(DelfTestPaperORM).where(DelfTestPaperORM.status == status)
             if level:
                 stmt = stmt.where(DelfTestPaperORM.level == level.upper())
             if section:

@@ -24,8 +24,7 @@ def delf_content_cache_key(
 ) -> str:
     """Build the Redis key for one DELF paper."""
     return (
-        f"{DELF_CONTENT_CACHE_PREFIX}:"
-        f"{level.upper()}:{variant}:{section}:{test_id}"
+        f"{DELF_CONTENT_CACHE_PREFIX}:" f"{level.upper()}:{variant}:{section}:{test_id}"
     )
 
 

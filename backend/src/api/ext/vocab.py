@@ -14,7 +14,6 @@ from src.api.errors import BadRequestError
 from src.domain.vocabulary_mongo import MongoVocabularyRepository
 from src.utils.response_builder import ResponseBuilder
 
-
 MONGO_ID_PREFIX = "mongo:"
 
 

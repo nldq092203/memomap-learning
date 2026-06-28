@@ -58,6 +58,7 @@ def require_auth(func):
     Decorator to protect endpoints with JWT authentication.
     Injects 'user_id' into kwargs.
     """
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         # Authenticate request and inject user_id from JWT.
@@ -77,6 +78,7 @@ def with_db(func):
     Decorator to inject database session.
     Automatically commits on success, rolls back on error.
     """
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         with db_session() as db:

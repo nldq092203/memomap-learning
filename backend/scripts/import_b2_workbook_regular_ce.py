@@ -26,7 +26,6 @@ from src.shared.delf_practice.github_manager import GitHubDelfManager
 from src.shared.delf_practice.schemas import DelfTestPaper
 from src.shared.delf_practice.test_paper_repository import DelfTestPaperRepository
 
-
 BOOK_ID = "818818090-DELF-Tout-Public-B2"
 LEVEL = "B2"
 VARIANT = "tout-public-b2"
@@ -50,30 +49,252 @@ def _answers(raw: str) -> tuple[str, ...]:
 
 
 CE_SPECS: tuple[CeExerciseSpec, ...] = (
-    CeExerciseSpec("tp-01", "Partie A - Activité 2 : Les bienfaits de l'art sur la santé", (58, 59), "A", 2, _answers("b a c c b c b"), "Vous lisez cet article", "Pour répondre aux questions"),
-    CeExerciseSpec("tp-02", "Partie A - Activité 3 : Mes placards et moi", (60, 61), "A", 3, _answers("a a a b b c c"), "Vous lisez cet article", "Pour répondre aux questions"),
-    CeExerciseSpec("tp-03", "Partie A - Activité 4 : Une nouvelle génération de cheffes", (62, 63), "A", 4, _answers("c a c a a b a"), "Vous lisez cet article", "Pour répondre aux questions"),
-    CeExerciseSpec("tp-04", "Partie A - Activité 5 : Les influenceurs, nouveaux favoris de la mode", (64, 65), "A", 5, _answers("b b c a b b a"), "Vous lisez cet article", "Pour répondre aux questions"),
-    CeExerciseSpec("tp-05", "Partie A - Activité 6 : Pénurie de bouquinistes sur les bords de la Seine", (66, 67), "A", 6, _answers("b c c a c b a"), "Vous lisez cet article", "Pour répondre aux questions"),
-    CeExerciseSpec("tp-06", "Partie A - Activité 7 : Le lycée Winston-Churchill à l'heure des tablettes numériques", (68, 69), "A", 7, _answers("a c a c a a a"), "Vous lisez cet article", "Pour répondre aux questions"),
-    CeExerciseSpec("tp-07", "Partie A - Activité 8 : La Fémis, meilleure école de cinéma française", (70, 71), "A", 8, _answers("a c a c c c a"), "Vous lisez cet article", "Pour répondre aux questions"),
-    CeExerciseSpec("tp-08", "Partie B - Activité 1 : Comment aider les seniors à maîtriser les outils numériques ?", (72, 73, 74), "B", 1, _answers("a c c c b a b"), "Lisez cet article", "Pour répondre aux questions"),
-    CeExerciseSpec("tp-09", "Partie B - Activité 2 : Trop aimer son animal de compagnie peut-il nuire à sa santé ?", (75, 76), "B", 2, _answers("c c b a b c b"), "Vous lisez cet article", "Pour répondre aux questions"),
-    CeExerciseSpec("tp-10", "Partie B - Activité 3 : Le temps partagé pour prendre en main sa vie professionnelle ?", (77, 78), "B", 3, _answers("b c a b a a b"), "Vous lisez cet article", "Pour répondre aux questions"),
-    CeExerciseSpec("tp-11", "Partie B - Activité 4 : Les plateformes numériques d'autoédition sont-elles l'avenir de l'édition ?", (79, 80), "B", 4, _answers("c b a b b c b"), "Vous lisez cet article", "Pour répondre aux questions"),
-    CeExerciseSpec("tp-12", "Partie B - Activité 5 : De plus en plus d'adolescents deviennent jeunes sapeurs-pompiers", (81, 82), "B", 5, _answers("b c a a a b b"), "Vous lisez cet article", "Pour répondre aux questions"),
-    CeExerciseSpec("tp-13", "Partie B - Activité 6 : La thérapie-photo, une méthode efficace pour oublier ses complexes", (83, 84), "B", 6, _answers("c b c c b b c"), "Vous lisez cet article", "Pour répondre aux questions"),
-    CeExerciseSpec("tp-14", "Partie B - Activité 7 : Job étudiant : frein ou avantage à l'insertion professionnelle ?", (85, 86), "B", 7, _answers("c c b a c b b"), "Vous lisez cet article", "Pour répondre aux questions"),
-    CeExerciseSpec("tp-15", "Partie B - Activité 8 : L'intelligence artificielle peut-elle créer de l'art ?", (87, 88), "B", 8, _answers("c b a b a b a"), "Vous lisez cet article", "Pour répondre aux questions"),
-    CeExerciseSpec("tp-16", "Partie C - Activité 1 : Manuel papier ou manuel numérique ?", (89, 90, 91, 92), "C", 1, _answers("a b a c b c"), "Vous lisez l'opinion", "À quelle personne associez-vous"),
-    CeExerciseSpec("tp-17", "Partie C - Activité 2 : Pour ou contre la gratuité des transports publics ?", (92, 93, 94), "C", 2, _answers("a b a c a c"), "Vous lisez l'opinion de ces trois personnes dans les commentaires", "À quelle personne associez-vous", "Pour ou contre les applications des banques"),
-    CeExerciseSpec("tp-18", "Partie C - Activité 3 : Pour ou contre les applications des banques en ligne ?", (94, 95), "C", 3, _answers("a c c b a b"), "Vous lisez l'opinion de ces trois personnes sur un forum belge", "À quelle personne associez-vous", "Vous lisez l'opinion de ces trois personnes sur un forum de débats"),
-    CeExerciseSpec("tp-19", "Partie C - Activité 4 : Pour ou contre l'énergie éolienne ?", (95, 96, 97), "C", 4, _answers("b a b a c b"), "Vous lisez l'opinion de ces trois personnes sur un forum de débats", "À quelle personne associez-vous", "Emmener son animal"),
-    CeExerciseSpec("tp-20", "Partie C - Activité 5 : Emmener son animal de compagnie au travail ?", (97, 98), "C", 5, _answers("a b c c a a"), "Vous iisez l'opinion", "À quelle personne associez-vous", "Vous lisez l'opinion de ces trois personnes sur un forum français"),
-    CeExerciseSpec("tp-21", "Partie C - Activité 6 : L'école à la maison ?", (98, 99, 100), "C", 6, _answers("a b a c b c"), "Vous lisez l'opinion de ces trois personnes sur un forum français", "À quelle personne associez-vous", "L'alimentation vivante"),
-    CeExerciseSpec("tp-22", "Partie C - Activité 7 : L'alimentation vivante : pour ou contre manger cru ?", (100, 101), "C", 7, _answers("c b b c a a"), "Vous lisez l'opinion de ces trois personnes à la suite", "À quelle personne associez-vous", "Vous lisez l'opinion de ces trois personnes sur un forum dont le sujet"),
-    CeExerciseSpec("tp-23", "Partie C - Activité 8 : Pour ou contre les stages de team building en entreprise ?", (101, 102), "C", 8, _answers("a b b c c a"), "Vous lisez l'opinion de ces trois personnes sur un forum dont le sujet", "À quelle personne associez-vous"),
-    CeExerciseSpec("tp-24", "Partie A - Activité 1 : Les réussites du modèle d'intégration français", (55, 56, 57), "A", 1, _answers("a a b b a a a"), "La France réussit à donner un toit", "Selon le journaliste"),
+    CeExerciseSpec(
+        "tp-01",
+        "Partie A - Activité 2 : Les bienfaits de l'art sur la santé",
+        (58, 59),
+        "A",
+        2,
+        _answers("b a c c b c b"),
+        "Vous lisez cet article",
+        "Pour répondre aux questions",
+    ),
+    CeExerciseSpec(
+        "tp-02",
+        "Partie A - Activité 3 : Mes placards et moi",
+        (60, 61),
+        "A",
+        3,
+        _answers("a a a b b c c"),
+        "Vous lisez cet article",
+        "Pour répondre aux questions",
+    ),
+    CeExerciseSpec(
+        "tp-03",
+        "Partie A - Activité 4 : Une nouvelle génération de cheffes",
+        (62, 63),
+        "A",
+        4,
+        _answers("c a c a a b a"),
+        "Vous lisez cet article",
+        "Pour répondre aux questions",
+    ),
+    CeExerciseSpec(
+        "tp-04",
+        "Partie A - Activité 5 : Les influenceurs, nouveaux favoris de la mode",
+        (64, 65),
+        "A",
+        5,
+        _answers("b b c a b b a"),
+        "Vous lisez cet article",
+        "Pour répondre aux questions",
+    ),
+    CeExerciseSpec(
+        "tp-05",
+        "Partie A - Activité 6 : Pénurie de bouquinistes sur les bords de la Seine",
+        (66, 67),
+        "A",
+        6,
+        _answers("b c c a c b a"),
+        "Vous lisez cet article",
+        "Pour répondre aux questions",
+    ),
+    CeExerciseSpec(
+        "tp-06",
+        "Partie A - Activité 7 : Le lycée Winston-Churchill à l'heure des tablettes numériques",
+        (68, 69),
+        "A",
+        7,
+        _answers("a c a c a a a"),
+        "Vous lisez cet article",
+        "Pour répondre aux questions",
+    ),
+    CeExerciseSpec(
+        "tp-07",
+        "Partie A - Activité 8 : La Fémis, meilleure école de cinéma française",
+        (70, 71),
+        "A",
+        8,
+        _answers("a c a c c c a"),
+        "Vous lisez cet article",
+        "Pour répondre aux questions",
+    ),
+    CeExerciseSpec(
+        "tp-08",
+        "Partie B - Activité 1 : Comment aider les seniors à maîtriser les outils numériques ?",
+        (72, 73, 74),
+        "B",
+        1,
+        _answers("a c c c b a b"),
+        "Lisez cet article",
+        "Pour répondre aux questions",
+    ),
+    CeExerciseSpec(
+        "tp-09",
+        "Partie B - Activité 2 : Trop aimer son animal de compagnie peut-il nuire à sa santé ?",
+        (75, 76),
+        "B",
+        2,
+        _answers("c c b a b c b"),
+        "Vous lisez cet article",
+        "Pour répondre aux questions",
+    ),
+    CeExerciseSpec(
+        "tp-10",
+        "Partie B - Activité 3 : Le temps partagé pour prendre en main sa vie professionnelle ?",
+        (77, 78),
+        "B",
+        3,
+        _answers("b c a b a a b"),
+        "Vous lisez cet article",
+        "Pour répondre aux questions",
+    ),
+    CeExerciseSpec(
+        "tp-11",
+        "Partie B - Activité 4 : Les plateformes numériques d'autoédition sont-elles l'avenir de l'édition ?",
+        (79, 80),
+        "B",
+        4,
+        _answers("c b a b b c b"),
+        "Vous lisez cet article",
+        "Pour répondre aux questions",
+    ),
+    CeExerciseSpec(
+        "tp-12",
+        "Partie B - Activité 5 : De plus en plus d'adolescents deviennent jeunes sapeurs-pompiers",
+        (81, 82),
+        "B",
+        5,
+        _answers("b c a a a b b"),
+        "Vous lisez cet article",
+        "Pour répondre aux questions",
+    ),
+    CeExerciseSpec(
+        "tp-13",
+        "Partie B - Activité 6 : La thérapie-photo, une méthode efficace pour oublier ses complexes",
+        (83, 84),
+        "B",
+        6,
+        _answers("c b c c b b c"),
+        "Vous lisez cet article",
+        "Pour répondre aux questions",
+    ),
+    CeExerciseSpec(
+        "tp-14",
+        "Partie B - Activité 7 : Job étudiant : frein ou avantage à l'insertion professionnelle ?",
+        (85, 86),
+        "B",
+        7,
+        _answers("c c b a c b b"),
+        "Vous lisez cet article",
+        "Pour répondre aux questions",
+    ),
+    CeExerciseSpec(
+        "tp-15",
+        "Partie B - Activité 8 : L'intelligence artificielle peut-elle créer de l'art ?",
+        (87, 88),
+        "B",
+        8,
+        _answers("c b a b a b a"),
+        "Vous lisez cet article",
+        "Pour répondre aux questions",
+    ),
+    CeExerciseSpec(
+        "tp-16",
+        "Partie C - Activité 1 : Manuel papier ou manuel numérique ?",
+        (89, 90, 91, 92),
+        "C",
+        1,
+        _answers("a b a c b c"),
+        "Vous lisez l'opinion",
+        "À quelle personne associez-vous",
+    ),
+    CeExerciseSpec(
+        "tp-17",
+        "Partie C - Activité 2 : Pour ou contre la gratuité des transports publics ?",
+        (92, 93, 94),
+        "C",
+        2,
+        _answers("a b a c a c"),
+        "Vous lisez l'opinion de ces trois personnes dans les commentaires",
+        "À quelle personne associez-vous",
+        "Pour ou contre les applications des banques",
+    ),
+    CeExerciseSpec(
+        "tp-18",
+        "Partie C - Activité 3 : Pour ou contre les applications des banques en ligne ?",
+        (94, 95),
+        "C",
+        3,
+        _answers("a c c b a b"),
+        "Vous lisez l'opinion de ces trois personnes sur un forum belge",
+        "À quelle personne associez-vous",
+        "Vous lisez l'opinion de ces trois personnes sur un forum de débats",
+    ),
+    CeExerciseSpec(
+        "tp-19",
+        "Partie C - Activité 4 : Pour ou contre l'énergie éolienne ?",
+        (95, 96, 97),
+        "C",
+        4,
+        _answers("b a b a c b"),
+        "Vous lisez l'opinion de ces trois personnes sur un forum de débats",
+        "À quelle personne associez-vous",
+        "Emmener son animal",
+    ),
+    CeExerciseSpec(
+        "tp-20",
+        "Partie C - Activité 5 : Emmener son animal de compagnie au travail ?",
+        (97, 98),
+        "C",
+        5,
+        _answers("a b c c a a"),
+        "Vous iisez l'opinion",
+        "À quelle personne associez-vous",
+        "Vous lisez l'opinion de ces trois personnes sur un forum français",
+    ),
+    CeExerciseSpec(
+        "tp-21",
+        "Partie C - Activité 6 : L'école à la maison ?",
+        (98, 99, 100),
+        "C",
+        6,
+        _answers("a b a c b c"),
+        "Vous lisez l'opinion de ces trois personnes sur un forum français",
+        "À quelle personne associez-vous",
+        "L'alimentation vivante",
+    ),
+    CeExerciseSpec(
+        "tp-22",
+        "Partie C - Activité 7 : L'alimentation vivante : pour ou contre manger cru ?",
+        (100, 101),
+        "C",
+        7,
+        _answers("c b b c a a"),
+        "Vous lisez l'opinion de ces trois personnes à la suite",
+        "À quelle personne associez-vous",
+        "Vous lisez l'opinion de ces trois personnes sur un forum dont le sujet",
+    ),
+    CeExerciseSpec(
+        "tp-23",
+        "Partie C - Activité 8 : Pour ou contre les stages de team building en entreprise ?",
+        (101, 102),
+        "C",
+        8,
+        _answers("a b b c c a"),
+        "Vous lisez l'opinion de ces trois personnes sur un forum dont le sujet",
+        "À quelle personne associez-vous",
+    ),
+    CeExerciseSpec(
+        "tp-24",
+        "Partie A - Activité 1 : Les réussites du modèle d'intégration français",
+        (55, 56, 57),
+        "A",
+        1,
+        _answers("a a b b a a a"),
+        "La France réussit à donner un toit",
+        "Selon le journaliste",
+    ),
 )
 
 
@@ -125,7 +346,18 @@ def _page_text(doc: fitz.Document, pages: tuple[int, ...]) -> str:
 
 def _clean_line(line: str) -> str:
     line = line.strip()
-    for bad in ("ç_j", "Si)", "(□)", "(a)", "( J)", "( j)", "(ja)", "(EJ)", "(gj)", "(f£j)"):
+    for bad in (
+        "ç_j",
+        "Si)",
+        "(□)",
+        "(a)",
+        "( J)",
+        "( j)",
+        "(ja)",
+        "(EJ)",
+        "(gj)",
+        "(f£j)",
+    ):
         line = line.replace(bad, "□")
     line = re.sub(r"^[•■*«<>\\–—\s]+", "", line)
     line = re.sub(r"^(?:0|O|Q|f\])\s+(?=[A-ZÀ-Ö])", "", line)
@@ -146,8 +378,25 @@ def _is_noise(line: str) -> bool:
     if re.fullmatch(r"\d{1,3}", line):
         return True
     if line in {
-        "a", "b", "c", "j", "r", "I", "l/", "X", "i", "l2", "J", "I J", "l J", "k J", "V", ">", "KI",
-        "_ Je m'entraîne", "Je m'entraîne",
+        "a",
+        "b",
+        "c",
+        "j",
+        "r",
+        "I",
+        "l/",
+        "X",
+        "i",
+        "l2",
+        "J",
+        "I J",
+        "l J",
+        "k J",
+        "V",
+        ">",
+        "KI",
+        "_ Je m'entraîne",
+        "Je m'entraîne",
     }:
         return True
     if (
@@ -235,7 +484,20 @@ def _clean_document_text(text: str) -> str:
     raw_lines = _repair_pdf_line_breaks(_extract_lines(text))
     lines: list[str] = []
     skip_lines = {
-        "X", "i", "l2", "J", "I J", "l J", "k J", "V", ">", "KI", "LJ", "L J", "L /", "—",
+        "X",
+        "i",
+        "l2",
+        "J",
+        "I J",
+        "l J",
+        "k J",
+        "V",
+        ">",
+        "KI",
+        "LJ",
+        "L J",
+        "L /",
+        "—",
         "Je m'entraîne",
     }
     skip_fragments = (
@@ -416,10 +678,7 @@ def _is_source_line(line: str) -> bool:
 
 
 def _is_intro_line(line: str) -> bool:
-    return (
-        line.startswith("Vous lisez ")
-        or line.startswith("Lisez cet article")
-    )
+    return line.startswith("Vous lisez ") or line.startswith("Lisez cet article")
 
 
 def _is_person_heading(line: str) -> bool:
@@ -431,7 +690,9 @@ def _is_person_heading(line: str) -> bool:
     return all(word[:1].isupper() for word in words if word)
 
 
-def _remove_repeated_article_title(lines: list[str], title: str, source_part: str) -> list[str]:
+def _remove_repeated_article_title(
+    lines: list[str], title: str, source_part: str
+) -> list[str]:
     if source_part not in {"A", "B"}:
         return lines
 
@@ -463,7 +724,11 @@ def _remove_repeated_article_title(lines: list[str], title: str, source_part: st
 
 def _format_document_paragraphs(text: str, *, title: str, source_part: str) -> str:
     raw_lines = [line.strip() for line in text.splitlines() if line.strip()]
-    raw_lines = [line for line in raw_lines if line not in {"J", "I J", "l J", "k J", "L J", "L /", "—", ">"}]
+    raw_lines = [
+        line
+        for line in raw_lines
+        if line not in {"J", "I J", "l J", "k J", "L J", "L /", "—", ">"}
+    ]
     lines = _remove_repeated_article_title(raw_lines, title, source_part)
 
     paragraphs: list[str] = []
@@ -521,7 +786,9 @@ def build_paper(spec: CeExerciseSpec, doc: fitz.Document) -> dict[str, Any]:
     if question_index < 0:
         raise ValueError(f"{spec.test_id} question marker not found")
 
-    document_text = _finalize_document_text(_clean_document_text(scoped[:question_index]))
+    document_text = _finalize_document_text(
+        _clean_document_text(scoped[:question_index])
+    )
     document_title = spec.title.split(" : ", 1)[-1]
     document_text = _format_document_paragraphs(
         document_text,
@@ -585,14 +852,18 @@ def build_paper(spec: CeExerciseSpec, doc: fitz.Document) -> dict[str, Any]:
     }
 
 
-def upsert_paper(content: dict[str, Any], *, dry_run: bool, update_active: bool) -> dict[str, Any]:
+def upsert_paper(
+    content: dict[str, Any], *, dry_run: bool, update_active: bool
+) -> dict[str, Any]:
     validation = validate_content(content)
     if not validation.get("valid"):
         return {
             "success": False,
             "test_id": content.get("test_id"),
             "error": "validation_failed",
-            "validation": {key: val for key, val in validation.items() if key != "paper"},
+            "validation": {
+                key: val for key, val in validation.items() if key != "paper"
+            },
         }
     if dry_run:
         return {
@@ -609,7 +880,9 @@ def upsert_paper(content: dict[str, Any], *, dry_run: bool, update_active: bool)
             paper_model = DelfTestPaper.model_validate(content)
             GitHubDelfManager().create_or_update_file(
                 file_path=existing.github_path,
-                content=paper_model.model_dump_json(indent=2, by_alias=True).encode("utf-8"),
+                content=paper_model.model_dump_json(indent=2, by_alias=True).encode(
+                    "utf-8"
+                ),
                 commit_message=f"chore(delf): update active B2 CE {existing.test_id}",
             )
             repo.update(
@@ -703,11 +976,15 @@ def main() -> int:
 
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
+    out_path.write_text(
+        json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
 
     papers_path = Path(args.papers_out)
     papers_path.parent.mkdir(parents=True, exist_ok=True)
-    papers_path.write_text(json.dumps(built_papers, ensure_ascii=False, indent=2), encoding="utf-8")
+    papers_path.write_text(
+        json.dumps(built_papers, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
 
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     return 0 if summary["failed_count"] == 0 else 1

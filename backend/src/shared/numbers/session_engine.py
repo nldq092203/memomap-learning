@@ -21,7 +21,6 @@ from src.shared.numbers.repository.github_repo import (
 )
 from src.config import Config
 
-
 # ============================================================
 # Repository access (singleton-style for MVP)
 # ============================================================

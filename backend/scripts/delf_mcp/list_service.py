@@ -17,9 +17,11 @@ def _serialize_draft(row: Any) -> dict[str, Any]:
         "exercise_count": getattr(row, "exercise_count", 0),
         "audio_filename": getattr(row, "audio_filename", None),
         "github_path": getattr(row, "github_path", None),
-        "created_at": getattr(row, "created_at", None).isoformat()
-        if getattr(row, "created_at", None)
-        else None,
+        "created_at": (
+            getattr(row, "created_at", None).isoformat()
+            if getattr(row, "created_at", None)
+            else None
+        ),
     }
 
 

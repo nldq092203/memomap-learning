@@ -29,7 +29,6 @@ from src.infra.drive.client import GoogleDriveError
 from src.utils.response_builder import ResponseBuilder
 from src.extensions import logger
 
-
 # ============================================================
 # Helpers
 # ============================================================

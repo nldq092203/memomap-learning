@@ -8,7 +8,6 @@ from typing import Any
 
 from src.api.errors import BadRequestError
 
-
 try:  # pragma: no cover - import availability depends on local setup
     import cv2
     import numpy as np
@@ -84,7 +83,7 @@ def detect_option_boxes(
     """Detect answer-image boxes inside a region from left to right."""
     ensure_local_asset_deps()
 
-    roi = image_bgr[region.top:region.bottom, region.left:region.right]
+    roi = image_bgr[region.top : region.bottom, region.left : region.right]
     if roi.size == 0:
         raise BadRequestError("auto_detect region is outside the screenshot")
 
@@ -120,8 +119,7 @@ def detect_option_boxes(
 
     image_height, image_width = image_bgr.shape[:2]
     return [
-        clamp_crop_box(box, image_width, image_height, padding=padding)
-        for box in boxes
+        clamp_crop_box(box, image_width, image_height, padding=padding) for box in boxes
     ]
 
 
@@ -134,7 +132,7 @@ def export_crop_to_webp(
     """Crop one image region and encode it as WEBP bytes."""
     ensure_local_asset_deps()
 
-    crop_image = image_bgr[crop.top:crop.bottom, crop.left:crop.right]
+    crop_image = image_bgr[crop.top : crop.bottom, crop.left : crop.right]
     if crop_image.size == 0:
         raise BadRequestError("Crop box produced an empty image")
 

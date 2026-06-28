@@ -6,7 +6,9 @@ import os
 import sys
 
 _BACKEND_DIR = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    )
 )
 if _BACKEND_DIR not in sys.path:
     sys.path.insert(0, _BACKEND_DIR)
@@ -46,12 +48,7 @@ def test_parses_dashed_form():
 
 
 def test_parses_one_per_line_form():
-    text = (
-        "Activité 3\n"
-        "1. a\n"
-        "2. d\n"
-        "3. b\n"
-    )
+    text = "Activité 3\n" "1. a\n" "2. d\n" "3. b\n"
     key = parse_answer_pdf([_page(text)])
     assert key.for_activity(3) == {1: 0, 2: 3, 3: 1}
 

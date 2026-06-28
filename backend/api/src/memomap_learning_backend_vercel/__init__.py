@@ -2,4 +2,3 @@
 
 The actual Vercel serverless entrypoint is `backend/api/index.py`.
 """
-

@@ -163,7 +163,9 @@ def _is_guest_accessible_paper(
         section=section or None,
         variant=variant or None,
     )
-    allowed_ids = {candidate.id for candidate in _filter_guest_preview_records(papers, limit=limit)}
+    allowed_ids = {
+        candidate.id for candidate in _filter_guest_preview_records(papers, limit=limit)
+    }
     return paper.id in allowed_ids
 
 
@@ -493,11 +495,7 @@ def delf_admin_delete_test(user_id: str, test_paper_id: str):
         test_id=paper.test_id,
     )
 
-    return (
-        ResponseBuilder()
-        .success(data={"message": "Test paper deleted"})
-        .build()
-    )
+    return ResponseBuilder().success(data={"message": "Test paper deleted"}).build()
 
 
 @require_auth  # TODO: Change to @require_admin when ready
@@ -658,9 +656,7 @@ def delf_admin_upload_file(user_id: str):
         raise BadRequestError(f"Invalid content_base64: {e}")
 
     filename = req.filename.split("/")[-1]
-    file_path = (
-        f"delf/{paper.level.lower()}/{paper.variant}/{paper.section}/{req.folder}/{filename}"
-    )
+    file_path = f"delf/{paper.level.lower()}/{paper.variant}/{paper.section}/{req.folder}/{filename}"
 
     github_mgr = GitHubDelfManager()
     result = github_mgr.create_or_update_file(
@@ -871,16 +867,20 @@ def delf_admin_mark_guest_preview(user_id: str):
         if repo.update(paper.id, extra=extra):
             updated_ids.append(paper.id)
 
-    return ResponseBuilder().success(
-        data={
-            "level": level,
-            "variant": variant,
-            "section": section,
-            "count": count,
-            "selected_ids": list(selected_ids),
-            "updated_ids": updated_ids,
-        }
-    ).build()
+    return (
+        ResponseBuilder()
+        .success(
+            data={
+                "level": level,
+                "variant": variant,
+                "section": section,
+                "count": count,
+                "selected_ids": list(selected_ids),
+                "updated_ids": updated_ids,
+            }
+        )
+        .build()
+    )
 
 
 # Export all endpoints

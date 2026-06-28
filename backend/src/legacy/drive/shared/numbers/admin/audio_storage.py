@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from src.infra.drive.repository import DriveRepository
 
-
 AUDIO_MIME = "audio/mpeg"
 ROOT_FOLDER = "NumbersDictation"
 

@@ -117,9 +117,7 @@ def _resolve_question_boxes(
         label = str(opt.get("label", chr(ord("a") + idx)))
         crop = opt.get("crop")
         if not isinstance(crop, dict):
-            return None, {
-                "error": f"options[{idx}] missing required `crop` object"
-            }
+            return None, {"error": f"options[{idx}] missing required `crop` object"}
         box, parse_err = _parse_crop_dict(crop)
         if parse_err:
             return None, {"error": f"options[{idx}]: {parse_err}"}
@@ -177,9 +175,7 @@ def process_screenshot_options(
     if len(raw) > limit:
         return {
             "success": False,
-            "error": (
-                f"Payload too large: {len(raw)} bytes > {limit} bytes"
-            ),
+            "error": (f"Payload too large: {len(raw)} bytes > {limit} bytes"),
         }
 
     try:
@@ -198,10 +194,12 @@ def process_screenshot_options(
     for q in questions:
         qnum = q.get("question_number")
         if not isinstance(qnum, int) or qnum < 1:
-            failures.append({
-                "question_number": qnum,
-                "error": "question_number must be a positive integer",
-            })
+            failures.append(
+                {
+                    "question_number": qnum,
+                    "error": "question_number must be a positive integer",
+                }
+            )
             continue
 
         pairs, q_err = _resolve_question_boxes(image_bgr, width, height, q)
@@ -226,33 +224,41 @@ def process_screenshot_options(
                     github=github,
                 )
             except Exception as exc:
-                failures.append({
-                    "question_number": qnum,
-                    "label": label,
-                    "error": f"Unexpected failure: {exc}",
-                })
+                failures.append(
+                    {
+                        "question_number": qnum,
+                        "label": label,
+                        "error": f"Unexpected failure: {exc}",
+                    }
+                )
                 continue
 
             if outcome.get("success"):
-                question_results.append({
-                    "label": label,
-                    "img_url": outcome["img_url"],
-                    "github_path": outcome["github_path"],
-                    "byte_size": outcome["byte_size"],
-                    "overwritten": outcome.get("overwritten", False),
-                })
+                question_results.append(
+                    {
+                        "label": label,
+                        "img_url": outcome["img_url"],
+                        "github_path": outcome["github_path"],
+                        "byte_size": outcome["byte_size"],
+                        "overwritten": outcome.get("overwritten", False),
+                    }
+                )
             else:
-                failures.append({
-                    "question_number": qnum,
-                    "label": label,
-                    "error": outcome.get("error", "Unknown upload error"),
-                    "github_path": outcome.get("github_path"),
-                })
+                failures.append(
+                    {
+                        "question_number": qnum,
+                        "label": label,
+                        "error": outcome.get("error", "Unknown upload error"),
+                        "github_path": outcome.get("github_path"),
+                    }
+                )
 
-        results.append({
-            "question_number": qnum,
-            "options": question_results,
-        })
+        results.append(
+            {
+                "question_number": qnum,
+                "options": question_results,
+            }
+        )
 
     return {
         "success": not failures,

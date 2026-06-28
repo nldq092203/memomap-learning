@@ -32,10 +32,14 @@ class BackfillCounts:
     failed: int = 0
 
 
-def build_mongo_vocab_doc(card: VocabularyCardORM, imported_at: datetime) -> dict[str, Any]:
+def build_mongo_vocab_doc(
+    card: VocabularyCardORM, imported_at: datetime
+) -> dict[str, Any]:
     """Convert one SQL vocabulary row into the Mongo vocabulary shape."""
     extra = dict(card.extra or {})
-    item_type = extra.get("item_type") or ("phrase" if " " in card.word.strip() else "word")
+    item_type = extra.get("item_type") or (
+        "phrase" if " " in card.word.strip() else "word"
+    )
     return {
         "user_id": card.user_id,
         "legacy_sql_id": card.id,
@@ -124,7 +128,10 @@ def backfill_sql_vocab_to_mongo(
 
     collection = None
     if not dry_run:
-        from src.infra.mongo import ensure_vocabulary_indexes, get_vocab_cards_collection
+        from src.infra.mongo import (
+            ensure_vocabulary_indexes,
+            get_vocab_cards_collection,
+        )
 
         if ensure_indexes:
             ensure_vocabulary_indexes()

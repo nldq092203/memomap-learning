@@ -8,7 +8,6 @@ from enum import Enum
 
 from pydantic import BaseModel, Field, field_validator
 
-
 _FIELD_LABEL_RE = re.compile(
     r"\s+(Nom|Origine|Ville actuelle|Occupation|À propos de moi|Objectif professionnel|"
     r"Objectif|Adresse|Date|Lieu|Source|Titre)\s*:",
@@ -33,7 +32,7 @@ def _format_readable_text(value: str | None) -> str | None:
 
 class ExerciseTopic(str, Enum):
     """Exercise topic/category for filtering."""
-    
+
     # Common topics
     POLITICS = "politics"
     HEALTH = "health"
@@ -109,7 +108,9 @@ class CoCeQuestion(BaseModel):
 class CoCeQuestionsMeta(BaseModel):
     """Meta section for CO/CE questions file."""
 
-    type: str = Field(..., min_length=1)  # compréhension_orale / compréhension_écrite / ...
+    type: str = Field(
+        ..., min_length=1
+    )  # compréhension_orale / compréhension_écrite / ...
     niveau: str = Field(..., min_length=1)
     titre: str = Field(..., min_length=1)
     consigne: str | None = None
@@ -158,7 +159,9 @@ class CreateExerciseRequest(BaseModel):
     duration_seconds: int = Field(..., ge=0)
     media_id: str = Field(..., min_length=1)  # YouTube video ID or audio UUID
     media_type: str = Field(default="audio", pattern="^(audio|video)$")
-    topic: ExerciseTopic | None = Field(default=None, description="Exercise topic/category")
+    topic: ExerciseTopic | None = Field(
+        default=None, description="Exercise topic/category"
+    )
 
 
 class UpdateExerciseRequest(BaseModel):
@@ -203,7 +206,7 @@ class ExerciseResponse(BaseModel):
     media_id: str
     topic: ExerciseTopic | None = None
     created_at: datetime
-    
+
     # Computed URLs
     audio_url: str | None = None
     video_url: str | None = None
@@ -213,7 +216,7 @@ class ExerciseDetail(ExerciseResponse):
     """Detailed exercise information."""
 
     updated_at: datetime
-    
+
     # File paths (internal use mostly, but good for debug)
     co_path: str | None = None
     ce_path: str | None = None

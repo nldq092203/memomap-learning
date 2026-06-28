@@ -47,4 +47,3 @@ class ResponseBuilder:
         for key, value in self._headers.items():
             response.headers[key] = value
         return response
-

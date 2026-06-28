@@ -14,7 +14,6 @@ from typing import Any
 
 from src.infra.drive.client import GoogleDriveClient
 
-
 FOLDER_MIME = "application/vnd.google-apps.folder"
 
 

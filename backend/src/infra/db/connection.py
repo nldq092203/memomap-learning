@@ -48,4 +48,3 @@ def db_session() -> Session:
 def get_db() -> Session:
     """Get a new database session (caller manages lifecycle)."""
     return SessionLocal()
-

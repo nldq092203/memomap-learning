@@ -96,7 +96,9 @@ class GitHubContentManager:
             "branch": self.base_branch,
         }
 
-        response = requests.delete(url, json=payload, headers=self._headers(), timeout=30)
+        response = requests.delete(
+            url, json=payload, headers=self._headers(), timeout=30
+        )
         response.raise_for_status()
 
         logger.info(f"[{self.log_prefix}] Deleted file: {file_path}")

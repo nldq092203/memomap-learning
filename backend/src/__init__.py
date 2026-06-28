@@ -15,7 +15,6 @@ from src.extensions import cors, logger
 from src.config import LearningConfig
 from src.utils.response_builder import ResponseBuilder
 
-
 METRICS_TOKEN = os.getenv("METRICS_TOKEN")
 
 
