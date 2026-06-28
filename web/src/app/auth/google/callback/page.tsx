@@ -1,9 +1,9 @@
 "use client"
 
-import { Suspense, useEffect, useState } from "react"
+import { Suspense, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2, AlertCircle } from "lucide-react"
-import { useLogin } from "@/lib/hooks/use-auth"
+import { useAuth, useLogin } from "@/lib/hooks/use-auth"
 
 const GOOGLE_REDIRECT_PATH = "/auth/google/callback"
 
@@ -23,23 +23,14 @@ function getSafeReturnPath(value: string | null) {
   return value
 }
 
-// Guards the single-use code exchange for the lifetime of this page load.
-// Every Google redirect is a full page load, so this resets naturally; within
-// a load it survives remounts/re-renders so we never double-exchange nor flash
-// a false "no authorization code" error after the URL has been read.
-let redirectHandled = false
-
 function GoogleCallbackContent() {
   const router = useRouter()
   const { login } = useLogin()
+  const { isAuthenticated, isLoading } = useAuth()
+  const exchangeStartedRef = useRef(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (redirectHandled) {
-      return
-    }
-    redirectHandled = true
-
     // Read straight from the live URL. useSearchParams() can hydrate empty on
     // a statically-optimized page; window.location.search is always accurate
     // on the client. We intentionally do NOT strip the code from the URL here
@@ -48,6 +39,20 @@ function GoogleCallbackContent() {
     const code = params.get("code")
     const oauthError = params.get("error")
     const returnTo = getSafeReturnPath(params.get("state"))
+
+    if (isAuthenticated) {
+      router.replace(returnTo)
+      return
+    }
+
+    if (isLoading) {
+      return
+    }
+
+    if (exchangeStartedRef.current) {
+      return
+    }
+    exchangeStartedRef.current = true
 
     if (oauthError) {
       setError("Google sign-in was cancelled or denied.")
@@ -67,7 +72,7 @@ function GoogleCallbackContent() {
         console.error("Google redirect login failed:", error)
         setError("Failed to finish Google sign-in. Please try again.")
       })
-  }, [login, router])
+  }, [isAuthenticated, isLoading, login, router])
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4">
