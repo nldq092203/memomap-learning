@@ -2,6 +2,7 @@ import Link from "next/link"
 import type { ComponentType } from "react"
 import { ArrowLeft, ArrowRight } from "lucide-react"
 
+import { GuestUpgradeHint } from "@/components/auth/guest-upgrade-hint"
 import { cn } from "@/lib/utils"
 
 export interface ExerciseHubAction {
@@ -71,6 +72,11 @@ export function ExerciseHubPage({
             </div>
           </div>
         </section>
+
+        <GuestUpgradeHint
+          className="mb-5"
+          description="Connectez-vous pour ouvrir plus d'exercices, plus de niveaux et retrouver votre progression."
+        />
 
         {actions.length > 0 ? (
           <section className="grid gap-5 lg:grid-cols-3">

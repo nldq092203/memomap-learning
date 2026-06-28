@@ -11,10 +11,11 @@ import { BookOpen, Sparkles, Play } from "lucide-react"
 import { ReviewModal } from "@/components/learning/review/session-review-modal"
 import { useLearningLang } from "@/lib/contexts/learning-lang-context"
 import { REVIEW_CHALLENGES, type ReviewChallengeId } from "@/components/learning/review/challenges"
+import { ProtectedRoute } from "@/components/auth/protected-route"
 
 // Recent sessions section removed for a cleaner, focused Review Hub
 
-export default function ReviewHub() {
+function ReviewHubContent() {
   const { user } = useAuth()
   const { lang: selectedLanguage } = useLearningLang()
   const [dueCards, setDueCards] = useState<LearningVocabCard[]>([])
@@ -445,5 +446,13 @@ export default function ReviewHub() {
         onOpenChange={setShowReview}
       />
     </div>
+  )
+}
+
+export default function ReviewHub() {
+  return (
+    <ProtectedRoute>
+      <ReviewHubContent />
+    </ProtectedRoute>
   )
 }

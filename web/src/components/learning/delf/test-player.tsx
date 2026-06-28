@@ -9,6 +9,7 @@ import {
 } from "@/lib/types/api/delf"
 import { learningDelfApi } from "@/lib/services/learning-delf-api"
 import { SupportProjectTrigger } from "@/components/auth/support-project-trigger"
+import { GuestUpgradeHint } from "@/components/auth/guest-upgrade-hint"
 import { ExerciseView } from "@/components/learning/delf/exercise-view"
 import { MatchingExerciseView } from "@/components/learning/delf/matching-exercise-view"
 import { ExtraTranscriptView } from "@/components/learning/delf/extra-transcript-view"
@@ -338,6 +339,8 @@ export function TestPlayer({
           </div>
         </div>
       </div>
+
+      <GuestUpgradeHint description="Connectez-vous pour ouvrir plus d'exercices DELF, plus de niveaux et retrouver votre progression." />
 
       {section === "CE" && content.extra_transcripts?.length > 0 && (
         <div className="space-y-4">

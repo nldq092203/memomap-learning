@@ -214,7 +214,7 @@ export function Navigation() {
                     onClick={() => setShowLoginPrompt(true)}
                     className={cn(
                       "w-full group flex items-center gap-3 rounded-2xl px-3 py-3 transition-all",
-                      "opacity-40 cursor-not-allowed hover:opacity-50",
+                      "text-[var(--vintage-muted-ink)] hover:bg-[var(--vintage-porcelain-mist)] hover:text-[var(--vintage-ink)]",
                       isCollapsed && "lg:justify-center lg:px-2",
                     )}
                     title="Connectez-vous pour débloquer"

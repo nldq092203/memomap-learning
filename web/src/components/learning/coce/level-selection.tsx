@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { GuestUpgradeHint } from "@/components/auth/guest-upgrade-hint"
 import type { CEFRLevel } from "@/lib/types/api/coce"
 import { GUEST_ALLOWED_LEVEL, useGuest } from "@/lib/contexts/guest-context"
 import { cn } from "@/lib/utils"
@@ -69,6 +70,8 @@ export function LevelSelection({ onSelectLevel, mode }: LevelSelectionProps) {
           {description}
         </p>
       </header>
+
+      <GuestUpgradeHint description="Connectez-vous pour débloquer plus de niveaux, plus d'exercices et conserver votre progression." />
 
       <div className="space-y-4">
         <h2 className="text-lg font-semibold text-[var(--vintage-ink)]">Choisissez votre niveau</h2>

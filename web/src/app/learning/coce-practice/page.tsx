@@ -16,6 +16,7 @@ import { PracticeTypeSelector } from "@/components/learning/coce/practice-type-s
 import { QuestionsView } from "@/components/learning/coce/questions-view"
 import { useGuest, GUEST_ALLOWED_LEVEL } from "@/lib/contexts/guest-context"
 import { SupportProjectTrigger } from "@/components/auth/support-project-trigger"
+import { GuestUpgradeHint } from "@/components/auth/guest-upgrade-hint"
 
 function matchesQuestionMode(
   questionType: string | undefined,
@@ -306,6 +307,11 @@ export default function CoCePracticePage() {
           </div>
 
         </div>
+
+        <GuestUpgradeHint
+          className="mb-6"
+          description="Connectez-vous pour débloquer plus d'exercices CO/CE, plus de niveaux et retrouver votre progression."
+        />
 
         <div
           className={cn(

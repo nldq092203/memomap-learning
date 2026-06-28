@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { GuestUpgradeHint } from "@/components/auth/guest-upgrade-hint"
 import type { DelfLevel, DelfSection } from "@/lib/types/api/delf"
 import { GUEST_ALLOWED_DELF_LEVELS, useGuest } from "@/lib/contexts/guest-context"
 import { BookOpen, ChevronRight, Headphones, Lock, Mic, PenTool } from "lucide-react"
@@ -58,6 +59,8 @@ export function LevelSectionSelector({ onSelect, loading, preferredSection }: Le
           </div>
         </div>
       </section>
+
+      <GuestUpgradeHint description="Connectez-vous pour débloquer plus de niveaux DELF, plus de livres et retrouver votre progression." />
 
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {DELF_LEVELS.map((level) => {
