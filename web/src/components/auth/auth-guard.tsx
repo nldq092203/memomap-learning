@@ -35,7 +35,7 @@ export function AuthGuard({ children, fallback }: AuthGuardProps) {
       <div
         className="flex min-h-screen items-center justify-center bg-[#f5eee5] px-4 py-8"
         style={{
-          backgroundImage: "linear-gradient(180deg, rgba(245,238,229,0.92), rgba(245,238,229,0.98)), url('/UI/map.png')",
+          backgroundImage: "linear-gradient(180deg, rgba(245,238,229,0.92), rgba(245,238,229,0.98)), url('/UI/map.webp')",
           backgroundPosition: "center top",
           backgroundSize: "cover",
         }}

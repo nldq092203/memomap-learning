@@ -143,23 +143,6 @@ export function useCoCePractice() {
     })
   }, [])
 
-  // Submit answers and show results
-  const submitAnswers = useCallback(() => {
-    if (!questions) return
-
-    // Validate all questions answered
-    const allAnswered = questions.questions.every((q) =>
-      userAnswers.some((a) => a.questionId === q.id && a.selectedIndices.length > 0)
-    )
-
-    if (!allAnswered) {
-      notificationService.error("Répondez à toutes les questions avant de valider")
-      return
-    }
-
-    setShowResults(true)
-  }, [questions, userAnswers])
-
   // Calculate score
   const score = useMemo(() => {
     if (!questions || !showResults) return null
@@ -182,6 +165,21 @@ export function useCoCePractice() {
       percentage: Math.round((correct / questions.questions.length) * 100),
     }
   }, [questions, userAnswers, showResults])
+
+  const submitAnswers = useCallback(() => {
+    if (!questions) return
+
+    const allAnswered = questions.questions.every((q) =>
+      userAnswers.some((a) => a.questionId === q.id && a.selectedIndices.length > 0)
+    )
+
+    if (!allAnswered) {
+      notificationService.error("Répondez à toutes les questions avant de valider")
+      return
+    }
+
+    setShowResults(true)
+  }, [questions, userAnswers])
 
   // Check if a specific answer is correct
   const isAnswerCorrect = useCallback(

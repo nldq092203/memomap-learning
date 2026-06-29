@@ -6,6 +6,8 @@ import { BookOpen, Clock3, Headphones, Loader2, PlayCircle } from "lucide-react"
 import { TrainingSurface } from "@/components/learning/ui"
 import { GuestUpgradeHint } from "@/components/auth/guest-upgrade-hint"
 import { formatDelfVariantLabel } from "@/lib/utils/delf-routes"
+import { ExerciseProgressBadge } from "@/components/learning/progress/exercise-progress-badge"
+import type { ExerciseProgressStatus } from "@/lib/services/learning-progress-api"
 
 interface TestListProps {
   level: DelfLevel
@@ -15,6 +17,7 @@ interface TestListProps {
   loading: boolean
   onSelectTest: (testId: string, level: DelfLevel, variant: string, section: DelfSection) => void
   onBack: () => void
+  progressByExerciseId?: Map<string, { status: ExerciseProgressStatus }>
 }
 
 export function TestList({
@@ -25,6 +28,7 @@ export function TestList({
   loading,
   onSelectTest,
   onBack,
+  progressByExerciseId,
 }: TestListProps) {
   const Icon = section === "CO" ? Headphones : BookOpen
   const sectionName = section === "CO" ? "Compréhension orale" : "Compréhension écrite"
@@ -87,13 +91,17 @@ export function TestList({
       ) : (
         <ScrollArea className="pr-2 sm:pr-4 md:h-[620px]">
           <div className="grid max-w-[1380px] gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
-            {tests.map((test, index) => (
-              <button
-                key={test.id}
-                type="button"
-                onClick={() => onSelectTest(test.test_id, test.level, test.variant, test.section)}
-                className="group min-h-[84px] rounded-[14px] border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/92 p-2.5 text-left shadow-[0_6px_16px_rgba(74,51,35,0.05)] transition-all hover:-translate-y-0.5 hover:border-[var(--vintage-desert-rock)] hover:shadow-[0_10px_24px_rgba(74,51,35,0.09)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--vintage-desert-rock)]"
-              >
+            {tests.map((test, index) => {
+              const progress = progressByExerciseId?.get(
+                `delf:${test.level}:${test.variant}:${test.section}:${test.test_id}`,
+              )
+              return (
+                <button
+                  key={test.id}
+                  type="button"
+                  onClick={() => onSelectTest(test.test_id, test.level, test.variant, test.section)}
+                  className="group min-h-[84px] rounded-[14px] border border-[var(--vintage-soft-sandstone)] bg-[var(--vintage-feather-white)]/92 p-2.5 text-left shadow-[0_6px_16px_rgba(74,51,35,0.05)] transition-all hover:-translate-y-0.5 hover:border-[var(--vintage-desert-rock)] hover:shadow-[0_10px_24px_rgba(74,51,35,0.09)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--vintage-desert-rock)]"
+                >
                 <div className="flex h-full min-w-0 flex-col gap-2.5">
                   <div className="space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2">
@@ -109,6 +117,7 @@ export function TestList({
                           Brouillon
                         </Badge>
                       )}
+                      {progress && <ExerciseProgressBadge status={progress.status} />}
                     </div>
 
                     <h2 className="text-[15px] font-semibold tracking-tight text-[var(--vintage-ink)]">
@@ -127,8 +136,9 @@ export function TestList({
                     </div>
                   </div>
                 </div>
-              </button>
-            ))}
+                </button>
+              )
+            })}
           </div>
         </ScrollArea>
       )}

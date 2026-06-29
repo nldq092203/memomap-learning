@@ -9,6 +9,7 @@ import { useGuest, GUEST_ALLOWED_DELF_LEVELS } from "@/lib/contexts/guest-contex
 import { useDelfPractice } from "@/lib/hooks/use-delf-practice"
 import { learningDelfApi } from "@/lib/services/learning-delf-api"
 import { notificationService } from "@/lib/services/notification-service"
+import { useExerciseProgressMap } from "@/lib/hooks/use-exercise-progress-map"
 import type { DelfLevel, DelfSection, DelfTestPaperResponse } from "@/lib/types/api/delf"
 import {
   buildDelfLevelRoute,
@@ -57,18 +58,22 @@ export default function DelfLevelRoutePage() {
   const [tests, setTests] = useState<DelfTestPaperResponse[]>([])
   const [loadingList, setLoadingList] = useState(false)
   const [loadingTest, setLoadingTest] = useState(false)
+  const levelParam = params.level
+  const slugKey = Array.isArray(params.slug) ? params.slug.join("/") : ""
   const preferredSectionRaw = searchParams.get("section")?.toUpperCase()
   const preferredSection = preferredSectionRaw && isDelfSection(preferredSectionRaw)
     ? preferredSectionRaw
     : null
+  const routeSectionForProgress = routeSectionFromKey(slugKey)
+  const progressByExerciseId = useExerciseProgressMap(routeSectionForProgress)
 
   const route = useMemo<ResolvedRoute>(() => {
-    const level = params.level?.toUpperCase()
+    const level = levelParam?.toUpperCase()
     if (!level || !isDelfLevel(level)) {
       return { kind: "invalid" }
     }
 
-    const slug = Array.isArray(params.slug) ? params.slug : []
+    const slug = slugKey ? slugKey.split("/") : []
     if (slug.length === 0) {
       return {
         kind: "books",
@@ -118,7 +123,7 @@ export default function DelfLevelRoutePage() {
     }
 
     return { kind: "invalid" }
-  }, [params.level, params.slug])
+  }, [levelParam, slugKey])
 
   useEffect(() => {
     if (route.kind === "invalid") {
@@ -208,7 +213,7 @@ export default function DelfLevelRoutePage() {
 
   const commonShell = "min-h-screen bg-[#f5eee5]"
   const commonShellStyle = {
-    backgroundImage: "linear-gradient(180deg, rgba(245,238,229,0.94), rgba(245,238,229,0.98)), url('/UI/map.png')",
+    backgroundImage: "linear-gradient(180deg, rgba(245,238,229,0.94), rgba(245,238,229,0.98)), url('/UI/map.webp')",
     backgroundPosition: "center top",
     backgroundSize: "cover",
   }
@@ -237,6 +242,7 @@ export default function DelfLevelRoutePage() {
               router.push(buildDelfTestRoute(level, variant, section, testId))
             }}
             onBack={() => router.push(buildDelfLevelRoute(route.level))}
+            progressByExerciseId={progressByExerciseId}
           />
         </div>
       </div>
@@ -319,4 +325,11 @@ export default function DelfLevelRoutePage() {
       </div>
     </div>
   )
+}
+
+function routeSectionFromKey(slugKey: string): DelfSection | null {
+  const slug = slugKey ? slugKey.split("/") : []
+  const sectionRaw = slug.length >= 2 ? slug[1] : slug[0]
+  const section = sectionRaw?.toUpperCase()
+  return section && isDelfSection(section) ? section : null
 }

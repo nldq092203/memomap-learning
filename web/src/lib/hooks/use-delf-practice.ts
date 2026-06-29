@@ -11,6 +11,7 @@ import type {
 } from "@/lib/types/api/delf"
 import { isNestedQuestionExerciseType } from "@/lib/types/api/delf"
 import { notificationService } from "@/lib/services/notification-service"
+import { useExerciseProgressTracker } from "@/lib/hooks/use-exercise-progress-tracker"
 
 type PracticeMode = "intro" | "test" | "review"
 
@@ -20,7 +21,90 @@ interface UserAnswer {
   selectedOption: number
 }
 
+function calculateDelfScore({
+  currentTest,
+  userAnswers,
+  matchingAnswers,
+  subQuestionAnswers,
+}: {
+  currentTest: DelfTestPaperDetailResponse | null
+  userAnswers: UserAnswer[]
+  matchingAnswers: MatchingAnswer[]
+  subQuestionAnswers: Record<string, any>
+}) {
+  if (!currentTest?.content.exercises) return null
+
+  let correct = 0
+  let total = 0
+
+  currentTest.content.exercises.forEach((ex) => {
+    if (ex.type === "matching") {
+      if (ex.correct_answers && ex.documents) {
+        const matchAnswer = matchingAnswers.find((a) => a.exerciseId === ex.id)
+        ex.documents.forEach((doc) => {
+          const pts = ex.points || 1
+          total += pts
+          const correctPerson = ex.correct_answers![doc.id]
+          if (matchAnswer?.selections[doc.id] === correctPerson) {
+            correct += pts
+          }
+        })
+      }
+    } else if (isNestedQuestionExerciseType(ex.type)) {
+      ex.questions?.forEach(q => {
+        if (q.type === "single_choice" || q.type === "multiple_choice" || q.type === "multiple_choice_image" || q.type === "true_false") {
+          const pts = q.points || 1
+          total += pts
+          const ans = subQuestionAnswers[q.id]
+          if (ans !== undefined && ans === q.correct_answer) correct += pts
+        } else if (q.type === "multiple_select_image") {
+          const correctArr = q.correct_answers as string[]
+          if (correctArr) {
+            const maxPts = q.points || correctArr.length
+            total += maxPts
+            const ansArr = subQuestionAnswers[q.id] as string[] || []
+            let rawCorrect = 0
+            ansArr.forEach(val => {
+              if (correctArr.includes(val)) rawCorrect++
+            })
+            const wrongSelections = ansArr.filter(val => !correctArr.includes(val)).length
+            const netCorrect = Math.max(0, rawCorrect - wrongSelections)
+            correct += (netCorrect / correctArr.length) * maxPts
+          }
+        } else if (q.type === "label_matching") {
+          const correctMap = q.correct_answers as Record<string, number>
+          if (correctMap) {
+            const keys = Object.keys(correctMap)
+            const maxPts = q.points || keys.length
+            total += maxPts
+            const ansMap = subQuestionAnswers[q.id] as Record<string, number> || {}
+            let rawCorrect = 0
+            keys.forEach(k => {
+              if (ansMap[k] === correctMap[k]) rawCorrect++
+            })
+            correct += (rawCorrect / keys.length) * maxPts
+          }
+        }
+      })
+    } else {
+      const pts = ex.points || 1
+      total += pts
+      const userAnswer = userAnswers.find((a) => a.exerciseId === ex.id)
+      if (userAnswer && userAnswer.selectedOption === ex.correct_answer) {
+        correct += pts
+      }
+    }
+  })
+
+  return {
+    correct,
+    total,
+    percentage: total > 0 ? Math.round((correct / total) * 100) : 0,
+  }
+}
+
 export function useDelfPractice() {
+  const progressTracker = useExerciseProgressTracker()
   const [level, setLevel] = useState<DelfLevel | null>(null)
   const [section, setSection] = useState<DelfSection | null>(null)
   const [variant, setVariant] = useState<string>("tout-public")
@@ -34,6 +118,22 @@ export function useDelfPractice() {
   const [subQuestionAnswers, setSubQuestionAnswers] = useState<Record<string, any>>({}) // Stores nested answers
   const [loading, setLoading] = useState(false)
   const [showResults, setShowResults] = useState(false)
+
+  const buildProgressPayload = useCallback(
+    (test: DelfTestPaperDetailResponse, extra?: Record<string, unknown>) => ({
+      exercise_id: `delf:${test.level}:${test.variant}:${test.section}:${test.test_id}`,
+      section: test.section,
+      source_type: "delf_book" as const,
+      level: test.level,
+      extra: {
+        test_id: test.test_id,
+        variant: test.variant,
+        question_count: test.exercise_count,
+        ...extra,
+      },
+    }),
+    [],
+  )
 
   // Load test papers list
   const loadTests = useCallback(
@@ -91,6 +191,11 @@ export function useDelfPractice() {
         setMatchingAnswers([])
         setSubQuestionAnswers({})
         setShowResults(false)
+        progressTracker.markOpened(
+          buildProgressPayload(data, {
+            content_exercise_count: data.content.exercises.length,
+          }),
+        )
         return true
       } catch (error) {
         console.error("Failed to load test paper:", error)
@@ -100,11 +205,18 @@ export function useDelfPractice() {
         setLoading(false)
       }
     },
-    []
+    [buildProgressPayload, progressTracker]
   )
 
   // Update user answer for MCQ exercise
   const updateAnswer = useCallback((exerciseId: string, selectedOption: number) => {
+    if (currentTest) {
+      progressTracker.markStarted(
+        buildProgressPayload(currentTest, {
+          first_answer_exercise_id: exerciseId,
+        }),
+      )
+    }
     setUserAnswers((prev) => {
       const existing = prev.find((a) => a.exerciseId === exerciseId)
       if (existing) {
@@ -114,10 +226,17 @@ export function useDelfPractice() {
       }
       return [...prev, { exerciseId, selectedOption }]
     })
-  }, [])
+  }, [buildProgressPayload, currentTest, progressTracker])
 
   // Update matching answer for a document → person association
   const updateMatchingAnswer = useCallback((exerciseId: string, docId: string, personLabel: string) => {
+    if (currentTest) {
+      progressTracker.markStarted(
+        buildProgressPayload(currentTest, {
+          first_answer_exercise_id: exerciseId,
+        }),
+      )
+    }
     setMatchingAnswers((prev) => {
       const existing = prev.find((a) => a.exerciseId === exerciseId)
       if (existing) {
@@ -129,101 +248,66 @@ export function useDelfPractice() {
       }
       return [...prev, { exerciseId, selections: { [docId]: personLabel } }]
     })
-  }, [])
+  }, [buildProgressPayload, currentTest, progressTracker])
 
   // Update answer for nested sub-questions
   const updateSubQuestionAnswer = useCallback((questionId: string, value: any) => {
+    if (currentTest) {
+      progressTracker.markStarted(
+        buildProgressPayload(currentTest, {
+          first_answer_question_id: questionId,
+        }),
+      )
+    }
     setSubQuestionAnswers(prev => ({
       ...prev,
       [questionId]: value
     }))
-  }, [])
-
-  // Submit test and show results
-  const submitTest = useCallback(() => {
-    if (!currentTest?.content.exercises) return
-    setShowResults(true)
-    setMode("review")
-  }, [currentTest])
+  }, [buildProgressPayload, currentTest, progressTracker])
 
   // Calculate score
   const score = useMemo(() => {
     if (!currentTest?.content.exercises || !showResults) return null
-
-    let correct = 0
-    let total = 0
-
-    currentTest.content.exercises.forEach((ex) => {
-      if (ex.type === "matching") {
-        // Matching: count each document-person pair
-        if (ex.correct_answers && ex.documents) {
-          const matchAnswer = matchingAnswers.find((a) => a.exerciseId === ex.id)
-          ex.documents.forEach((doc) => {
-            const pts = ex.points || 1 // fallback if needed
-            total += pts
-            const correctPerson = ex.correct_answers![doc.id]
-            if (matchAnswer?.selections[doc.id] === correctPerson) {
-              correct += pts
-            }
-          })
-        }
-      } else if (isNestedQuestionExerciseType(ex.type)) {
-        // Nested sub-questions
-        ex.questions?.forEach(q => {
-          if (q.type === "single_choice" || q.type === "multiple_choice" || q.type === "multiple_choice_image" || q.type === "true_false") {
-            const pts = q.points || 1
-            total += pts
-            const ans = subQuestionAnswers[q.id]
-            if (ans !== undefined && ans === q.correct_answer) correct += pts
-          } else if (q.type === "multiple_select_image") {
-            // Checkbox question: count total correct options
-            const correctArr = q.correct_answers as string[]
-            if (correctArr) {
-              const maxPts = q.points || correctArr.length
-              total += maxPts
-              const ansArr = subQuestionAnswers[q.id] as string[] || []
-              let rawCorrect = 0
-              ansArr.forEach(val => {
-                if (correctArr.includes(val)) rawCorrect++
-              })
-              const wrongSelections = ansArr.filter(val => !correctArr.includes(val)).length
-              const netCorrect = Math.max(0, rawCorrect - wrongSelections)
-              // Award proportional points
-              correct += (netCorrect / correctArr.length) * maxPts
-            }
-          } else if (q.type === "label_matching") {
-            // Label matching (A->1, B->3)
-            const correctMap = q.correct_answers as Record<string, number>
-            if (correctMap) {
-              const keys = Object.keys(correctMap)
-              const maxPts = q.points || keys.length
-              total += maxPts
-              const ansMap = subQuestionAnswers[q.id] as Record<string, number> || {}
-              let rawCorrect = 0
-              keys.forEach(k => {
-                if (ansMap[k] === correctMap[k]) rawCorrect++
-              })
-              correct += (rawCorrect / keys.length) * maxPts
-            }
-          }
-        })
-      } else {
-        // MCQ (flat legacy format)
-        const pts = ex.points || 1
-        total += pts
-        const userAnswer = userAnswers.find((a) => a.exerciseId === ex.id)
-        if (userAnswer && userAnswer.selectedOption === ex.correct_answer) {
-          correct += pts
-        }
-      }
+    return calculateDelfScore({
+      currentTest,
+      userAnswers,
+      matchingAnswers,
+      subQuestionAnswers,
     })
-
-    return {
-      correct,
-      total,
-      percentage: total > 0 ? Math.round((correct / total) * 100) : 0,
-    }
   }, [currentTest, userAnswers, matchingAnswers, subQuestionAnswers, showResults])
+
+  const submitTestWithProgress = useCallback(() => {
+    if (!currentTest?.content.exercises) return
+    setShowResults(true)
+    setMode("review")
+
+    const nextScore = calculateDelfScore({
+      currentTest,
+      userAnswers,
+      matchingAnswers,
+      subQuestionAnswers,
+    })
+    const percentage = nextScore?.percentage ?? 0
+    progressTracker.markCompleted({
+      ...buildProgressPayload(currentTest),
+      score: percentage,
+      accuracy: percentage,
+      answers_snapshot: {
+        user_answers: userAnswers,
+        matching_answers: matchingAnswers,
+        sub_question_answers: subQuestionAnswers,
+        correct: nextScore?.correct ?? 0,
+        total: nextScore?.total ?? 0,
+      },
+    })
+  }, [
+    buildProgressPayload,
+    currentTest,
+    matchingAnswers,
+    progressTracker,
+    subQuestionAnswers,
+    userAnswers,
+  ])
 
   // Check if a specific MCQ answer is correct
   const isAnswerCorrect = useCallback(
@@ -242,18 +326,25 @@ export function useDelfPractice() {
 
   // Reset current test state
   const restartCurrentTest = useCallback(() => {
-    setUserAnswers([])
-    setMatchingAnswers([])
-    setSubQuestionAnswers({})
-    setShowResults(false)
-    setMode("intro")
-  }, [])
+    if (currentTest) {
+      progressTracker.markRetried(buildProgressPayload(currentTest))
+    }
+    setUserAnswers((prev) => (prev.length ? [] : prev))
+    setMatchingAnswers((prev) => (prev.length ? [] : prev))
+    setSubQuestionAnswers((prev) => (Object.keys(prev).length ? {} : prev))
+    setShowResults((prev) => (prev ? false : prev))
+    setMode((prev) => (prev === "intro" ? prev : "intro"))
+  }, [buildProgressPayload, currentTest, progressTracker])
 
   // Reset current test state
   const resetTest = useCallback(() => {
-    setCurrentTest(null)
-    restartCurrentTest()
-  }, [restartCurrentTest])
+    setCurrentTest((prev) => (prev ? null : prev))
+    setUserAnswers((prev) => (prev.length ? [] : prev))
+    setMatchingAnswers((prev) => (prev.length ? [] : prev))
+    setSubQuestionAnswers((prev) => (Object.keys(prev).length ? {} : prev))
+    setShowResults((prev) => (prev ? false : prev))
+    setMode((prev) => (prev === "intro" ? prev : "intro"))
+  }, [])
 
   // Complete reset to selection screen
   const resetAll = useCallback(() => {
@@ -284,7 +375,7 @@ export function useDelfPractice() {
     updateAnswer,
     updateMatchingAnswer,
     updateSubQuestionAnswer,
-    submitTest,
+    submitTest: submitTestWithProgress,
     isAnswerCorrect,
     setMode,
     restartCurrentTest,

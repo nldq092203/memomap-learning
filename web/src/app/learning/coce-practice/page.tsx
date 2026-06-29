@@ -271,7 +271,7 @@ export default function CoCePracticePage() {
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.16]"
         style={{
-          backgroundImage: "url('/UI/map.png')",
+          backgroundImage: "url('/UI/map.webp')",
           backgroundPosition: "center top",
           backgroundSize: "cover",
         }}

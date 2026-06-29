@@ -28,7 +28,7 @@ export default function DelfPracticePage() {
     <div
       className="min-h-screen bg-[#f5eee5]"
       style={{
-        backgroundImage: "linear-gradient(180deg, rgba(245,238,229,0.94), rgba(245,238,229,0.98)), url('/UI/map.png')",
+        backgroundImage: "linear-gradient(180deg, rgba(245,238,229,0.94), rgba(245,238,229,0.98)), url('/UI/map.webp')",
         backgroundPosition: "center top",
         backgroundSize: "cover",
       }}

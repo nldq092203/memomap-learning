@@ -49,7 +49,7 @@ export default function SpeakingPracticePage() {
     <div
       className="relative min-h-screen overflow-hidden bg-[#f5eee5] text-[var(--vintage-ink)]"
       style={{
-        backgroundImage: "linear-gradient(180deg, rgba(245,238,229,0.93), rgba(245,238,229,0.98)), url('/UI/map.png')",
+        backgroundImage: "linear-gradient(180deg, rgba(245,238,229,0.93), rgba(245,238,229,0.98)), url('/UI/map.webp')",
         backgroundPosition: "center top",
         backgroundSize: "cover",
       }}

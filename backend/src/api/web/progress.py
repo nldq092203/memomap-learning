@@ -15,6 +15,14 @@ from src.domain.controllers import (
 from src.utils.response_builder import ResponseBuilder
 
 
+def _get_int_query(name: str, default: int) -> int:
+    raw = request.args.get(name, str(default))
+    try:
+        return int(raw)
+    except (TypeError, ValueError) as exc:
+        raise BadRequestError(f"{name} must be an integer") from exc
+
+
 @require_auth
 @with_db
 def progress_list_update(user_id: str, db: Session):
@@ -22,8 +30,8 @@ def progress_list_update(user_id: str, db: Session):
     if request.method == "GET":
         status = request.args.get("status", "").strip() or None
         section = request.args.get("section", "").strip() or None
-        limit = int(request.args.get("limit", 20))
-        offset = int(request.args.get("offset", 0))
+        limit = _get_int_query("limit", 20)
+        offset = _get_int_query("offset", 0)
 
         data = list_exercise_progress_controller(
             db=db,
