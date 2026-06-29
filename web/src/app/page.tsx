@@ -70,7 +70,7 @@ const mapSections: MapSection[] = [
     id: "po",
     title: "Production Orale",
     href: "/learning/speaking-practice",
-    image: "/UI/patheon.webp",
+    image: "/UI/13quartier.webp",
     icon: Mic,
     position: "left-[55%] top-[63%]",
     mobilePosition: "left-[55%] top-[65%]",
